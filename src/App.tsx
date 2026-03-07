@@ -4,19 +4,30 @@ import { Dashboard } from './components/Dashboard';
 import { Cronograma } from './components/Cronograma';
 import { Agenda } from './components/Agenda';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
+import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { useSubjects } from './hooks/useSubjects';
 import type { ActiveView } from './types';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView | 'dashboard'>('dashboard');
-  const { subjects, toggleAula, togglePreAula, toggleFlashcards, registerReview, doResetCiclo } =
-    useSubjects();
+  const [showGerenciar, setShowGerenciar] = useState(false);
+  const {
+    subjects,
+    toggleAula,
+    togglePreAula,
+    toggleFlashcards,
+    registerReview,
+    doResetCiclo,
+    addSubject,
+    removeSubject,
+  } = useSubjects();
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0f0f0f]">
       <Header
         activeView={activeView === 'dashboard' ? 'cronograma' : activeView}
         onViewChange={(v) => setActiveView(v)}
+        onOpenGerenciar={() => setShowGerenciar(true)}
       />
 
       {/* Hero banner — only on dashboard */}
@@ -29,7 +40,7 @@ export default function App() {
         >
           <div className="absolute inset-0 flex items-end px-6 pb-5">
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              RevisaENEM
+              Ebbin
             </h1>
           </div>
         </div>
@@ -68,6 +79,15 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {showGerenciar && (
+        <GerenciarConteudo
+          subjects={subjects}
+          onAdd={addSubject}
+          onRemove={removeSubject}
+          onClose={() => setShowGerenciar(false)}
+        />
+      )}
     </div>
   );
 }

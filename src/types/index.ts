@@ -1,12 +1,4 @@
-export type Area =
-  | 'FÍSICA'
-  | 'QUÍMICA'
-  | 'BIOLOGIA'
-  | 'MATEMÁTICA'
-  | 'HISTÓRIA'
-  | 'GEOGRAFIA'
-  | 'PORTUGUÊS'
-  | 'REDAÇÃO';
+export type Area = string;
 
 export type Relevance = 'Alta' | 'Média' | 'Baixa';
 

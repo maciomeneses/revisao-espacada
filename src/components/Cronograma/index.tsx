@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import type { Subject, Area, Relevance } from '../../types';
+import type { Subject, Relevance } from '../../types';
 import { SubjectRow } from './SubjectRow';
 import type { useSubjects } from '../../hooks/useSubjects';
 
@@ -15,10 +15,6 @@ interface CronogramaProps {
   onResetCiclo: SubjectsHook['doResetCiclo'];
 }
 
-const AREAS: Area[] = [
-  'FÍSICA', 'QUÍMICA', 'BIOLOGIA', 'MATEMÁTICA',
-  'HISTÓRIA', 'GEOGRAFIA', 'PORTUGUÊS', 'REDAÇÃO',
-];
 const RELEVANCES: Relevance[] = ['Alta', 'Média', 'Baixa'];
 
 export function Cronograma({
@@ -30,9 +26,14 @@ export function Cronograma({
   onResetCiclo,
 }: CronogramaProps) {
   const [search, setSearch] = useState('');
-  const [filterArea, setFilterArea] = useState<Area | ''>('');
+  const [filterArea, setFilterArea] = useState('');
   const [filterRelevance, setFilterRelevance] = useState<Relevance | ''>('');
   const [showFilters, setShowFilters] = useState(false);
+
+  const areas = useMemo(() => {
+    const set = new Set(subjects.map((s) => s.area));
+    return Array.from(set).sort();
+  }, [subjects]);
 
   const filtered = useMemo(() => {
     return subjects.filter((s) => {
@@ -88,11 +89,11 @@ export function Cronograma({
             <span className="text-xs text-gray-400">Área:</span>
             <select
               value={filterArea}
-              onChange={(e) => setFilterArea(e.target.value as Area | '')}
+              onChange={(e) => setFilterArea(e.target.value)}
               className="bg-[#1a1a1a] border border-[#333] rounded px-2 py-1 text-xs text-white"
             >
               <option value="">Todas</option>
-              {AREAS.map((a) => (
+              {areas.map((a) => (
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>

@@ -127,6 +127,44 @@ export function useSubjects() {
     [subjects, updateSubject],
   );
 
+  const addSubject = useCallback(
+    (data: { area: string; modulo: string; aulaPrincipal: string; relevancia: Subject['relevancia'] }) => {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      const newSubject: Subject = {
+        id,
+        ...data,
+        aulaAssistida: false,
+        preAulaFeita: false,
+        flashcardsFeitos: false,
+        fixacao24hFeita: false,
+        estudoReversoFeito: false,
+        rev7dFeita: false,
+        rev30dFeita: false,
+        rev60dFeita: false,
+        rev90dFeita: false,
+        currentStage: 'aula',
+        nextReviewDate: null,
+        lastReviewDate: null,
+        lastPerformance: null,
+        performanceLevel: 'nao_classificada',
+      };
+      setSubjects((prev) => {
+        const next = [...prev, newSubject];
+        saveSubjects(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const removeSubject = useCallback((id: string) => {
+    setSubjects((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      saveSubjects(next);
+      return next;
+    });
+  }, []);
+
   return {
     subjects,
     toggleAula,
@@ -134,5 +172,7 @@ export function useSubjects() {
     toggleFlashcards,
     registerReview,
     doResetCiclo,
+    addSubject,
+    removeSubject,
   };
 }
