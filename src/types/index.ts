@@ -48,4 +48,4 @@ export interface Subject {
   performanceLevel: PerformanceLevel;
 }
 
-export type ActiveView = 'cronograma' | 'agenda' | 'espiao';
+export type ActiveView = 'dashboard' | 'cronograma' | 'agenda' | 'espiao';

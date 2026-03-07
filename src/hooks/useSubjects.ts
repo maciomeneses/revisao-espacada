@@ -170,36 +170,34 @@ export function useSubjects() {
       const subject = subjects.find((s) => s.id === id);
       if (!subject) return;
 
-      const stageFlag: Partial<Subject> = {};
-      switch (stage) {
-        case 'fixacao':
-          stageFlag.fixacao24hFeita = false;
-          break;
-        case 'estudo_reverso':
-          stageFlag.estudoReversoFeito = false;
-          break;
-        case 'rev7d':
-          stageFlag.rev7dFeita = false;
-          break;
-        case 'rev30d':
-          stageFlag.rev30dFeita = false;
-          break;
-        case 'rev60d':
-          stageFlag.rev60dFeita = false;
-          break;
-        case 'rev90d':
-          stageFlag.rev90dFeita = false;
-          break;
-        default:
-          return;
+      // Stage order — clear the reverted stage AND all downstream stages
+      const stageOrder: Subject['currentStage'][] = [
+        'fixacao', 'estudo_reverso', 'rev7d', 'rev30d', 'rev60d', 'rev90d',
+      ];
+      const idx = stageOrder.indexOf(stage);
+      if (idx === -1) return;
+
+      const downstream = stageOrder.slice(idx);
+      const stageFlags: Partial<Subject> = {};
+      for (const s of downstream) {
+        switch (s) {
+          case 'fixacao': stageFlags.fixacao24hFeita = false; break;
+          case 'estudo_reverso': stageFlags.estudoReversoFeito = false; break;
+          case 'rev7d': stageFlags.rev7dFeita = false; break;
+          case 'rev30d': stageFlags.rev30dFeita = false; break;
+          case 'rev60d': stageFlags.rev60dFeita = false; break;
+          case 'rev90d': stageFlags.rev90dFeita = false; break;
+        }
       }
 
       updateSubject({
         ...subject,
-        ...stageFlag,
+        ...stageFlags,
         currentStage: stage,
         nextReviewDate: null,
+        lastReviewDate: null,
         lastPerformance: null,
+        performanceLevel: 'nao_classificada',
       });
     },
     [subjects, updateSubject],

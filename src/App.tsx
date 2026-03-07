@@ -9,7 +9,7 @@ import { useSubjects } from './hooks/useSubjects';
 import type { ActiveView } from './types';
 
 export default function App() {
-  const [activeView, setActiveView] = useState<ActiveView | 'dashboard'>('dashboard');
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
   const {
     subjects,
@@ -26,7 +26,7 @@ export default function App() {
   return (
     <div className="flex flex-col min-h-screen bg-[#0f0f0f]">
       <Header
-        activeView={activeView === 'dashboard' ? 'cronograma' : activeView}
+        activeView={activeView}
         onViewChange={(v) => setActiveView(v)}
         onOpenGerenciar={() => setShowGerenciar(true)}
       />

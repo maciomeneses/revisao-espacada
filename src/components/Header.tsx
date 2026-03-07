@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Eye, Settings } from 'lucide-react';
+import { Home, BookOpen, Calendar, Eye, Settings } from 'lucide-react';
 import type { ActiveView } from '../types';
 
 interface HeaderProps {
@@ -8,6 +8,7 @@ interface HeaderProps {
 }
 
 const TABS: { view: ActiveView; label: string; Icon: React.ElementType }[] = [
+  { view: 'dashboard', label: 'Início', Icon: Home },
   { view: 'cronograma', label: 'Cronograma', Icon: BookOpen },
   { view: 'agenda', label: 'Agenda', Icon: Calendar },
   { view: 'espiao', label: 'Espião Estratégico', Icon: Eye },
