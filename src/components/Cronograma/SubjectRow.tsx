@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import type { Performance, Subject } from '../../types';
+import type { Performance, ReviewStage, Subject } from '../../types';
 import { getProximaTarefa, getFormulaStatus } from '../../services/algorithm';
 import { PerformanceModal } from '../PerformanceModal';
 import type { useSubjects } from '../../hooks/useSubjects';
@@ -14,6 +14,7 @@ interface SubjectRowProps {
   onToggleFlashcards: SubjectsHook['toggleFlashcards'];
   onRegisterReview: SubjectsHook['registerReview'];
   onResetCiclo: SubjectsHook['doResetCiclo'];
+  onRevertStage: SubjectsHook['revertStage'];
 }
 
 function RelevanceBadge({ relevance }: { relevance: Subject['relevancia'] }) {
@@ -127,12 +128,29 @@ export function SubjectRow({
   onToggleFlashcards,
   onRegisterReview,
   onResetCiclo,
+  onRevertStage,
 }: SubjectRowProps) {
   const [showModal, setShowModal] = useState(false);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
 
+  const stageChecked: Record<string, boolean> = {
+    fixacao: subject.fixacao24hFeita,
+    estudo_reverso: subject.estudoReversoFeito,
+    rev7d: subject.rev7dFeita,
+    rev30d: subject.rev30dFeita,
+    rev60d: subject.rev60dFeita,
+    rev90d: subject.rev90dFeita,
+  };
+
   const handleReviewClick = (stage: string) => {
-    if (subject.currentStage !== stage) return; // not the current stage
+    // If already checked, allow reverting with confirmation
+    if (stageChecked[stage]) {
+      if (confirm(`Desfazer esta etapa de "${subject.aulaPrincipal}"?`)) {
+        onRevertStage(subject.id, stage as ReviewStage);
+      }
+      return;
+    }
+    if (subject.currentStage !== stage) return;
     if (REVIEW_STAGES.has(stage)) {
       setPendingStage(stage);
       setShowModal(true);

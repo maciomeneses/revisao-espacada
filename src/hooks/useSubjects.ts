@@ -165,6 +165,46 @@ export function useSubjects() {
     });
   }, []);
 
+  const revertStage = useCallback(
+    (id: string, stage: Subject['currentStage']) => {
+      const subject = subjects.find((s) => s.id === id);
+      if (!subject) return;
+
+      const stageFlag: Partial<Subject> = {};
+      switch (stage) {
+        case 'fixacao':
+          stageFlag.fixacao24hFeita = false;
+          break;
+        case 'estudo_reverso':
+          stageFlag.estudoReversoFeito = false;
+          break;
+        case 'rev7d':
+          stageFlag.rev7dFeita = false;
+          break;
+        case 'rev30d':
+          stageFlag.rev30dFeita = false;
+          break;
+        case 'rev60d':
+          stageFlag.rev60dFeita = false;
+          break;
+        case 'rev90d':
+          stageFlag.rev90dFeita = false;
+          break;
+        default:
+          return;
+      }
+
+      updateSubject({
+        ...subject,
+        ...stageFlag,
+        currentStage: stage,
+        nextReviewDate: null,
+        lastPerformance: null,
+      });
+    },
+    [subjects, updateSubject],
+  );
+
   return {
     subjects,
     toggleAula,
@@ -174,5 +214,6 @@ export function useSubjects() {
     doResetCiclo,
     addSubject,
     removeSubject,
+    revertStage,
   };
 }

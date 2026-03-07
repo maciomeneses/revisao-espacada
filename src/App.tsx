@@ -20,6 +20,7 @@ export default function App() {
     doResetCiclo,
     addSubject,
     removeSubject,
+    revertStage,
   } = useSubjects();
 
   return (
@@ -64,6 +65,7 @@ export default function App() {
             onToggleFlashcards={toggleFlashcards}
             onRegisterReview={registerReview}
             onResetCiclo={doResetCiclo}
+            onRevertStage={revertStage}
           />
         )}
 

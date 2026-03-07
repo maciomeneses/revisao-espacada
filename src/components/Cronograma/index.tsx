@@ -13,6 +13,7 @@ interface CronogramaProps {
   onToggleFlashcards: SubjectsHook['toggleFlashcards'];
   onRegisterReview: SubjectsHook['registerReview'];
   onResetCiclo: SubjectsHook['doResetCiclo'];
+  onRevertStage: SubjectsHook['revertStage'];
 }
 
 const RELEVANCES: Relevance[] = ['Alta', 'Média', 'Baixa'];
@@ -24,6 +25,7 @@ export function Cronograma({
   onToggleFlashcards,
   onRegisterReview,
   onResetCiclo,
+  onRevertStage,
 }: CronogramaProps) {
   const [search, setSearch] = useState('');
   const [filterArea, setFilterArea] = useState('');
@@ -158,6 +160,7 @@ export function Cronograma({
                 onToggleFlashcards={onToggleFlashcards}
                 onRegisterReview={onRegisterReview}
                 onResetCiclo={onResetCiclo}
+                onRevertStage={onRevertStage}
               />
             ))}
             {filtered.length === 0 && (
