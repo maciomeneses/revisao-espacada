@@ -8,10 +8,13 @@ export function loadSubjects(): Subject[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return INITIAL_SUBJECTS;
     const parsed = JSON.parse(raw) as Subject[];
-    // Merge: keep existing subjects, add any new ones from initial data
-    const existingIds = new Set(parsed.map((s) => s.id));
+    const validIds = new Set(INITIAL_SUBJECTS.map((s) => s.id));
+    // Remove subjects that no longer exist in INITIAL_SUBJECTS (e.g. old generic history)
+    const filtered = parsed.filter((s) => validIds.has(s.id));
+    // Add any new subjects from INITIAL_SUBJECTS not yet in storage
+    const existingIds = new Set(filtered.map((s) => s.id));
     const newSubjects = INITIAL_SUBJECTS.filter((s) => !existingIds.has(s.id));
-    return [...parsed, ...newSubjects];
+    return [...filtered, ...newSubjects];
   } catch {
     return INITIAL_SUBJECTS;
   }
