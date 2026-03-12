@@ -205,3 +205,107 @@ describe('computeStageTransition — Rev 90D (Alta only)', () => {
     expect(t.stageCompleted).toBe(true);
   });
 });
+
+describe('computeStageTransition — Concluído', () => {
+  it('concluido always stays concluido', () => {
+    const t = computeStageTransition('concluido', 'Alta', 'gte_80');
+    expect(t.nextStage).toBe('concluido');
+    expect(t.daysUntilNext).toBe(0);
+    expect(t.stageCompleted).toBe(true);
+  });
+});
+
+import { today, getProximaTarefa, getFormulaStatus, resetCiclo } from '../src/services/algorithm';
+import type { Subject } from '../src/types';
+
+describe('today', () => {
+  it('returns today date in YYYY-MM-DD format', () => {
+    const t = today();
+    expect(t).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe('getProximaTarefa', () => {
+  it('returns correct label for each stage', () => {
+    expect(getProximaTarefa('aula')).toBe('Aula');
+    expect(getProximaTarefa('fixacao')).toBe('Fixação 24H');
+    expect(getProximaTarefa('estudo_reverso')).toBe('Estudo Reverso');
+    expect(getProximaTarefa('rev7d')).toBe('Revisão 7 Dias');
+    expect(getProximaTarefa('rev30d')).toBe('Revisão 30 Dias');
+    expect(getProximaTarefa('rev60d')).toBe('Revisão 60 Dias');
+    expect(getProximaTarefa('rev90d')).toBe('Revisão 90 Dias');
+    expect(getProximaTarefa('concluido')).toBe('Concluído');
+  });
+});
+
+describe('getFormulaStatus', () => {
+  it('returns empty string if stage is aula', () => {
+    const subject = { currentStage: 'aula' } as Subject;
+    expect(getFormulaStatus(subject)).toBe('');
+  });
+
+  it('returns Concluído if stage is concluido', () => {
+    const subject = { currentStage: 'concluido' } as Subject;
+    expect(getFormulaStatus(subject)).toBe('Concluído');
+  });
+
+  it('returns empty string if nextReviewDate is missing', () => {
+    const subject = { currentStage: 'rev7d', nextReviewDate: null } as Subject;
+    expect(getFormulaStatus(subject)).toBe('');
+  });
+
+  it('returns Atrasado if nextReviewDate is before today', () => {
+    const subject = { currentStage: 'rev7d', nextReviewDate: '2000-01-01' } as Subject;
+    expect(getFormulaStatus(subject)).toBe('Atrasado');
+  });
+
+  it('returns Hoje if nextReviewDate is today', () => {
+    const subject = { currentStage: 'rev7d', nextReviewDate: today() } as Subject;
+    expect(getFormulaStatus(subject)).toBe('Hoje');
+  });
+
+  it('returns No Prazo if nextReviewDate is after today', () => {
+    const subject = { currentStage: 'rev7d', nextReviewDate: '2099-01-01' } as Subject;
+    expect(getFormulaStatus(subject)).toBe('No Prazo');
+  });
+});
+
+describe('resetCiclo', () => {
+  it('resets subject state and schedules rev7d', () => {
+    const mockSubject: Subject = {
+      id: '1',
+      modulo: 'M1',
+      area: 'A1',
+      aulaPrincipal: 'Aula 1',
+      relevancia: 'Alta',
+      aulaAssistida: true,
+      preAulaFeita: true,
+      flashcardsFeitos: true,
+      fixacao24hFeita: false,
+      estudoReversoFeito: false,
+      rev7dFeita: true,
+      rev30dFeita: true,
+      rev60dFeita: true,
+      rev90dFeita: true,
+      currentStage: 'rev90d',
+      nextReviewDate: '2020-01-01',
+      lastReviewDate: '2020-01-01',
+      lastPerformance: 'gte_80',
+      performanceLevel: 'gte_80',
+    };
+
+    const resetSubject = resetCiclo(mockSubject);
+
+    expect(resetSubject.fixacao24hFeita).toBe(true);
+    expect(resetSubject.estudoReversoFeito).toBe(true);
+    expect(resetSubject.rev7dFeita).toBe(false);
+    expect(resetSubject.rev30dFeita).toBe(false);
+    expect(resetSubject.rev60dFeita).toBe(false);
+    expect(resetSubject.rev90dFeita).toBe(false);
+    expect(resetSubject.currentStage).toBe('rev7d');
+    expect(resetSubject.lastReviewDate).toBe(today());
+    expect(resetSubject.nextReviewDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(resetSubject.lastPerformance).toBe('lte_60');
+    expect(resetSubject.performanceLevel).toBe('lte_60');
+  });
+});
