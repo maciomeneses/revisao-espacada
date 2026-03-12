@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Cronograma } from './components/Cronograma';
 import { Agenda } from './components/Agenda';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
+import { AuthScreen } from './components/Auth/AuthScreen';
 import { useSubjects } from './hooks/useSubjects';
 import type { ActiveView } from './types';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
+  
   const {
     subjects,
     toggleAula,
@@ -23,12 +26,36 @@ export default function App() {
     revertStage,
   } = useSubjects();
 
+  // Check for existing session
+  useEffect(() => {
+    const session = localStorage.getItem('ebbin_session');
+    if (session) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (email: string) => {
+    localStorage.setItem('ebbin_session', JSON.stringify({ email, timestamp: Date.now() }));
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('ebbin_session');
+    setIsAuthenticated(false);
+    setActiveView('dashboard');
+  };
+
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#0f0f0f]">
       <Header
         activeView={activeView}
         onViewChange={(v) => setActiveView(v)}
         onOpenGerenciar={() => setShowGerenciar(true)}
+        onLogout={handleLogout}
       />
 
       {/* Hero banner — only on dashboard */}
