@@ -2,7 +2,7 @@
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /app
 
-COPY gradlew settings.gradle.kts build.gradle.kts ./
+COPY gradlew settings.gradle build.gradle ./
 COPY gradle gradle
 
 # Download dependencies
