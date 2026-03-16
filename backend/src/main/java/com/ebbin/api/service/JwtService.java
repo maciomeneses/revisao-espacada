@@ -74,11 +74,23 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration).before(clock.get());
     }
 
+    /**
+     * Tolerância máxima de skew de relógio (em segundos) para o parser JJWT.
+     *
+     * <p>O JJWT usa o <em>relógio do sistema</em> para verificar {@code exp} durante o parse.
+     * Como a expiração é validada manualmente em {@link #isTokenExpired} usando o relógio
+     * injetado ({@code clock}), usamos apenas uma tolerância pequena aqui — suficiente para
+     * absorver diferenças de NTP entre servidores, sem desabilitar inteiramente a proteção.</p>
+     *
+     * <p>30 segundos é o valor padrão recomendado pela RFC 7519 §4.1.4.</p>
+     */
+    private static final long CLOCK_SKEW_SECONDS = 30L;
+
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {
         return resolver.apply(
                 Jwts.parser()
                         .verifyWith(key)
-                        .clockSkewSeconds(Integer.MAX_VALUE) // desabilita clock-enforcement do JJWT; expiração validada manualmente em isTokenExpired
+                        .clockSkewSeconds(CLOCK_SKEW_SECONDS)
                         .build()
                         .parseSignedClaims(token)
                         .getPayload());

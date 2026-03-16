@@ -55,13 +55,14 @@ class JwtServiceTest {
     @Test
     @DisplayName("deve rejeitar token expirado (email correto mas token vencido pelo relógio injetado)")
     void isTokenValid_shouldReturnFalseForExpiredToken() {
-        // Gera um token com validade de 10 minutos usando relógio real
+        // Gera um token com validade de 24h a partir do relógio real.
+        // O JJWT parser usa o relógio do sistema para verificar exp durante o parse:
+        // como o token expira em +24h, o parse ocorre sem erros (clockSkewSeconds=30).
+        // A verificação manual em isTokenExpired() usa o relógio injetado (futureDate +2d),
+        // que está APÓS a expiração do token → retorna true → isTokenValid retorna false.
         String email = "user@test.com";
         String token = jwtService.generateToken(email);
 
-        // Cria um serviço com relógio que retorna uma data 2 dias no futuro:
-        // para o parser o token ainda é válido (clockSkewSeconds=MAX),
-        // mas isTokenExpired() compara com clock.get() → far-future → token parece expirado
         Date futureDate = new Date(System.currentTimeMillis() + 2 * 86_400_000L);
         JwtService futureClockService = new JwtService(SECRET, EXPIRATION_MS, () -> futureDate);
 

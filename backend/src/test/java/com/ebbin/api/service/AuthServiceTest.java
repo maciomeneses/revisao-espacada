@@ -74,13 +74,15 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("login deve lançar UsernameNotFoundException quando usuário não existe no repositório após autenticação")
-    void login_userNotFoundAfterAuthentication_throwsUsernameNotFound() {
-        // Autenticação bem-sucedida, mas findByEmail retorna vazio (estado defensivo/anômalo)
+    @DisplayName("login deve lançar IllegalStateException quando repositório retorna vazio após autenticação bem-sucedida (invariante violado)")
+    void login_userNotFoundAfterAuthentication_throwsIllegalState() {
+        // Estado estruturalmente impossível em produção: autenticação bem-sucedida implica
+        // que UserDetailsServiceImpl encontrou o usuário no banco. Este teste verifica a
+        // guarda defensiva contra corrupção de dados ou race condition extremamente improvável.
         when(userRepository.findByEmail("user@test.com")).thenReturn(java.util.Optional.empty());
 
         assertThatThrownBy(() -> authService.login(new LoginRequest("user@test.com", "senha123")))
-                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("user@test.com");
     }
 

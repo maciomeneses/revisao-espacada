@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,8 +36,12 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.email(), req.password()));
 
+        // Guarda defensiva: se a autenticação acima foi bem-sucedida, o usuário DEVE existir
+        // no repositório (UserDetailsServiceImpl já o carregou). Este estado é estruturalmente
+        // impossível em operação normal; IllegalStateException sinaliza violação de invariante.
         User user = userRepository.findByEmail(req.email())
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + req.email()));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Inconsistência de dados: usuário autenticado não encontrado no repositório: " + req.email()));
 
         String token = jwtService.generateToken(user.getEmail());
         log.info("Login bem-sucedido: email={}, role={}", user.getEmail(), user.getRole());
