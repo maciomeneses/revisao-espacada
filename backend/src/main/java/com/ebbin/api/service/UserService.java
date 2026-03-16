@@ -30,7 +30,7 @@ public class UserService {
     @Transactional
     public UserDto createUser(UserDto dto) {
         if (userRepository.existsByEmail(dto.email())) {
-            throw new RuntimeException("E-mail já cadastrado");
+            throw new IllegalArgumentException("E-mail já cadastrado");
         }
         User user = new User();
         user.setEmail(dto.email());
@@ -43,18 +43,14 @@ public class UserService {
     public UserDto updateUser(UUID id, UserDto dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
-            throw new RuntimeException("E-mail já em uso");
-        }
-
-        user.setEmail(dto.email());
-        user.setRole(dto.role());
         
+        user.setEmail(dto.email());
         if (dto.password() != null && !dto.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.password()));
         }
-
+        if (dto.role() != null) {
+            user.setRole(dto.role());
+        }
         return UserDto.from(userRepository.save(user));
     }
 

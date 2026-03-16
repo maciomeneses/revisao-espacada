@@ -20,6 +20,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
+    // Limpar sessão anterior para evitar headers de autorização antigos
+    localStorage.removeItem('ebbin_session');
     try {
       const res = await api.auth.login(email, password);
       onLogin(res.email, res.token, res.role);
@@ -79,6 +81,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     <input
                       type="email"
                       required
+                      name="email"
+                      autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
@@ -105,6 +109,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     <input
                       type="password"
                       required
+                      name="password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
