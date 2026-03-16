@@ -116,4 +116,54 @@ class ProductionConfigValidatorTest {
                 .hasMessageContaining("JWT_SECRET")
                 .hasMessageContaining("ADMIN_PASSWORD");
     }
+
+    // --- JWT_SECRET minimum length validation ---
+
+    @Test
+    @DisplayName("Deve lançar IllegalStateException quando JWT_SECRET tem menos de 32 caracteres")
+    void validate_jwtSecretTooShort_shouldThrow() {
+        // 31 characters — 1 abaixo do mínimo de 32 (256 bits)
+        String shortSecret = "A".repeat(ProductionConfigValidator.JWT_SECRET_MIN_LENGTH - 1);
+
+        ProductionConfigValidator v = validator(shortSecret, "Senha@Prod#Segura!2025");
+
+        assertThatThrownBy(v::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET")
+                .hasMessageContaining(String.valueOf(ProductionConfigValidator.JWT_SECRET_MIN_LENGTH));
+    }
+
+    @Test
+    @DisplayName("Deve passar quando JWT_SECRET tem exatamente 32 caracteres (limite mínimo)")
+    void validate_jwtSecretExactlyMinLength_shouldNotThrow() {
+        // Exactly 32 characters — no mínimo aceitável
+        String exactSecret = "A".repeat(ProductionConfigValidator.JWT_SECRET_MIN_LENGTH);
+
+        ProductionConfigValidator v = validator(exactSecret, "Senha@Prod#Segura!2025");
+
+        assertThatCode(v::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Deve passar quando JWT_SECRET tem mais de 32 caracteres")
+    void validate_jwtSecretAboveMinLength_shouldNotThrow() {
+        String longSecret = "umSegredoJwtMuitoLongoESeguroComMaisDe256BitsParaProducao1234567890";
+
+        ProductionConfigValidator v = validator(longSecret, "Senha@Prod#Segura!2025");
+
+        assertThatCode(v::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("JWT_SECRET curto deve mencionar o comprimento atual e o mínimo na mensagem de erro")
+    void validate_jwtSecretTooShort_messageContainsLengthDetails() {
+        String shortSecret = "curto";
+
+        ProductionConfigValidator v = validator(shortSecret, "Senha@Prod#Segura!2025");
+
+        assertThatThrownBy(v::validate)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(String.valueOf(shortSecret.length()))
+                .hasMessageContaining(String.valueOf(ProductionConfigValidator.JWT_SECRET_MIN_LENGTH));
+    }
 }

@@ -18,7 +18,9 @@ import org.springframework.stereotype.Component;
  * <p>Variáveis validadas:
  * <ul>
  *   <li>{@code JWT_SECRET} — chave de assinatura dos tokens JWT; o default de desenvolvimento
- *       é publicamente conhecido e <strong>inseguro</strong> em produção.</li>
+ *       é publicamente conhecido e <strong>inseguro</strong> em produção. Além disso, o segredo
+ *       deve ter no mínimo {@value #JWT_SECRET_MIN_LENGTH} caracteres (256 bits) para que o
+ *       algoritmo HS256 opere com entropia adequada conforme RFC 7518 §3.2.</li>
  *   <li>{@code ADMIN_PASSWORD} — senha inicial do administrador; o default {@code admin123}
  *       é trivialmente adivinhável e não deve ser aceito em produção.</li>
  * </ul>
@@ -35,6 +37,16 @@ import org.springframework.stereotype.Component;
 public class ProductionConfigValidator {
 
     private static final Logger log = LoggerFactory.getLogger(ProductionConfigValidator.class);
+
+    /**
+     * Comprimento mínimo exigido para o JWT_SECRET em caracteres.
+     *
+     * <p>O algoritmo HMAC-SHA256 (HS256) requer chaves com entropia mínima de 256 bits.
+     * Assumindo codificação ASCII/UTF-8 onde cada caractere contribui com ao menos 1 byte
+     * (8 bits), são necessários pelo menos 32 caracteres (32 × 8 = 256 bits).
+     * Conforme RFC 7518 §3.2, chaves abaixo deste limiar são consideradas inseguras.</p>
+     */
+    static final int JWT_SECRET_MIN_LENGTH = 32;
 
     /**
      * Valor padrão inseguro do JWT_SECRET, usado apenas em desenvolvimento.
@@ -68,6 +80,10 @@ public class ProductionConfigValidator {
         if (jwtSecret == null || jwtSecret.isBlank() || INSECURE_JWT_DEFAULT.equals(jwtSecret)) {
             errors.append("[FATAL] JWT_SECRET não está configurado ou usa o valor default inseguro. ")
                   .append("Defina a variável de ambiente JWT_SECRET com uma chave aleatória de no mínimo 256 bits. ");
+        } else if (jwtSecret.length() < JWT_SECRET_MIN_LENGTH) {
+            errors.append("[FATAL] JWT_SECRET possui apenas ").append(jwtSecret.length())
+                  .append(" caracteres, abaixo do mínimo de ").append(JWT_SECRET_MIN_LENGTH)
+                  .append(" exigido para garantir 256 bits de entropia (RFC 7518 §3.2). ");
         }
 
         if (adminPassword == null || adminPassword.isBlank() || INSECURE_ADMIN_PASSWORD_DEFAULT.equals(adminPassword)) {

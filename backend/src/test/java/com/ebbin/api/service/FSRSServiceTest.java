@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("FSRSService — algoritmo de repetição espaçada v6")
 class FSRSServiceTest {
@@ -28,6 +29,31 @@ class FSRSServiceTest {
     @BeforeEach
     void setUp() {
         fsrsService = new FSRSService(FIXED_CLOCK);
+    }
+
+    // --- validateRating ---
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, 5, 100, Integer.MIN_VALUE, Integer.MAX_VALUE})
+    @DisplayName("init deve lançar IllegalArgumentException para rating fora do intervalo 1–4")
+    void init_invalidRating_throwsIllegalArgumentException(int invalidRating) {
+        assertThatThrownBy(() -> fsrsService.init(invalidRating))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Rating inválido")
+                .hasMessageContaining(String.valueOf(invalidRating));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, 5, 100})
+    @DisplayName("update deve lançar IllegalArgumentException para rating fora do intervalo 1–4")
+    void update_invalidRating_throwsIllegalArgumentException(int invalidRating) {
+        FSRSService.FSRSState initial = fsrsService.init(3);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(initial.scheduledDays);
+
+        assertThatThrownBy(() -> fsrsService.update(initial, invalidRating, now))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Rating inválido")
+                .hasMessageContaining(String.valueOf(invalidRating));
     }
 
     // --- init ---

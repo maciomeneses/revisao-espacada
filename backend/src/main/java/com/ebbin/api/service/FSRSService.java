@@ -57,7 +57,24 @@ public class FSRSService {
         public LocalDate nextReviewDate;
     }
 
+    /**
+     * Valida que o rating está no intervalo esperado pelo algoritmo FSRS (1–4).
+     *
+     * <p>Os pesos {@code DEFAULT_W[rating - 1]} são indexados com base neste intervalo.
+     * Um valor fora do range causaria {@code ArrayIndexOutOfBoundsException} em produção.</p>
+     *
+     * @param rating valor a validar
+     * @throws IllegalArgumentException se {@code rating} não estiver entre 1 e 4
+     */
+    private static void validateRating(int rating) {
+        if (rating < 1 || rating > 4) {
+            throw new IllegalArgumentException(
+                    "Rating inválido: " + rating + ". O valor deve estar entre 1 (Again) e 4 (Easy).");
+        }
+    }
+
     public FSRSState init(int rating) {
+        validateRating(rating);
         FSRSState s = new FSRSState();
         s.reps = 1;
         s.lapses = 0;
@@ -72,6 +89,7 @@ public class FSRSService {
     }
 
     public FSRSState update(FSRSState current, int rating, LocalDateTime now) {
+        validateRating(rating);
         FSRSState next = new FSRSState();
         next.reps = current.reps + 1;
         next.lapses = current.lapses + (rating == 1 ? 1 : 0);

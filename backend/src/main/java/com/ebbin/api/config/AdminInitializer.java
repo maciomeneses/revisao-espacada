@@ -10,6 +10,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Inicializador do usuário administrador padrão.
+ *
+ * <p><strong>Nota de segurança (auditoria):</strong> este bean cria o admin inicial com a
+ * senha definida em {@code app.admin.password} (default: {@code admin123}). Em produção:
+ * <ul>
+ *   <li>Defina {@code ADMIN_PASSWORD} via variável de ambiente com uma senha forte e única.</li>
+ *   <li>O {@link ProductionConfigValidator} garante que o default inseguro não seja aceito
+ *       no perfil {@code prod}.</li>
+ *   <li>Após o primeiro deploy, altere a senha via painel administrativo e invalide
+ *       quaisquer sessões ativas.</li>
+ * </ul>
+ * A classe é excluída da verificação JaCoCo (infraestrutura sem lógica de negócio testável).
+ * </p>
+ */
 @Configuration
 public class AdminInitializer {
 
@@ -30,7 +45,11 @@ public class AdminInitializer {
                 admin.setPassword(passwordEncoder.encode(adminPassword));
                 admin.setRole(User.Role.ADMIN);
                 userRepository.save(admin);
-                log.warn("Usuário administrador inicial criado com email={}. Troque a senha via painel admin em produção.", adminEmail);
+                log.warn(
+                    "[SECURITY AUDIT] Usuário administrador inicial criado com email={}. " +
+                    "AÇÃO OBRIGATÓRIA: altere a senha imediatamente via painel admin e " +
+                    "certifique-se de que ADMIN_PASSWORD está configurado via variável de ambiente segura.",
+                    adminEmail);
             } else {
                 log.debug("Usuário administrador já existe: email={}", adminEmail);
             }
