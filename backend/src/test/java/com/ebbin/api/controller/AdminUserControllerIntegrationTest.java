@@ -107,6 +107,18 @@ class AdminUserControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("POST /api/admin/users sem senha deve retornar 400 (grupo OnCreate)")
+    void createUser_missingPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/admin/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nopass@admintest.com","role":"USER"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("POST /api/admin/users com e-mail inválido deve retornar 400")
     void createUser_invalidEmail_returns400() throws Exception {
         mockMvc.perform(post("/api/admin/users")

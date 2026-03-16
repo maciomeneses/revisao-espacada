@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,9 +24,11 @@ import static org.mockito.Mockito.*;
  * <ul>
  *   <li>servletPath nulo — fallback para requestURI</li>
  *   <li>servletPath em branco — fallback para requestURI</li>
- *   <li>X-Forwarded-For com múltiplos IPs — extrai apenas o primeiro</li>
- *   <li>X-Forwarded-For em branco — usa remoteAddr</li>
+ *   <li>X-Forwarded-For com múltiplos IPs de proxy confiável — extrai apenas o primeiro</li>
+ *   <li>X-Forwarded-For em branco de proxy confiável — usa remoteAddr</li>
  *   <li>X-Forwarded-For ausente — usa remoteAddr</li>
+ *   <li>X-Forwarded-For de proxy NÃO confiável — ignora header, usa remoteAddr</li>
+ *   <li>Trusted-proxies vazia — ignora X-Forwarded-For por padrão (postura segura)</li>
  *   <li>Endpoint não protegido — passa sem rate limiting</li>
  *   <li>Método não POST em endpoint protegido — passa sem rate limiting</li>
  *   <li>Limite excedido — retorna 429 RFC 9457</li>
@@ -119,33 +122,77 @@ class EndpointRateLimitFilterUnitTest {
     // ---- resolveClientIp edge cases ----
 
     @Test
-    @DisplayName("Deve extrair apenas o primeiro IP de X-Forwarded-For com múltiplos valores")
-    void resolveClientIp_multipleForwardedIps_shouldUseFirst() throws Exception {
+    @DisplayName("Deve extrair primeiro IP de X-Forwarded-For quando remoteAddr é proxy confiável")
+    void resolveClientIp_trustedProxy_multipleForwardedIps_shouldUseFirst() throws Exception {
+        props.setTrustedProxies(List.of("10.0.0.1")); // proxy confiável
+        EndpointRateLimitFilter filterWithProxy = new EndpointRateLimitFilter(props);
+
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("10.0.0.1"); // remoteAddr é o proxy confiável
         request.addHeader("X-Forwarded-For", "203.0.113.1, 198.51.100.2, 192.0.2.3");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
 
-        // Consome 1 token — deve passar (bucket cheio com 5 tokens)
-        filter.doFilter(request, response, chain);
+        // Rate limit aplicado ao IP real (203.0.113.1), não ao proxy
+        filterWithProxy.doFilter(request, response, chain);
 
         verify(chain, times(1)).doFilter(request, response);
         assertThat(response.getStatus()).isNotEqualTo(429);
     }
 
     @Test
-    @DisplayName("Deve usar remoteAddr quando X-Forwarded-For está em branco")
-    void resolveClientIp_blankForwardedHeader_shouldUseRemoteAddr() throws Exception {
+    @DisplayName("Deve usar remoteAddr quando X-Forwarded-For está em branco (proxy confiável)")
+    void resolveClientIp_trustedProxy_blankForwardedHeader_shouldUseRemoteAddr() throws Exception {
+        props.setTrustedProxies(List.of("10.0.0.1"));
+        EndpointRateLimitFilter filterWithProxy = new EndpointRateLimitFilter(props);
+
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("10.0.0.1");
         request.addHeader("X-Forwarded-For", "   ");
-        request.setRemoteAddr("10.20.30.40");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
 
-        filter.doFilter(request, response, chain);
+        filterWithProxy.doFilter(request, response, chain);
 
         verify(chain, times(1)).doFilter(request, response);
         assertThat(response.getStatus()).isNotEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("Deve ignorar X-Forwarded-For quando remoteAddr NÃO é proxy confiável")
+    void resolveClientIp_untrustedRemoteAddr_shouldIgnoreForwardedHeader() throws Exception {
+        props.setTrustedProxies(List.of("10.0.0.1")); // somente este é confiável
+        EndpointRateLimitFilter filterWithProxy = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("99.99.99.99"); // NÃO está na lista de proxies confiáveis
+        request.addHeader("X-Forwarded-For", "1.2.3.4"); // header deve ser ignorado
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filterWithProxy.doFilter(request, response, chain);
+
+        // Deve passar (rate limit aplicado ao remoteAddr real, não ao IP forjado)
+        verify(chain, times(1)).doFilter(request, response);
+        assertThat(response.getStatus()).isNotEqualTo(429);
+
+        // Verifica que o rate limit foi aplicado ao remoteAddr 99.99.99.99, não ao 1.2.3.4
+        // (indireto: a mesma requisição de 99.99.99.99 usa o bucket correto)
+        String resolvedIp = filterWithProxy.resolveClientIp(request);
+        assertThat(resolvedIp).isEqualTo("99.99.99.99");
+    }
+
+    @Test
+    @DisplayName("Deve ignorar X-Forwarded-For quando lista de proxies confiáveis está vazia (padrão seguro)")
+    void resolveClientIp_emptyTrustedProxies_shouldIgnoreForwardedHeader() throws Exception {
+        // filter configurado sem trusted proxies (padrão do setUp)
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("192.168.1.1");
+        request.addHeader("X-Forwarded-For", "5.6.7.8"); // deve ser ignorado
+
+        String resolvedIp = filter.resolveClientIp(request);
+
+        assertThat(resolvedIp).isEqualTo("192.168.1.1");
     }
 
     @Test
@@ -160,6 +207,21 @@ class EndpointRateLimitFilterUnitTest {
 
         verify(chain, times(1)).doFilter(request, response);
         assertThat(response.getStatus()).isNotEqualTo(429);
+    }
+
+    @Test
+    @DisplayName("Deve usar remoteAddr quando proxy é confiável mas X-Forwarded-For está ausente (null)")
+    void resolveClientIp_trustedProxy_nullForwardedHeader_shouldUseRemoteAddr() {
+        props.setTrustedProxies(List.of("10.0.0.1"));
+        EndpointRateLimitFilter filterWithProxy = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("10.0.0.1");
+        // Sem header X-Forwarded-For — getHeader() retorna null
+
+        String resolvedIp = filterWithProxy.resolveClientIp(request);
+
+        assertThat(resolvedIp).isEqualTo("10.0.0.1");
     }
 
     // ---- Endpoint não protegido ----

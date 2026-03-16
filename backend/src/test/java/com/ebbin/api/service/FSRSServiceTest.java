@@ -6,19 +6,28 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("FSRSService — algoritmo de repetição espaçada v6")
 class FSRSServiceTest {
 
+    /** Clock fixo em 2025-06-01 para resultados determinísticos. */
+    private static final Instant FIXED_INSTANT = Instant.parse("2025-06-01T00:00:00Z");
+    private static final ZoneId ZONE = ZoneId.of("UTC");
+    private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_INSTANT, ZONE);
+    private static final LocalDate TODAY = LocalDate.now(FIXED_CLOCK);
+
     private FSRSService fsrsService;
 
     @BeforeEach
     void setUp() {
-        fsrsService = new FSRSService();
+        fsrsService = new FSRSService(FIXED_CLOCK);
     }
 
     // --- init ---
@@ -35,7 +44,8 @@ class FSRSServiceTest {
         assertThat(state.lapses).isEqualTo(0);
         assertThat(state.state).isEqualTo("Learning");
         assertThat(state.scheduledDays).isGreaterThanOrEqualTo(1);
-        assertThat(state.nextReviewDate).isAfterOrEqualTo(LocalDate.now());
+        // Com clock fixo, nextReviewDate é determinístico
+        assertThat(state.nextReviewDate).isEqualTo(TODAY.plusDays(state.scheduledDays));
     }
 
     @Test
@@ -47,13 +57,23 @@ class FSRSServiceTest {
         assertThat(easy.stability).isGreaterThan(again.stability);
     }
 
+    @Test
+    @DisplayName("init deve calcular nextReviewDate com base no clock injetado")
+    void init_usesInjectedClock_deterministicDate() {
+        FSRSService.FSRSState state = fsrsService.init(3); // Good
+
+        // Com clock fixo, a data de revisão é baseada em TODAY, nunca no relógio do sistema
+        assertThat(state.nextReviewDate).isAfterOrEqualTo(TODAY);
+        assertThat(state.nextReviewDate).isEqualTo(TODAY.plusDays(state.scheduledDays));
+    }
+
     // --- update ---
 
     @Test
     @DisplayName("update com rating Good deve aumentar stability")
     void update_goodRating_increasesStability() {
         FSRSService.FSRSState initial = fsrsService.init(3);
-        LocalDateTime now = LocalDateTime.now().plusDays(initial.scheduledDays);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(initial.scheduledDays);
 
         FSRSService.FSRSState updated = fsrsService.update(initial, 3, now);
 
@@ -67,7 +87,7 @@ class FSRSServiceTest {
     @DisplayName("update com rating Again deve definir estado Relearning e incrementar lapses")
     void update_againRating_setsRelearningAndIncrementsLapses() {
         FSRSService.FSRSState initial = fsrsService.init(3);
-        LocalDateTime now = LocalDateTime.now().plusDays(initial.scheduledDays);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(initial.scheduledDays);
 
         FSRSService.FSRSState updated = fsrsService.update(initial, 1, now);
 
@@ -79,7 +99,7 @@ class FSRSServiceTest {
     @DisplayName("update deve manter scheduledDays >= 1")
     void update_scheduledDaysAlwaysAtLeastOne() {
         FSRSService.FSRSState initial = fsrsService.init(1); // Again — menor stability
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK);
 
         FSRSService.FSRSState updated = fsrsService.update(initial, 1, now);
 
@@ -90,7 +110,7 @@ class FSRSServiceTest {
     @DisplayName("update deve manter difficulty entre 1 e 10")
     void update_difficultyAlwaysInBounds() {
         FSRSService.FSRSState initial = fsrsService.init(4); // Easy
-        LocalDateTime now = LocalDateTime.now().plusDays(initial.scheduledDays);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(initial.scheduledDays);
 
         for (int i = 0; i < 10; i++) {
             initial = fsrsService.update(initial, 4, now);
@@ -102,11 +122,23 @@ class FSRSServiceTest {
     @DisplayName("update com Easy deve ser maior que Hard na stability resultante")
     void update_easyProducesHigherStabilityThanHard() {
         FSRSService.FSRSState baseState = fsrsService.init(3);
-        LocalDateTime now = LocalDateTime.now().plusDays(baseState.scheduledDays);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(baseState.scheduledDays);
 
         FSRSService.FSRSState afterHard = fsrsService.update(baseState, 2, now);
         FSRSService.FSRSState afterEasy = fsrsService.update(baseState, 4, now);
 
         assertThat(afterEasy.stability).isGreaterThan(afterHard.stability);
+    }
+
+    @Test
+    @DisplayName("update deve calcular nextReviewDate com base no clock injetado")
+    void update_usesInjectedClock_deterministicDate() {
+        FSRSService.FSRSState initial = fsrsService.init(3);
+        LocalDateTime now = LocalDateTime.now(FIXED_CLOCK).plusDays(initial.scheduledDays);
+
+        FSRSService.FSRSState updated = fsrsService.update(initial, 3, now);
+
+        // nextReviewDate deve ser baseada em TODAY (clock fixo), não no relógio do sistema
+        assertThat(updated.nextReviewDate).isEqualTo(TODAY.plusDays(updated.scheduledDays));
     }
 }

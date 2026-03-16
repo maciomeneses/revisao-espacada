@@ -3,8 +3,10 @@ package com.ebbin.api.controller;
 import com.ebbin.api.dto.UserDto;
 import com.ebbin.api.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +29,8 @@ public class AdminUserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@Valid @RequestBody UserDto dto) {
+    public ResponseEntity<UserDto> create(
+            @Validated({Default.class, UserDto.OnCreate.class}) @RequestBody UserDto dto) {
         return ResponseEntity.ok(userService.createUser(dto));
     }
 

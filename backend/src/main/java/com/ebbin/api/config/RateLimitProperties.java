@@ -3,7 +3,9 @@ package com.ebbin.api.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,6 +20,12 @@ import java.util.Map;
  * <p>Propriedades TTL (ttlMinutes) controlam o tempo de vida dos buckets inativos no
  * Caffeine cache, resolvendo o crescimento ilimitado do ConcurrentHashMap anterior.</p>
  *
+ * <p>A lista {@code trustedProxies} controla quais endereços IP de proxy reverso são
+ * confiáveis para leitura do header {@code X-Forwarded-For}. Quando a requisição chega
+ * de um IP que <em>não</em> está nessa lista, o header {@code X-Forwarded-For} é
+ * ignorado e o IP real da conexão TCP ({@code remoteAddr}) é usado — prevenindo forjamento
+ * de IP por clientes que se conectam diretamente ao servidor.</p>
+ *
  * <p>Prefixo: {@code app.rate-limit}</p>
  */
 @Component
@@ -30,6 +38,26 @@ public class RateLimitProperties {
      * Valor: {@link EndpointConfig} com parâmetros do bucket.
      */
     private Map<String, EndpointConfig> endpoints = new HashMap<>();
+
+    /**
+     * Lista de IPs ou CIDRs de proxies reversos confiáveis cujos headers
+     * {@code X-Forwarded-For} serão respeitados.
+     *
+     * <p>Exemplo no application.yml:
+     * <pre>
+     * app:
+     *   rate-limit:
+     *     trusted-proxies:
+     *       - "10.0.0.1"
+     *       - "172.16.0.0/12"
+     * </pre>
+     * </p>
+     *
+     * <p>Se a lista estiver vazia (padrão), o header {@code X-Forwarded-For} é sempre
+     * ignorado e o {@code remoteAddr} é utilizado como identificador do cliente — postura
+     * segura por padrão para ambientes sem proxy configurado.</p>
+     */
+    private List<String> trustedProxies = new ArrayList<>();
 
     // --- Propriedades legadas (prefixo app.rate-limit.login.*) ---
     // Mantidas para não quebrar configurações existentes via variáveis de ambiente.
@@ -56,6 +84,9 @@ public class RateLimitProperties {
 
     public Map<String, EndpointConfig> getEndpoints() { return endpoints; }
     public void setEndpoints(Map<String, EndpointConfig> endpoints) { this.endpoints = endpoints; }
+
+    public List<String> getTrustedProxies() { return trustedProxies; }
+    public void setTrustedProxies(List<String> trustedProxies) { this.trustedProxies = trustedProxies; }
 
     /**
      * Retorna a configuração do endpoint pelo identificador, usando os valores legados do

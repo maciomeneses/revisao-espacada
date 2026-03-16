@@ -32,7 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.jwt.expiration-ms=86400000",
     "app.cors.allowed-origins=http://localhost:5173",
     "app.admin.email=admin@test.com",
-    "app.admin.password=admin123"
+    "app.admin.password=admin123",
+    // Confia em 127.0.0.1 (remoteAddr do MockMvc) para aceitar X-Forwarded-For nos testes,
+    // garantindo isolamento de buckets de rate limit por IP simulado.
+    "app.rate-limit.trusted-proxies=127.0.0.1"
 })
 @Transactional
 @DisplayName("AuthController — testes de integração")

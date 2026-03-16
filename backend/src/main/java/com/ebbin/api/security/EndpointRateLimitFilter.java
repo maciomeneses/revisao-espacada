@@ -142,14 +142,26 @@ public class EndpointRateLimitFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Resolve o IP real do cliente, respeitando proxies reversos via X-Forwarded-For.
+     * Resolve o IP real do cliente, respeitando o header {@code X-Forwarded-For} apenas
+     * quando a requisição chega de um proxy reverso confiável.
+     *
+     * <p>Se a lista {@code app.rate-limit.trusted-proxies} estiver vazia (padrão), o
+     * header é <em>sempre ignorado</em> e o {@code remoteAddr} é usado — postura segura
+     * por padrão. Caso contrário, o header só é lido quando o {@code remoteAddr} estiver
+     * na lista de proxies confiáveis, impedindo que clientes diretos forjem seu IP.</p>
      */
-    private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+    String resolveClientIp(HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+        boolean isTrustedProxy = !props.getTrustedProxies().isEmpty()
+                && props.getTrustedProxies().contains(remoteAddr);
+
+        if (isTrustedProxy) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
     }
 
     /**

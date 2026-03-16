@@ -39,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.rate-limit.capacity=3",
     "app.rate-limit.refill-tokens=3",
     "app.rate-limit.refill-minutes=60",
+    // Confia em 127.0.0.1 (remoteAddr do MockMvc) para aceitar X-Forwarded-For nos testes
+    "app.rate-limit.trusted-proxies=127.0.0.1",
     // Configuração por endpoint
     "app.rate-limit.endpoints.login.capacity=3",
     "app.rate-limit.endpoints.login.refill-tokens=3",

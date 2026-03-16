@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -161,5 +162,22 @@ class RateLimitPropertiesTest {
         assertThat(config.getRefillTokens()).isEqualTo(15);
         assertThat(config.getRefillMinutes()).isEqualTo(5);
         assertThat(config.getTtlMinutes()).isEqualTo(90);
+    }
+
+    // ---- trustedProxies getter/setter ----
+
+    @Test
+    @DisplayName("getTrustedProxies deve retornar lista vazia por padrão (postura segura)")
+    void getTrustedProxies_default_isEmpty() {
+        assertThat(props.getTrustedProxies()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("setTrustedProxies deve armazenar e retornar a lista configurada")
+    void setTrustedProxies_storesAndReturnsConfiguredList() {
+        List<String> proxies = List.of("10.0.0.1", "172.16.0.1");
+        props.setTrustedProxies(proxies);
+
+        assertThat(props.getTrustedProxies()).containsExactlyInAnyOrder("10.0.0.1", "172.16.0.1");
     }
 }

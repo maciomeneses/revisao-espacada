@@ -2,11 +2,21 @@ package com.ebbin.api.service;
 
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 
+/**
+ * Serviço de cálculo do algoritmo FSRS v6 (Free Spaced Repetition Scheduler).
+ *
+ * <p>Utiliza um {@link Clock} injetável em vez de {@code LocalDate.now()} fixo, o que
+ * permite testes determinísticos e reproduzíveis sem depender do relógio do sistema.</p>
+ *
+ * <p>Em produção, o Spring injeta {@code Clock.systemDefaultZone()} automaticamente via
+ * um {@code @Bean} declarado na configuração da aplicação. Em testes, o clock pode ser
+ * substituído por {@code Clock.fixed()} para datas previsíveis.</p>
+ */
 @Service
 public class FSRSService {
 
@@ -23,6 +33,18 @@ public class FSRSService {
     private static final double REQUEST_RETENTION = 0.9;
     private static final double DECAY = -0.5;
     private static final double FACTOR = Math.pow(0.9, 1.0 / DECAY) - 1;
+
+    private final Clock clock;
+
+    /**
+     * Constrói o serviço com um {@link Clock} explícito.
+     *
+     * @param clock fonte de tempo usada para calcular datas de revisão; injete
+     *              {@code Clock.systemDefaultZone()} em produção e um clock fixo em testes.
+     */
+    public FSRSService(Clock clock) {
+        this.clock = clock;
+    }
 
     public static class FSRSState {
         public double stability;
@@ -45,7 +67,7 @@ public class FSRSService {
         s.difficulty = Math.max(1, Math.min(10, s.difficulty));
         s.scheduledDays = (int) Math.round(s.stability * FACTOR);
         s.scheduledDays = Math.max(1, s.scheduledDays);
-        s.nextReviewDate = LocalDate.now().plusDays(s.scheduledDays);
+        s.nextReviewDate = LocalDate.now(clock).plusDays(s.scheduledDays);
         return s;
     }
 
@@ -54,10 +76,10 @@ public class FSRSService {
         next.reps = current.reps + 1;
         next.lapses = current.lapses + (rating == 1 ? 1 : 0);
         next.state = (rating == 1) ? "Relearning" : "Review";
-        
+
         long daysSinceLast = ChronoUnit.DAYS.between(current.nextReviewDate.minusDays(current.scheduledDays), now.toLocalDate());
         next.elapsedDays = (int) Math.max(0, daysSinceLast);
-        
+
         double retrievability = Math.pow(1 + FACTOR * next.elapsedDays / current.stability, DECAY);
 
         // Update Difficulty
@@ -67,22 +89,22 @@ public class FSRSService {
 
         // Update Stability
         if (rating == 1) {
-            next.stability = DEFAULT_W[11] * Math.pow(current.difficulty, -DEFAULT_W[12]) * 
-                             (Math.pow(current.stability + 1, DEFAULT_W[13]) - 1) * 
+            next.stability = DEFAULT_W[11] * Math.pow(current.difficulty, -DEFAULT_W[12]) *
+                             (Math.pow(current.stability + 1, DEFAULT_W[13]) - 1) *
                              Math.exp(DEFAULT_W[14] * (1 - retrievability));
         } else {
             double hardPenalty = (rating == 2) ? DEFAULT_W[15] : 1.0;
             double easyBonus = (rating == 4) ? DEFAULT_W[16] : 1.0;
-            
-            next.stability = current.stability * (1 + Math.exp(DEFAULT_W[8]) * 
-                             (11 - next.difficulty) * Math.pow(current.stability, -DEFAULT_W[9]) * 
+
+            next.stability = current.stability * (1 + Math.exp(DEFAULT_W[8]) *
+                             (11 - next.difficulty) * Math.pow(current.stability, -DEFAULT_W[9]) *
                              (Math.exp((1 - retrievability) * DEFAULT_W[10]) - 1) * hardPenalty * easyBonus);
         }
 
         next.scheduledDays = (int) Math.round(next.stability * FACTOR);
         next.scheduledDays = Math.max(1, next.scheduledDays);
-        next.nextReviewDate = LocalDate.now().plusDays(next.scheduledDays);
-        
+        next.nextReviewDate = LocalDate.now(clock).plusDays(next.scheduledDays);
+
         return next;
     }
 }
