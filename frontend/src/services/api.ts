@@ -1,7 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
-console.log('[api] BASE_URL =', BASE_URL);
-
 export interface AuthResponse {
   token: string;
   userId: string;
@@ -27,26 +25,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const url = `${BASE_URL}${path}`;
-  console.log(`[api] ${options.method ?? 'GET'} ${url}`);
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
-  try {
-    const res = await fetch(url, { ...options, headers });
-
-    console.log(`[api] response status: ${res.status}`);
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      console.error('[api] error body:', body);
-      throw new Error(body.message ?? `Erro ${res.status}`);
-    }
-
-    if (res.status === 204) return undefined as T;
-    return res.json();
-  } catch (err) {
-    console.error('[api] fetch failed:', err);
-    throw err;
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? `Erro ${res.status}`);
   }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
 }
 
 export const api = {
