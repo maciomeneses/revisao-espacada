@@ -91,6 +91,10 @@ public class SecurityConfig {
                         // vazamento de informações internas (OWASP A05 — Security Misconfiguration).
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/**").authenticated()
+                        // Defesa em profundidade: restrição no nível de URL além do @PreAuthorize
+                        // (OWASP A01 — Broken Access Control). Garante que o accessDeniedHandler
+                        // RFC 9457 é acionado mesmo em contextos onde o @ControllerAdvice não atua.
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 // ---- RFC 9457 para respostas 401/403 do Spring Security ----
                 .exceptionHandling(ex -> ex
