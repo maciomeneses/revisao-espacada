@@ -74,3 +74,35 @@ jacocoTestReport {
         }))
     }
 }
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    // Aplica as mesmas exclusões de infraestrutura que o relatório
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/EbbinApplication.class',
+                '**/config/AdminInitializer.class'
+            ])
+        }))
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                value   = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+            limit {
+                counter = 'BRANCH'
+                value   = 'COVEREDRATIO'
+                minimum = 0.85
+            }
+            limit {
+                counter = 'LINE'
+                value   = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+        }
+    }
+}
