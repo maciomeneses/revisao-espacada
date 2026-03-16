@@ -13,7 +13,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
-  
+
   const {
     subjects,
     toggleAula,
@@ -26,16 +26,20 @@ export default function App() {
     revertStage,
   } = useSubjects();
 
-  // Check for existing session
   useEffect(() => {
     const session = localStorage.getItem('ebbin_session');
     if (session) {
-      setIsAuthenticated(true);
+      try {
+        const parsed = JSON.parse(session);
+        if (parsed.token) setIsAuthenticated(true);
+      } catch {
+        localStorage.removeItem('ebbin_session');
+      }
     }
   }, []);
 
-  const handleLogin = (email: string) => {
-    localStorage.setItem('ebbin_session', JSON.stringify({ email, timestamp: Date.now() }));
+  const handleLogin = (email: string, token: string) => {
+    localStorage.setItem('ebbin_session', JSON.stringify({ email, token, timestamp: Date.now() }));
     setIsAuthenticated(true);
   };
 
@@ -58,13 +62,10 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Hero banner — only on dashboard */}
       {activeView === 'dashboard' && (
         <div
           className="relative w-full h-40 md:h-52 overflow-hidden shrink-0"
-          style={{
-            background: 'linear-gradient(to bottom, #1a2a3a, #0f0f0f)',
-          }}
+          style={{ background: 'linear-gradient(to bottom, #1a2a3a, #0f0f0f)' }}
         >
           <div className="absolute inset-0 flex items-end px-6 pb-5">
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">

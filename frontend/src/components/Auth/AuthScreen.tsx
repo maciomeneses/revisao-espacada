@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { LogIn, Mail, Lock, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
+import { api } from '../../services/api';
 
 interface AuthScreenProps {
-  onLogin: (email: string) => void;
+  onLogin: (email: string, token: string) => void;
 }
 
 type AuthMode = 'login' | 'forgot-password';
@@ -20,18 +21,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     setError(null);
     setIsLoading(true);
 
-    // Mock login logic
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (email && password) {
-        onLogin(email);
-      } else {
-        setError('Por favor, preencha todos os campos.');
-      }
+      const res = await api.auth.login(email, password);
+      onLogin(res.email, res.token);
     } catch (err) {
-      setError('Erro ao realizar login. Tente novamente.');
+      setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -44,16 +38,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      // Simulate API call
+      // Simulação — backend ainda não tem endpoint de recuperação de senha
       await new Promise(resolve => setTimeout(resolve, 800));
-      
       if (email) {
         setSuccessMessage('As instruções para redefinir sua senha foram enviadas para o seu e-mail.');
-        // In a real app, this would trigger a backend process
       } else {
         setError('Por favor, insira seu e-mail.');
       }
-    } catch (err) {
+    } catch {
       setError('Erro ao processar solicitação. Tente novamente.');
     } finally {
       setIsLoading(false);

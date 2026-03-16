@@ -1,0 +1,27 @@
+# ── Frontend ──────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/*.tsbuildinfo
+frontend/.env.local
+frontend/.env.*.local
+
+# ── Backend ───────────────────────────────────────────────────────────────────
+backend/.gradle/
+backend/build/
+backend/out/
+backend/.env
+
+# ── OS / IDEs ─────────────────────────────────────────────────────────────────
+.DS_Store
+*.DS_Store
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ── Root artifacts (legado, podem ser apagados) ───────────────────────────────
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
