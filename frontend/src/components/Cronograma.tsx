@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Subject } from '../types';
+import { getProximaTarefa, getFormulaStatus } from '../services/algorithm';
 
 interface CronogramaProps {
   subjects: Subject[];
@@ -48,6 +49,16 @@ export function Cronograma({
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black bg-white/10 text-white/50 px-2 py-0.5 rounded uppercase">{s.area}</span>
                 <span className="text-[10px] font-black bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded uppercase">{s.relevancia}</span>
+                <span className="text-[10px] font-black bg-white/5 text-white/30 px-2 py-0.5 rounded uppercase">{getProximaTarefa(s.currentStage)}</span>
+                {getFormulaStatus(s) && (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
+                    getFormulaStatus(s) === 'Atrasado' ? 'bg-red-500/20 text-red-400' :
+                    getFormulaStatus(s) === 'Hoje' ? 'bg-orange-500/20 text-orange-400' :
+                    'bg-green-500/20 text-green-400'
+                  }`}>
+                    {getFormulaStatus(s)}
+                  </span>
+                )}
               </div>
               <h3 className="text-xl font-black text-white mb-1">{s.aulaPrincipal}</h3>
               <p className="text-white/40 text-xs font-bold uppercase mb-4">{s.modulo}</p>

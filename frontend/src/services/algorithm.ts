@@ -54,13 +54,15 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     } else {
       const hardPenalty = (rating === 2) ? DEFAULT_W[15] : 1.0;
       const easyBonus = (rating === 4) ? DEFAULT_W[16] : 1.0;
-      
-      nextStability = stability * (1 + Math.exp(DEFAULT_W[8]) * 
-                      (11 - nextDifficulty) * Math.pow(stability, -DEFAULT_W[9]) * 
-                      (Math.exp((1 - retrievability) * DEFAULT_W[10]) - 1) * hardPenalty * easyBonus);
+
+      const stabilityUpdate = (1 + Math.exp(DEFAULT_W[8]) * 
+                        (11 - nextDifficulty) * Math.pow(stability, -DEFAULT_W[9]) * 
+                        (Math.exp((1 - retrievability) * DEFAULT_W[10]) - 1) * hardPenalty * easyBonus);
+
+      // Ensure stability actually increases for Good/Easy if retrievability is high or normal
+      nextStability = stability * Math.max(1.1, stabilityUpdate);
       state = 'Review';
-    }
-  }
+    }  }
 
   reps++;
   scheduledDays = Math.max(1, Math.round(nextStability * FACTOR));
@@ -80,6 +82,46 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     performanceLevel: rating === 1 ? 'ruim' : rating === 2 ? 'medio' : rating === 3 ? 'bom' : 'excelente',
     currentStage: state
   };
+}
+
+export function addDays(date: Date, days: number): string {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result.toISOString().split('T')[0];
+}
+
+export function today(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+export function getProximaTarefa(stage: string): string {
+  switch (stage) {
+    case 'aula': return 'Aula';
+    case 'Learning': return 'Aprendizado';
+    case 'Review': return 'Revisão';
+    case 'Relearning': return 'Reaprendizado';
+    case 'New': return 'Novo';
+    // Legacy mapping for tests compatibility if needed, but FSRS uses the above
+    case 'fixacao': return 'Fixação 24H';
+    case 'estudo_reverso': return 'Estudo Reverso';
+    case 'rev7d': return 'Revisão 7 Dias';
+    case 'rev30d': return 'Revisão 30 Dias';
+    case 'rev60d': return 'Revisão 60 Dias';
+    case 'rev90d': return 'Revisão 90 Dias';
+    case 'concluido': return 'Concluído';
+    default: return stage;
+  }
+}
+
+export function getFormulaStatus(subject: Subject): string {
+  if (subject.currentStage === 'aula') return '';
+  if (subject.currentStage === 'concluido') return 'Concluído';
+  if (!subject.nextReviewDate) return '';
+  
+  const todayStr = today();
+  if (subject.nextReviewDate < todayStr) return 'Atrasado';
+  if (subject.nextReviewDate === todayStr) return 'Hoje';
+  return 'No Prazo';
 }
 
 export function resetCiclo(subject: Subject): Subject {
