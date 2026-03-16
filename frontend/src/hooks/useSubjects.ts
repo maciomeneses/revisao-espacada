@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
 import { calculateNextReview, resetCiclo } from '../services/algorithm';
@@ -7,6 +7,16 @@ import { api } from '../services/api';
 export function useSubjects() {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects());
 
+  /**
+   * Ref que espelha o estado atual de subjects para que callbacks estáveis
+   * (useCallback sem subjects na dep array) possam ler o valor mais recente
+   * sem causar re-criação desnecessária das funções a cada mudança de estado.
+   */
+  const subjectsRef = useRef<Subject[]>(subjects);
+  useEffect(() => {
+    subjectsRef.current = subjects;
+  }, [subjects]);
+
   // Sync with API if possible, merging with local state
   useEffect(() => {
     api.subjects.list().then((data) => {
@@ -14,15 +24,15 @@ export function useSubjects() {
         setSubjects((prev) => {
           // apiMap contains subjects already in the DB (with progress)
           const apiMap = new Map((data as Subject[]).map(s => [s.id, s]));
-          
+
           // Merge: For each subject in current state (which has all INITIAL_SUBJECTS),
           // use the API version if it exists, otherwise keep current.
           const merged = prev.map(s => apiMap.get(s.id) || s);
-          
+
           // Also include any subjects from API that weren't in our initial list (user created)
           const currentIds = new Set(prev.map(s => s.id));
           const userCreated = (data as Subject[]).filter(s => !currentIds.has(s.id));
-          
+
           const final = [...merged, ...userCreated];
           saveSubjects(final);
 
@@ -50,51 +60,54 @@ export function useSubjects() {
     }
   }, []);
 
+  /**
+   * Usa subjectsRef para ler o estado atual sem declarar subjects como
+   * dependência — evita re-criação do callback a cada atualização de subjects.
+   */
   const toggleAula = useCallback(
     (id: string) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       updateSubject({ ...subject, aulaAssistida: !subject.aulaAssistida });
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   const togglePreAula = useCallback(
     (id: string) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       updateSubject({ ...subject, preAulaFeita: !subject.preAulaFeita });
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   const toggleFlashcards = useCallback(
     (id: string) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       updateSubject({ ...subject, flashcardsFeitos: !subject.flashcardsFeitos });
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   const registerReview = useCallback(
     (id: string, numCorrect: number) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
-
       const updates = calculateNextReview(subject, numCorrect);
       updateSubject({ ...subject, ...updates });
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   const doResetCiclo = useCallback(
     (id: string) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       updateSubject(resetCiclo(subject));
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   const addSubject = useCallback(
@@ -142,14 +155,14 @@ export function useSubjects() {
 
   const revertStage = useCallback(
     (id: string) => {
-      const subject = subjects.find((s) => s.id === id);
+      const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject || !subject.stability) return;
       updateSubject({
         ...subject,
-        stability: subject.stability * 0.7
+        stability: subject.stability * 0.7,
       });
     },
-    [subjects, updateSubject],
+    [updateSubject],
   );
 
   return {

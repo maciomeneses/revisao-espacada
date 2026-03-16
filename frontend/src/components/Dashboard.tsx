@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Subject } from '../types';
 
 interface DashboardProps {
@@ -7,12 +8,17 @@ interface DashboardProps {
 
 export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
   const todayStr = new Date().toISOString().split('T')[0];
-  
-  const stats = {
+
+  /**
+   * Memoiza as estatísticas do dashboard para evitar recalcular a cada re-render
+   * enquanto a lista de subjects não mudar.
+   */
+  const stats = useMemo(() => ({
     total: subjects.length,
     today: subjects.filter((s) => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
     memorized: subjects.filter((s) => (s.stability || 0) > 30).length,
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [subjects]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">

@@ -39,8 +39,14 @@ dependencies {
     // Bucket4j — rate limiting em memória para endpoints críticos
     implementation 'com.bucket4j:bucket4j-core:8.10.1'
 
-    // Caffeine — cache com TTL para eviction automática dos buckets de rate limit
+    // Caffeine — cache com TTL para eviction automática dos buckets de rate limit e cache de leitura
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
+    // Spring Cache — abstração de cache para leituras frequentes (ex: getSubjects)
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // Spring Boot Actuator — health check e métricas operacionais
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -71,7 +77,8 @@ jacocoTestReport {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
                 '**/EbbinApplication.class',
-                '**/config/AdminInitializer.class'
+                '**/config/AdminInitializer.class',
+                '**/config/CacheConfig.class'
             ])
         }))
     }
@@ -84,7 +91,8 @@ jacocoTestCoverageVerification {
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
                 '**/EbbinApplication.class',
-                '**/config/AdminInitializer.class'
+                '**/config/AdminInitializer.class',
+                '**/config/CacheConfig.class'
             ])
         }))
     }

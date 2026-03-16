@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -106,15 +106,16 @@ export function AdminArea() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = useMemo(
+    () => users.filter(u => u.email.toLowerCase().includes(searchTerm.toLowerCase())),
+    [users, searchTerm],
   );
 
-  const stats = {
+  const stats = useMemo(() => ({
     total: users.length,
     admins: users.filter(u => u.role === 'ADMIN').length,
-    users: users.filter(u => u.role === 'USER').length
-  };
+    users: users.filter(u => u.role === 'USER').length,
+  }), [users]);
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 animate-in fade-in duration-500">

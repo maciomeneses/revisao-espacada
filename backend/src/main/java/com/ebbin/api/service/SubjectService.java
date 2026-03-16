@@ -1,5 +1,6 @@
 package com.ebbin.api.service;
 
+import com.ebbin.api.config.CacheConfig;
 import com.ebbin.api.dto.SubjectDto;
 import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
@@ -7,6 +8,8 @@ import com.ebbin.api.repository.SubjectRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,12 @@ public class SubjectService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Retorna a lista de subjects do usuário, servindo do cache quando disponível.
+     * A chave de cache é o e-mail do usuário; o TTL é de 10 minutos (ver {@link CacheConfig}).
+     * Toda operação de escrita (sync, upsert, delete) invalida esta entrada.
+     */
+    @Cacheable(cacheNames = CacheConfig.SUBJECTS_CACHE, key = "#email")
     @Transactional(readOnly = true)
     public List<SubjectDto> getSubjects(String email) {
         User user = findUser(email);
@@ -43,7 +52,9 @@ public class SubjectService {
     /**
      * Sincronização completa — upsert dos subjects recebidos e remoção dos ausentes.
      * Usa um Map para evitar N+1 queries na busca por clientId (O(n) em vez de O(n²)).
+     * Invalida o cache de leitura para que a próxima chamada a getSubjects reflita o estado atual.
      */
+    @CacheEvict(cacheNames = CacheConfig.SUBJECTS_CACHE, key = "#email")
     @Transactional
     public List<SubjectDto> syncSubjects(String email, List<SubjectDto> dtos) {
         User user = findUser(email);
@@ -70,6 +81,7 @@ public class SubjectService {
         return getSubjects(email);
     }
 
+    @CacheEvict(cacheNames = CacheConfig.SUBJECTS_CACHE, key = "#email")
     @Transactional
     public SubjectDto upsertSubject(String email, SubjectDto dto) {
         User user = findUser(email);
@@ -81,6 +93,7 @@ public class SubjectService {
         return result;
     }
 
+    @CacheEvict(cacheNames = CacheConfig.SUBJECTS_CACHE, key = "#email")
     @Transactional
     public void deleteSubject(String email, String clientId) {
         User user = findUser(email);

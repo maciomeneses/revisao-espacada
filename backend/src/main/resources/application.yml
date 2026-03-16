@@ -61,6 +61,24 @@ app:
         refill-minutes: ${RATE_LIMIT_RESET_PASSWORD_REFILL_MINUTES:15}
         ttl-minutes: 60
 
+management:
+  endpoints:
+    web:
+      # Expõe apenas /actuator/health — não vaza métricas, env ou beans em produção.
+      # Para monitoramento avançado (Prometheus, etc.), habilitar explicitamente por perfil.
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # Exibe detalhes de componentes (DB, etc.) apenas para requisições autenticadas.
+      # Em desenvolvimento, "always" facilita depuração local; em produção use "when-authorized".
+      show-details: when-authorized
+      show-components: when-authorized
+  # Oculta informações sensíveis de ambiente que poderiam ser expostas via /actuator/env
+  info:
+    env:
+      enabled: false
+
 logging:
   level:
     com.ebbin: DEBUG

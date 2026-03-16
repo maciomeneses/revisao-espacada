@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Subject } from '../types';
 
 interface EspiaoEstrategicoProps {
@@ -5,10 +6,16 @@ interface EspiaoEstrategicoProps {
 }
 
 export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
-  const subjectsWithStability = subjects.filter(s => (s.stability || 0) > 0);
-  const avgStability = subjectsWithStability.length > 0 
-    ? subjectsWithStability.reduce((acc, s) => acc + (s.stability || 0), 0) / subjectsWithStability.length 
-    : 0;
+  /**
+   * Memoiza o cálculo de estabilidade média para evitar iteração redundante
+   * sobre a lista de subjects a cada re-render do componente pai.
+   */
+  const avgStability = useMemo(() => {
+    const subjectsWithStability = subjects.filter(s => (s.stability || 0) > 0);
+    return subjectsWithStability.length > 0
+      ? subjectsWithStability.reduce((acc, s) => acc + (s.stability || 0), 0) / subjectsWithStability.length
+      : 0;
+  }, [subjects]);
   
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">

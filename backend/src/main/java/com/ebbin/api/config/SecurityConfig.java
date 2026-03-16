@@ -86,6 +86,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // /actuator/health é público (liveness probe de infra/load balancer).
+                        // Qualquer outro endpoint do actuator requer autenticação para evitar
+                        // vazamento de informações internas (OWASP A05 — Security Misconfiguration).
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").authenticated()
                         .anyRequest().authenticated())
                 // ---- RFC 9457 para respostas 401/403 do Spring Security ----
                 .exceptionHandling(ex -> ex
