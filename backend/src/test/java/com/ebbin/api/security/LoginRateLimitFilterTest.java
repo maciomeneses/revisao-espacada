@@ -14,12 +14,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Testes de integração para o {@link LoginRateLimitFilter}.
+ * Testes de integração para o {@link EndpointRateLimitFilter}.
  *
  * <p>Cada teste usa um IP diferente via X-Forwarded-For para garantir isolamento —
- * o bucket é por IP, então IPs distintos partem sempre com o token cheio.</p>
+ * o bucket é por IP×endpoint, portanto IPs distintos partem sempre com o token cheio.</p>
  *
- * Capacidade configurada = 3 requisições/60 min por IP.
+ * Capacidade configurada = 3 requisições/60 min por IP para ambos os endpoints.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,11 +35,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "app.cors.allowed-origins=http://localhost:5173",
     "app.admin.email=admin@ratelimit.com",
     "app.admin.password=admin123",
-    "app.rate-limit.login.capacity=3",
-    "app.rate-limit.login.refill-tokens=3",
-    "app.rate-limit.login.refill-minutes=60"
+    // Configuração legada (retrocompatibilidade)
+    "app.rate-limit.capacity=3",
+    "app.rate-limit.refill-tokens=3",
+    "app.rate-limit.refill-minutes=60",
+    // Configuração por endpoint
+    "app.rate-limit.endpoints.login.capacity=3",
+    "app.rate-limit.endpoints.login.refill-tokens=3",
+    "app.rate-limit.endpoints.login.refill-minutes=60",
+    "app.rate-limit.endpoints.login.ttl-minutes=120",
+    "app.rate-limit.endpoints.forgot-password.capacity=3",
+    "app.rate-limit.endpoints.forgot-password.refill-tokens=3",
+    "app.rate-limit.endpoints.forgot-password.refill-minutes=60",
+    "app.rate-limit.endpoints.forgot-password.ttl-minutes=120"
 })
-@DisplayName("LoginRateLimitFilter — proteção contra brute force")
+@DisplayName("EndpointRateLimitFilter — proteção contra brute force e abuso")
 class LoginRateLimitFilterTest {
 
     @Autowired
@@ -49,24 +59,28 @@ class LoginRateLimitFilterTest {
             {"email":"admin@ratelimit.com","password":"senhaErrada"}
             """;
 
+    private static final String FORGOT_PASSWORD_BODY = """
+            {"email":"admin@ratelimit.com"}
+            """;
+
+    // ---- /api/auth/login ----
+
     @Test
-    @DisplayName("Requisições dentro do limite devem receber resposta normal (401 para credenciais inválidas)")
-    void withinLimit_shouldPassThrough() throws Exception {
-        // IP 10.0.0.1 — bucket novo com capacity=3
+    @DisplayName("Requisições dentro do limite no /login devem receber resposta normal (401)")
+    void login_withinLimit_shouldPassThrough() throws Exception {
         for (int i = 0; i < 3; i++) {
             mockMvc.perform(post("/api/auth/login")
                             .header("X-Forwarded-For", "10.0.0.1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(LOGIN_BODY))
-                    .andExpect(status().isUnauthorized()); // 401 = passou pelo rate limit, atingiu o controller
+                    .andExpect(status().isUnauthorized()); // 401 = passou pelo rate limit
         }
     }
 
     @Test
-    @DisplayName("Exceder o limite deve retornar 429 com mensagem de erro RFC 9457")
-    void exceedLimit_shouldReturn429() throws Exception {
-        // IP 10.0.0.2 — bucket novo com capacity=3
-        // Esgota as 3 tentativas
+    @DisplayName("Exceder o limite no /login deve retornar 429 com corpo RFC 9457")
+    void login_exceedLimit_shouldReturn429() throws Exception {
+        // IP 10.0.0.2 — esgota as 3 tentativas
         for (int i = 0; i < 3; i++) {
             mockMvc.perform(post("/api/auth/login")
                             .header("X-Forwarded-For", "10.0.0.2")
@@ -85,8 +99,8 @@ class LoginRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("Rate limit deve se aplicar apenas ao endpoint de login (não ao /register)")
-    void rateLimitOnlyOnLoginPath() throws Exception {
+    @DisplayName("Rate limit do /login não deve afetar /register")
+    void login_rateLimitDoesNotApplyToRegister() throws Exception {
         // IP 10.0.0.3 — esgota o bucket no /login
         for (int i = 0; i < 4; i++) {
             mockMvc.perform(post("/api/auth/login")
@@ -95,7 +109,7 @@ class LoginRateLimitFilterTest {
                             .content(LOGIN_BODY));
         }
 
-        // /api/auth/register usa servlet path diferente — rate limit não deve ser aplicado
+        // /api/auth/register não deve ser afetado pelo rate limit do /login
         mockMvc.perform(post("/api/auth/register")
                         .header("X-Forwarded-For", "10.0.0.3")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,7 +117,66 @@ class LoginRateLimitFilterTest {
                 .andExpect(result -> {
                     int status = result.getResponse().getStatus();
                     org.assertj.core.api.Assertions.assertThat(status)
-                            .as("/register não deve retornar 429 — rate limit aplica-se só ao /login")
+                            .as("/register não deve retornar 429 — rate limit aplica-se só a endpoints configurados")
+                            .isNotEqualTo(429);
+                });
+    }
+
+    // ---- /api/auth/forgot-password ----
+
+    @Test
+    @DisplayName("Requisições dentro do limite no /forgot-password devem receber 202")
+    void forgotPassword_withinLimit_shouldPassThrough() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/auth/forgot-password")
+                            .header("X-Forwarded-For", "10.1.0.1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(FORGOT_PASSWORD_BODY))
+                    .andExpect(status().isAccepted()); // 202 = passou pelo rate limit
+        }
+    }
+
+    @Test
+    @DisplayName("Exceder o limite no /forgot-password deve retornar 429 (proteção contra abuso)")
+    void forgotPassword_exceedLimit_shouldReturn429() throws Exception {
+        // IP 10.1.0.2 — esgota as 3 tentativas
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/auth/forgot-password")
+                            .header("X-Forwarded-For", "10.1.0.2")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(FORGOT_PASSWORD_BODY));
+        }
+
+        // 4ª tentativa deve ser bloqueada com 429
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .header("X-Forwarded-For", "10.1.0.2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(FORGOT_PASSWORD_BODY))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.type").value("urn:problem:too-many-requests"))
+                .andExpect(jsonPath("$.status").value(429));
+    }
+
+    @Test
+    @DisplayName("Buckets de /login e /forgot-password são independentes por endpoint")
+    void login_and_forgotPassword_bucketsAreIndependent() throws Exception {
+        // IP 10.1.0.3 — esgota o bucket no /forgot-password
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/auth/forgot-password")
+                            .header("X-Forwarded-For", "10.1.0.3")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(FORGOT_PASSWORD_BODY));
+        }
+
+        // O mesmo IP ainda deve ter tokens disponíveis para /login (bucket independente)
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "10.1.0.3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(LOGIN_BODY))
+                .andExpect(result -> {
+                    int status = result.getResponse().getStatus();
+                    org.assertj.core.api.Assertions.assertThat(status)
+                            .as("/login deve ter bucket independente do /forgot-password")
                             .isNotEqualTo(429);
                 });
     }

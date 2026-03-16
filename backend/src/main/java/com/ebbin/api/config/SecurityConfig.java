@@ -1,7 +1,7 @@
 package com.ebbin.api.config;
 
+import com.ebbin.api.security.EndpointRateLimitFilter;
 import com.ebbin.api.security.JwtAuthenticationFilter;
-import com.ebbin.api.security.LoginRateLimitFilter;
 import com.ebbin.api.security.MdcRequestFilter;
 import com.ebbin.api.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
@@ -28,12 +28,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
-    private final LoginRateLimitFilter rateLimitFilter;
+    private final EndpointRateLimitFilter rateLimitFilter;
     private final MdcRequestFilter mdcFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
-                          LoginRateLimitFilter rateLimitFilter,
+                          EndpointRateLimitFilter rateLimitFilter,
                           MdcRequestFilter mdcFilter,
                           UserDetailsServiceImpl userDetailsService) {
         this.jwtFilter = jwtFilter;

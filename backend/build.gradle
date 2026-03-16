@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.ebbin'
@@ -36,6 +37,9 @@ dependencies {
     // Bucket4j — rate limiting em memória para endpoints críticos
     implementation 'com.bucket4j:bucket4j-core:8.10.1'
 
+    // Caffeine — cache com TTL para eviction automática dos buckets de rate limit
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
@@ -45,4 +49,28 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    // 0.8.13 introduz suporte a Java 25 (class file major version 69)
+    toolVersion = '0.8.13'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    // Exclui classes de infraestrutura que não têm lógica testável diretamente
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/EbbinApplication.class',
+                '**/config/AdminInitializer.class'
+            ])
+        }))
+    }
 }

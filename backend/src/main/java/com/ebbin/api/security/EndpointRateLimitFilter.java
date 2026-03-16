@@ -1,0 +1,160 @@
+package com.ebbin.api.security;
+
+import com.ebbin.api.config.RateLimitProperties;
+import com.ebbin.api.config.RateLimitProperties.EndpointConfig;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Filtro de rate limiting multi-endpoint baseado em token bucket (Bucket4j).
+ *
+ * <p>Protege endpoints sensíveis contra abuso (brute-force, flooding), com um bucket
+ * independente por IP e por endpoint. Os buckets são armazenados em um
+ * {@link Cache Caffeine cache} com TTL configurável, garantindo eviction automática de
+ * entradas inativas e prevenindo crescimento ilimitado de memória — solução para a
+ * vulnerabilidade do {@code ConcurrentHashMap} utilizado anteriormente.</p>
+ *
+ * <h3>Endpoints protegidos</h3>
+ * <ul>
+ *   <li>{@code POST /api/auth/login} — proteção contra brute-force de credenciais</li>
+ *   <li>{@code POST /api/auth/forgot-password} — proteção contra abuso do fluxo de reset de senha</li>
+ * </ul>
+ *
+ * <h3>Configuração</h3>
+ * <p>Cada endpoint é configurado via {@code app.rate-limit.endpoints.<key>.*} no
+ * {@code application.yml}. O fallback para os valores legados {@code app.rate-limit.login.*}
+ * é mantido para retrocompatibilidade.</p>
+ *
+ * <p>Mitigação OWASP A07 — Identification and Authentication Failures (brute force).</p>
+ */
+@Component
+public class EndpointRateLimitFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(EndpointRateLimitFilter.class);
+
+    /** Mapeamento de path protegido → chave de configuração no RateLimitProperties. */
+    private static final Map<String, String> PROTECTED_PATHS = Map.of(
+            "/api/auth/login",          "login",
+            "/api/auth/forgot-password", "forgot-password"
+    );
+
+    private static final String POST = "POST";
+
+    /**
+     * Cache de caches: chave externa = endpointKey, cache interno = ip → Bucket.
+     * Cada endpoint tem seu próprio Caffeine cache com TTL independente.
+     */
+    private final ConcurrentHashMap<String, Cache<String, Bucket>> bucketCaches = new ConcurrentHashMap<>();
+
+    private final RateLimitProperties props;
+
+    public EndpointRateLimitFilter(RateLimitProperties props) {
+        this.props = props;
+    }
+
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String path = resolvePath(request);
+        String endpointKey = PROTECTED_PATHS.get(path);
+
+        if (endpointKey == null || !POST.equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String clientIp = resolveClientIp(request);
+        EndpointConfig config = props.getEndpointConfig(endpointKey);
+        Cache<String, Bucket> cache = bucketCaches.computeIfAbsent(endpointKey,
+                k -> buildCache(config));
+
+        Bucket bucket = cache.get(clientIp, ip -> newBucket(config));
+
+        if (bucket != null && bucket.tryConsume(1)) {
+            filterChain.doFilter(request, response);
+        } else {
+            log.warn("Rate limit excedido: endpoint={}, ip={}", endpointKey, clientIp);
+            writeTooManyRequests(response);
+        }
+    }
+
+    /**
+     * Constrói um Caffeine cache com TTL baseado na configuração do endpoint.
+     * A eviction após {@code ttlMinutes} de inatividade garante que IPs que param de
+     * fazer requisições tenham seus buckets removidos automaticamente da memória.
+     */
+    private Cache<String, Bucket> buildCache(EndpointConfig config) {
+        return Caffeine.newBuilder()
+                .expireAfterAccess(config.getTtlMinutes(), TimeUnit.MINUTES)
+                .build();
+    }
+
+    private Bucket newBucket(EndpointConfig config) {
+        Bandwidth limit = Bandwidth.builder()
+                .capacity(config.getCapacity())
+                .refillIntervally(config.getRefillTokens(), Duration.ofMinutes(config.getRefillMinutes()))
+                .build();
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    private void writeTooManyRequests(HttpServletResponse response) throws IOException {
+        response.setStatus(429);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("""
+                {"type":"urn:problem:too-many-requests","title":"Muitas tentativas","status":429,\
+                "detail":"Limite de requisições atingido. Aguarde um momento e tente novamente."}
+                """);
+    }
+
+    /**
+     * Resolve o path da requisição, com fallback para URI para compatibilidade com MockMvc.
+     */
+    private String resolvePath(HttpServletRequest request) {
+        String path = request.getServletPath();
+        if (path == null || path.isBlank()) {
+            path = request.getRequestURI();
+        }
+        return path;
+    }
+
+    /**
+     * Resolve o IP real do cliente, respeitando proxies reversos via X-Forwarded-For.
+     */
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    /**
+     * Retorna o conjunto de paths protegidos por este filtro (visível para testes).
+     */
+    Set<String> getProtectedPaths() {
+        return PROTECTED_PATHS.keySet();
+    }
+}

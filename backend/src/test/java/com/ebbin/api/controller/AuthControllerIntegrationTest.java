@@ -41,6 +41,7 @@ class AuthControllerIntegrationTest {
     void login_validCredentials_returns200WithToken() throws Exception {
         // O AdminInitializer cria admin@test.com com admin123 ao iniciar
         mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.1.1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"admin@test.com","password":"admin123"}
@@ -55,6 +56,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/login com credenciais inválidas deve retornar 401")
     void login_invalidCredentials_returns401() throws Exception {
         mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.1.2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"admin@test.com","password":"senhaErrada"}
@@ -66,6 +68,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/login com e-mail inválido deve retornar 400")
     void login_invalidEmail_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.1.3")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"nao_e_email","password":"senha123"}
@@ -77,6 +80,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/login com senha curta deve retornar 400")
     void login_shortPassword_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.1.4")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"user@test.com","password":"abc"}
@@ -88,6 +92,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/register sem autenticação deve retornar 401 ou 403")
     void register_unauthenticated_returns401or403() throws Exception {
         mockMvc.perform(post("/api/auth/register")
+                        .header("X-Forwarded-For", "192.168.1.5")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"novo@test.com","password":"senha123","role":"USER"}
@@ -96,11 +101,14 @@ class AuthControllerIntegrationTest {
     }
 
     // ---- forgot-password ----
+    // Cada teste usa um IP distinto via X-Forwarded-For para garantir isolamento
+    // de buckets de rate limit (o rate limit é por IP × endpoint).
 
     @Test
     @DisplayName("POST /api/auth/forgot-password com e-mail cadastrado deve retornar 202")
     void forgotPassword_existingEmail_returns202() throws Exception {
         mockMvc.perform(post("/api/auth/forgot-password")
+                        .header("X-Forwarded-For", "192.168.2.1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"admin@test.com"}
@@ -112,6 +120,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/forgot-password com e-mail não cadastrado deve retornar 202 (anti-enumeration)")
     void forgotPassword_unknownEmail_returns202() throws Exception {
         mockMvc.perform(post("/api/auth/forgot-password")
+                        .header("X-Forwarded-For", "192.168.2.2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"inexistente@test.com"}
@@ -123,6 +132,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/forgot-password com e-mail inválido deve retornar 400")
     void forgotPassword_invalidEmail_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/forgot-password")
+                        .header("X-Forwarded-For", "192.168.2.3")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"nao_e_email"}
@@ -134,6 +144,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("POST /api/auth/forgot-password sem corpo deve retornar 400")
     void forgotPassword_emptyEmail_returns400() throws Exception {
         mockMvc.perform(post("/api/auth/forgot-password")
+                        .header("X-Forwarded-For", "192.168.2.4")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":""}
