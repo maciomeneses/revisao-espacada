@@ -56,17 +56,26 @@ public class AuthService {
      * Em produção, este método deve delegar o envio do e-mail para um serviço de mensageria
      * assíncrono (e.g., AWS SES, SendGrid) com um token de reset de uso único.</p>
      *
+     * <p><b>TODO (pendência de implementação):</b>
+     * <ol>
+     *   <li>Gerar token de reset único (UUID v4) com TTL de 1 hora e persistir em tabela {@code password_reset_tokens}.</li>
+     *   <li>Enviar e-mail transacional via serviço de mensageria (AWS SES / SendGrid) com link de reset.</li>
+     *   <li>Implementar endpoint {@code POST /api/auth/reset-password} que valida o token e atualiza a senha.</li>
+     *   <li>Invalidar token após uso único e expirar automaticamente os vencidos via job agendado.</li>
+     * </ol>
+     * Enquanto não implementado, o endpoint responde 202 sem enviar e-mail — fluxo é stub intencional.</p>
+     *
      * @param req payload contendo o e-mail solicitante
      */
     public void requestPasswordReset(PasswordResetRequest req) {
-        log.info("Solicitação de reset de senha: email={}", req.email());
+        log.info("AUDIT: forgot-password solicitado: email={}", req.email());
         // Verifica existência sem expor resultado ao chamador (anti-user-enumeration)
         boolean exists = userRepository.existsByEmail(req.email());
         if (exists) {
             // TODO: gerar token de reset único + enviar e-mail via serviço de mensageria
-            log.info("Reset de senha solicitado para usuário existente: email={}", req.email());
+            log.warn("AUDIT: forgot-password stub — e-mail de reset NÃO enviado (implementação pendente): email={}", req.email());
         } else {
-            log.warn("Reset de senha solicitado para e-mail não cadastrado: email={}", req.email());
+            log.warn("AUDIT: forgot-password — e-mail não cadastrado (resposta genérica para evitar user-enumeration): email={}", req.email());
         }
         // Resposta deliberadamente genérica — não revela se o e-mail existe
     }

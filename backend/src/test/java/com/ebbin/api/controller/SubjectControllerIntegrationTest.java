@@ -308,4 +308,57 @@ class SubjectControllerIntegrationTest {
         mockMvc.perform(delete("/api/subjects/subj-1"))
                 .andExpect(status().is4xxClientError());
     }
+
+    // ---- Limite de tamanho do body no sync ----
+
+    @Test
+    @DisplayName("POST /api/subjects/sync com lista acima de 500 itens deve retornar 400")
+    void sync_exceedsMaxSize_returns400() throws Exception {
+        // Gera uma lista com 501 subjects válidos (máx. permitido é 500)
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < 501; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("""
+                    {"id":"subj-%d","modulo":"M","area":"A","aulaPrincipal":"AP","relevancia":"Alta",
+                    "aulaAssistida":false,"preAulaFeita":false,"flashcardsFeitos":false,
+                    "fixacao24hFeita":false,"estudoReversoFeito":false,"rev7dFeita":false,
+                    "rev30dFeita":false,"rev60dFeita":false,"rev90dFeita":false,
+                    "currentStage":"aula","nextReviewDate":null,"lastReviewDate":null,
+                    "lastPerformance":null,"performanceLevel":"nao_classificada"}
+                    """.formatted(i));
+        }
+        sb.append("]");
+
+        mockMvc.perform(post("/api/subjects/sync")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(sb.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/subjects/sync com exatamente 500 itens deve ser aceito (limite exato)")
+    void sync_exactlyMaxSize_returns200() throws Exception {
+        // Gera uma lista com exatamente 500 subjects (limite máximo permitido)
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < 500; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("""
+                    {"id":"subj-%d","modulo":"M","area":"A","aulaPrincipal":"AP","relevancia":"Alta",
+                    "aulaAssistida":false,"preAulaFeita":false,"flashcardsFeitos":false,
+                    "fixacao24hFeita":false,"estudoReversoFeito":false,"rev7dFeita":false,
+                    "rev30dFeita":false,"rev60dFeita":false,"rev90dFeita":false,
+                    "currentStage":"aula","nextReviewDate":null,"lastReviewDate":null,
+                    "lastPerformance":null,"performanceLevel":"nao_classificada"}
+                    """.formatted(i));
+        }
+        sb.append("]");
+
+        mockMvc.perform(post("/api/subjects/sync")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(sb.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(500));
+    }
 }

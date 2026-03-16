@@ -282,15 +282,28 @@ export function AdminArea() {
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-light" />
-                    <input 
+                    <input
                       required={!editingUser}
                       type="password"
+                      minLength={6}
                       value={formData.password}
                       onChange={e => setFormData({...formData, password: e.target.value})}
                       className="w-full bg-surface border border-border rounded-xl px-12 py-3 text-sm focus:border-navy/20 focus:outline-none transition-all"
                       placeholder="••••••••"
+                      aria-describedby="password-hint"
                     />
                   </div>
+                  {formData.password.length > 0 && formData.password.length < 6 && (
+                    <p id="password-hint" className="text-[10px] text-red-500 font-semibold ml-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      A senha deve ter pelo menos 6 caracteres
+                    </p>
+                  )}
+                  {!editingUser && formData.password.length === 0 && (
+                    <p id="password-hint" className="text-[10px] text-muted-light ml-1">
+                      Mínimo de 6 caracteres
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">

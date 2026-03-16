@@ -3,6 +3,8 @@ plugins {
     id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    // OWASP Dependency-Check — varredura de CVEs nas dependências do projeto
+    id 'org.owasp.dependencycheck' version '12.1.1'
 }
 
 group = 'com.ebbin'
@@ -105,4 +107,20 @@ jacocoTestCoverageVerification {
             }
         }
     }
+}
+
+// OWASP Dependency-Check: varredura de CVEs nas dependências (OWASP A06:2021 — Vulnerable Components)
+// Executar manualmente: ./gradlew dependencyCheckAnalyze
+// O relatório é gerado em build/reports/dependency-check-report.html
+dependencyCheck {
+    // Falha o build se alguma dependência tiver CVSS >= 7.0 (Alta ou Crítica)
+    failBuildOnCVSS = 7.0
+    // Diretório de relatórios
+    outputDirectory = layout.buildDirectory.dir('reports').get().asFile
+    // Formatos de relatório gerados
+    formats = ['HTML', 'JSON']
+    // Suprimido durante CI off-line: remover esta linha se a NVD API key estiver configurada
+    // nvd.apiKey = System.getenv('NVD_API_KEY') ?: ''
+    // Exclui dependências de escopo de teste da varredura de produção
+    scanConfigurations = ['runtimeClasspath', 'compileClasspath']
 }

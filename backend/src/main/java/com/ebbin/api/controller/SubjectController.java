@@ -22,7 +22,7 @@ public class SubjectController {
     private static final Logger log = LoggerFactory.getLogger(SubjectController.class);
 
     /** Limite de subjects por sincronização — proteção contra DoS */
-    private static final int MAX_SYNC_SIZE = 2000;
+    private static final int MAX_SYNC_SIZE = 500;
 
     private final SubjectService subjectService;
 

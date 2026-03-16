@@ -2,6 +2,7 @@ package com.ebbin.api.service;
 
 import com.ebbin.api.dto.LoginRequest;
 import com.ebbin.api.dto.LoginResponse;
+import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.UserRepository;
@@ -125,5 +126,29 @@ class AuthServiceTest {
         // O compact constructor do RegisterRequest converte null -> USER
         RegisterRequest req = new RegisterRequest("novo@test.com", "senha123", null);
         assertThat(req.role()).isEqualTo(User.Role.USER);
+    }
+
+    // --- requestPasswordReset ---
+
+    @Test
+    @DisplayName("requestPasswordReset com e-mail cadastrado deve completar sem exceção (resposta genérica)")
+    void requestPasswordReset_existingEmail_completesWithoutException() {
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(true);
+
+        // Não deve lançar exceção — resposta é sempre genérica (anti-user-enumeration)
+        authService.requestPasswordReset(new PasswordResetRequest("user@test.com"));
+
+        verify(userRepository).existsByEmail("user@test.com");
+    }
+
+    @Test
+    @DisplayName("requestPasswordReset com e-mail não cadastrado deve completar sem exceção (resposta genérica)")
+    void requestPasswordReset_unknownEmail_completesWithoutException() {
+        when(userRepository.existsByEmail("inexistente@test.com")).thenReturn(false);
+
+        // Não deve lançar exceção — resposta é sempre genérica (anti-user-enumeration)
+        authService.requestPasswordReset(new PasswordResetRequest("inexistente@test.com"));
+
+        verify(userRepository).existsByEmail("inexistente@test.com");
     }
 }

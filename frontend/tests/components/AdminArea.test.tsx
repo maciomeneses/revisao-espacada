@@ -217,4 +217,56 @@ describe('AdminArea', () => {
 
     vi.unstubAllGlobals();
   });
+
+  it('exibe dica "Mínimo de 6 caracteres" no campo senha quando vazio e criando usuário', async () => {
+    render(<AdminArea />);
+    await waitFor(() => screen.getByText('admin@test.com'));
+
+    fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+
+    // Dica estática deve aparecer quando campo está vazio e é criação
+    expect(screen.getByText(/mínimo de 6 caracteres/i)).toBeInTheDocument();
+  });
+
+  it('exibe aviso inline quando senha tem menos de 6 caracteres', async () => {
+    render(<AdminArea />);
+    await waitFor(() => screen.getByText('admin@test.com'));
+
+    fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'abc' },
+    });
+
+    // Feedback de erro inline deve aparecer para senha curta
+    expect(screen.getByText(/a senha deve ter pelo menos 6 caracteres/i)).toBeInTheDocument();
+  });
+
+  it('não exibe aviso de senha curta quando senha tem 6 ou mais caracteres', async () => {
+    render(<AdminArea />);
+    await waitFor(() => screen.getByText('admin@test.com'));
+
+    fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'senha123' },
+    });
+
+    // Aviso de senha curta não deve aparecer
+    expect(screen.queryByText(/a senha deve ter pelo menos 6 caracteres/i)).not.toBeInTheDocument();
+  });
+
+  it('campo senha tem atributo minLength=6 para validação HTML5 nativa', async () => {
+    render(<AdminArea />);
+    await waitFor(() => screen.getByText('admin@test.com'));
+
+    fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+
+    const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
+    expect(passwordInput.minLength).toBe(6);
+  });
 });
