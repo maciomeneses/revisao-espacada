@@ -7,12 +7,32 @@ import { api } from '../services/api';
 export function useSubjects() {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects());
 
-  // Sync with API if possible, otherwise use local storage
+  // Sync with API if possible, merging with local state
   useEffect(() => {
     api.subjects.list().then((data) => {
-      if (Array.isArray(data) && data.length > 0) {
-        setSubjects(data as Subject[]);
-        saveSubjects(data as Subject[]);
+      if (Array.isArray(data)) {
+        setSubjects((prev) => {
+          // apiMap contains subjects already in the DB (with progress)
+          const apiMap = new Map((data as Subject[]).map(s => [s.id, s]));
+          
+          // Merge: For each subject in current state (which has all INITIAL_SUBJECTS),
+          // use the API version if it exists, otherwise keep current.
+          const merged = prev.map(s => apiMap.get(s.id) || s);
+          
+          // Also include any subjects from API that weren't in our initial list (user created)
+          const currentIds = new Set(prev.map(s => s.id));
+          const userCreated = (data as Subject[]).filter(s => !currentIds.has(s.id));
+          
+          const final = [...merged, ...userCreated];
+          saveSubjects(final);
+
+          // If the database is missing subjects, push them up
+          if (data.length < final.length) {
+            api.subjects.sync(final).catch(console.error);
+          }
+
+          return final;
+        });
       }
     }).catch(console.error);
   }, []);
