@@ -30,14 +30,13 @@ export function Cronograma({
     }
   };
 
-  const today = new Date().toISOString().split('T')[0];
-  const pending = subjects.filter(s => !s.nextReviewDate || s.nextReviewDate <= today);
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-black text-white">Cronograma</h2>
-        <span className="text-white/40 text-xs font-bold uppercase tracking-widest bg-white/5 py-1 px-3 rounded-full">
+        <h2 className="text-3xl font-black text-white uppercase tracking-tight">Cronograma</h2>
+        <span className="text-white/40 text-[10px] font-black uppercase tracking-widest bg-white/5 py-1 px-3 rounded-full">
           FSRS v6 ACTIVE
         </span>
       </div>
@@ -60,7 +59,7 @@ export function Cronograma({
                 </div>
                 <div className="flex flex-col">
                   <span className="text-white/30 text-[10px] font-black uppercase mb-1">Próxima Revisão</span>
-                  <span className={`text-xs font-bold ${s.nextReviewDate && s.nextReviewDate <= today ? 'text-orange-400' : 'text-white'}`}>
+                  <span className={`text-xs font-bold ${s.nextReviewDate && s.nextReviewDate <= todayStr ? 'text-orange-400' : 'text-white'}`}>
                     {s.nextReviewDate || 'A definir'}
                   </span>
                 </div>
@@ -112,7 +111,7 @@ export function Cronograma({
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl">
             <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Registro de Bloco</h4>
-            <p className="text-white/40 text-xs font-bold uppercase mb-8">Bloco de 10 questões</p>
+            <p className="text-white/40 text-[10px] font-black uppercase mb-8">Bloco de 10 questões</p>
             
             <div className="space-y-6 mb-8">
               <div className="flex justify-between items-end">

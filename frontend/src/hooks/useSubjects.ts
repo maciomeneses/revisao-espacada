@@ -1,33 +1,40 @@
-import { useState, useCallback } from 'react';
-import type { Performance, Subject } from '../types';
+import { useState, useCallback, useEffect } from 'react';
+import type { Subject } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
-import { computeStageTransition, addDays, today, resetCiclo } from '../services/algorithm';
+import { calculateNextReview, resetCiclo } from '../services/algorithm';
+import { api } from '../services/api';
 
 export function useSubjects() {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects());
 
-  const updateSubject = useCallback((updated: Subject) => {
+  // Sync with API if possible, otherwise use local storage
+  useEffect(() => {
+    api.subjects.list().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setSubjects(data as Subject[]);
+        saveSubjects(data as Subject[]);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const updateSubject = useCallback(async (updated: Subject) => {
     setSubjects((prev) => {
       const next = prev.map((s) => (s.id === updated.id ? updated : s));
       saveSubjects(next);
       return next;
     });
+    try {
+      await api.subjects.upsert(updated.id, updated);
+    } catch (err) {
+      console.error('API update failed:', err);
+    }
   }, []);
 
   const toggleAula = useCallback(
     (id: string) => {
       const subject = subjects.find((s) => s.id === id);
       if (!subject) return;
-
-      const wasAssistida = subject.aulaAssistida;
-      const updated: Subject = {
-        ...subject,
-        aulaAssistida: !wasAssistida,
-        currentStage: !wasAssistida ? 'fixacao' : 'aula',
-        nextReviewDate: !wasAssistida ? addDays(new Date(), 1) : null,
-        lastReviewDate: !wasAssistida ? today() : null,
-      };
-      updateSubject(updated);
+      updateSubject({ ...subject, aulaAssistida: !subject.aulaAssistida });
     },
     [subjects, updateSubject],
   );
@@ -50,70 +57,13 @@ export function useSubjects() {
     [subjects, updateSubject],
   );
 
-  /**
-   * Called when the student completes a review stage and records their performance.
-   * Returns false if the stage is not the current pending one.
-   */
   const registerReview = useCallback(
-    (id: string, performance: Performance) => {
+    (id: string, numCorrect: number) => {
       const subject = subjects.find((s) => s.id === id);
       if (!subject) return;
 
-      const transition = computeStageTransition(
-        subject.currentStage,
-        subject.relevancia,
-        performance,
-      );
-
-      const nowDate = new Date();
-      const nextDate =
-        transition.nextStage === 'concluido'
-          ? null
-          : addDays(nowDate, transition.daysUntilNext);
-
-      // Mark the current stage as completed if passed
-      const stageFlags: Partial<Subject> = {};
-      if (transition.stageCompleted) {
-        switch (subject.currentStage) {
-          case 'fixacao':
-            stageFlags.fixacao24hFeita = true;
-            break;
-          case 'estudo_reverso':
-            stageFlags.estudoReversoFeito = true;
-            break;
-          case 'rev7d':
-            stageFlags.rev7dFeita = true;
-            break;
-          case 'rev30d':
-            stageFlags.rev30dFeita = true;
-            break;
-          case 'rev60d':
-            stageFlags.rev60dFeita = true;
-            break;
-          case 'rev90d':
-            stageFlags.rev90dFeita = true;
-            break;
-        }
-      }
-
-      // Derive performance level for board view
-      const performanceLevel: Subject['performanceLevel'] =
-        performance === 'gte_80'
-          ? 'gte_80'
-          : performance === 'range_61_79'
-            ? 'range_61_79'
-            : 'lte_60';
-
-      const updated: Subject = {
-        ...subject,
-        ...stageFlags,
-        currentStage: transition.nextStage,
-        nextReviewDate: nextDate,
-        lastReviewDate: today(),
-        lastPerformance: performance,
-        performanceLevel,
-      };
-      updateSubject(updated);
+      const updates = calculateNextReview(subject, numCorrect);
+      updateSubject({ ...subject, ...updates });
     },
     [subjects, updateSubject],
   );
@@ -128,33 +78,33 @@ export function useSubjects() {
   );
 
   const addSubject = useCallback(
-    (data: { area: string; modulo: string; aulaPrincipal: string; relevancia: Subject['relevancia'] }) => {
+    async (data: Partial<Subject>) => {
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
       const newSubject: Subject = {
         id,
-        ...data,
+        modulo: '',
+        area: '',
+        aulaPrincipal: '',
+        relevancia: 'Alta',
         aulaAssistida: false,
         preAulaFeita: false,
         flashcardsFeitos: false,
-        fixacao24hFeita: false,
-        estudoReversoFeito: false,
-        rev7dFeita: false,
-        rev30dFeita: false,
-        rev60dFeita: false,
-        rev90dFeita: false,
         currentStage: 'aula',
         nextReviewDate: null,
         lastReviewDate: null,
         lastPerformance: null,
         performanceLevel: 'nao_classificada',
-      };
+        ...data,
+      } as Subject;
+      
       setSubjects((prev) => {
         const next = [...prev, newSubject];
         saveSubjects(next);
         return next;
       });
+      await api.subjects.sync([...subjects, newSubject]);
     },
-    [],
+    [subjects],
   );
 
   const removeSubject = useCallback((id: string) => {
@@ -163,41 +113,16 @@ export function useSubjects() {
       saveSubjects(next);
       return next;
     });
+    api.subjects.delete(id).catch(console.error);
   }, []);
 
   const revertStage = useCallback(
-    (id: string, stage: Subject['currentStage']) => {
+    (id: string) => {
       const subject = subjects.find((s) => s.id === id);
-      if (!subject) return;
-
-      // Stage order — clear the reverted stage AND all downstream stages
-      const stageOrder: Subject['currentStage'][] = [
-        'fixacao', 'estudo_reverso', 'rev7d', 'rev30d', 'rev60d', 'rev90d',
-      ];
-      const idx = stageOrder.indexOf(stage);
-      if (idx === -1) return;
-
-      const downstream = stageOrder.slice(idx);
-      const stageFlags: Partial<Subject> = {};
-      for (const s of downstream) {
-        switch (s) {
-          case 'fixacao': stageFlags.fixacao24hFeita = false; break;
-          case 'estudo_reverso': stageFlags.estudoReversoFeito = false; break;
-          case 'rev7d': stageFlags.rev7dFeita = false; break;
-          case 'rev30d': stageFlags.rev30dFeita = false; break;
-          case 'rev60d': stageFlags.rev60dFeita = false; break;
-          case 'rev90d': stageFlags.rev90dFeita = false; break;
-        }
-      }
-
+      if (!subject || !subject.stability) return;
       updateSubject({
         ...subject,
-        ...stageFlags,
-        currentStage: stage,
-        nextReviewDate: null,
-        lastReviewDate: null,
-        lastPerformance: null,
-        performanceLevel: 'nao_classificada',
+        stability: subject.stability * 0.7
       });
     },
     [subjects, updateSubject],

@@ -1,21 +1,31 @@
 export type ActiveView = 'dashboard' | 'cronograma' | 'agenda' | 'espiao';
 
+export type Area = string;
+export type Relevance = 'Alta' | 'Média' | 'Baixa' | string;
+export type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string;
+export type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente' | string;
+
+export type ReviewStage =
+  | 'aula'
+  | 'Learning'
+  | 'Review'
+  | 'Relearning'
+  | 'New'
+  | string;
+
 export interface Subject {
   id: string;
   modulo: string;
-  area: string;
+  area: Area;
   aulaPrincipal: string;
-  relevancia: string;
+  relevancia: Relevance;
+
+  // Progress flags
   aulaAssistida: boolean;
   preAulaFeita: boolean;
   flashcardsFeitos: boolean;
-  currentStage: string;
-  nextReviewDate: string | null;
-  lastReviewDate: string | null;
-  lastPerformance: string | null;
-  performanceLevel: string;
-  
-  // FSRS fields
+
+  // FSRS v6 state
   stability?: number;
   difficulty?: number;
   elapsedDays?: number;
@@ -23,4 +33,19 @@ export interface Subject {
   reps?: number;
   lapses?: number;
   state?: string;
+
+  // Compatibility/Legacy fields
+  currentStage: ReviewStage;
+  nextReviewDate: string | null;
+  lastReviewDate: string | null;
+  lastPerformance: Performance | null;
+  performanceLevel: PerformanceLevel;
+
+  // Legacy stage flags (keeping as optional for compatibility with components I haven't fixed yet)
+  fixacao24hFeita?: boolean;
+  estudoReversoFeito?: boolean;
+  rev7dFeita?: boolean;
+  rev30dFeita?: boolean;
+  rev60dFeita?: boolean;
+  rev90dFeita?: boolean;
 }

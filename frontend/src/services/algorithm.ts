@@ -1,149 +1,99 @@
-import type { Performance, Relevance, ReviewStage, Subject } from '../types';
+import { Subject } from '../types';
 
-export interface StageTransition {
-  nextStage: ReviewStage;
-  daysUntilNext: number;
-  /** false = resgate (retry same stage), true = stage passed */
-  stageCompleted: boolean;
-}
+// FSRS v6 Default Parameters
+export const DEFAULT_W = [
+  0.4025, 0.8935, 2.1812, 4.1256, // S0 (G1-G4)
+  4.8228, 0.7428, 0.9651, 0.0215, // D0, Difficulty/Stability update
+  1.4505, 0.1490, 1.0151,
+  2.0, 0.06, 0.32, 1.3,
+  0.42, 2.26, 0.0, 0.5, 0.0, 0.2
+];
 
-/**
- * Computes the next stage and schedule after completing a review stage.
- * Implements the spaced repetition algorithm described in the system document.
- */
-export function computeStageTransition(
-  currentStage: ReviewStage,
-  relevance: Relevance,
-  performance: Performance,
-): StageTransition {
-  switch (currentStage) {
-    case 'aula':
-      return { nextStage: 'fixacao', daysUntilNext: 1, stageCompleted: true };
+export const REQUEST_RETENTION = 0.9;
+export const DECAY = -0.5;
+export const FACTOR = Math.pow(0.9, 1.0 / DECAY) - 1;
 
-    case 'fixacao':
-      if (performance === 'lte_60') {
-        return { nextStage: 'estudo_reverso', daysUntilNext: 1, stageCompleted: true };
-      }
-      return { nextStage: 'rev7d', daysUntilNext: 7, stageCompleted: true };
+export function calculateNextReview(subject: Subject, numCorrect: number): Partial<Subject> {
+  // Blocagem: Convert number of correct answers (0-10) to Rating (1-4)
+  let rating = 3; // Good
+  if (numCorrect <= 4) rating = 1; // Again
+  else if (numCorrect <= 6) rating = 2; // Hard
+  else if (numCorrect <= 8) rating = 3; // Good
+  else rating = 4; // Easy
 
-    case 'estudo_reverso':
-      return { nextStage: 'rev7d', daysUntilNext: 7, stageCompleted: true };
+  let { stability = 0, difficulty = 0, reps = 0, lapses = 0 } = subject;
+  const now = new Date();
+  
+  let nextStability: number;
+  let nextDifficulty: number;
+  let scheduledDays: number;
+  let state: string;
 
-    case 'rev7d':
-      return computeRev7dTransition(relevance, performance);
+  if (reps === 0 || !stability) {
+    // First review
+    nextStability = DEFAULT_W[rating - 1];
+    nextDifficulty = DEFAULT_W[4] - (rating - 1) * DEFAULT_W[5];
+    state = 'Learning';
+  } else {
+    // Subsequent reviews
+    const lastReview = subject.lastReviewDate ? new Date(subject.lastReviewDate) : new Date();
+    const elapsedDays = Math.max(0, Math.floor((now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24)));
+    const retrievability = Math.pow(1 + FACTOR * elapsedDays / stability, DECAY);
 
-    case 'rev30d':
-      return computeRev30dTransition(relevance, performance);
+    // Update Difficulty
+    nextDifficulty = difficulty - DEFAULT_W[17] * (rating - 3);
+    nextDifficulty = Math.max(1, Math.min(10, nextDifficulty));
 
-    case 'rev60d':
-      return computeRev60dTransition(performance);
-
-    case 'rev90d':
-      return computeRev90dTransition(performance);
-
-    case 'concluido':
-      return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true };
+    // Update Stability
+    if (rating === 1) {
+      nextStability = DEFAULT_W[11] * Math.pow(nextDifficulty, -DEFAULT_W[12]) * 
+                      (Math.pow(stability + 1, DEFAULT_W[13]) - 1) * 
+                      Math.exp(DEFAULT_W[14] * (1 - retrievability));
+      lapses++;
+      state = 'Relearning';
+    } else {
+      const hardPenalty = (rating === 2) ? DEFAULT_W[15] : 1.0;
+      const easyBonus = (rating === 4) ? DEFAULT_W[16] : 1.0;
+      
+      nextStability = stability * (1 + Math.exp(DEFAULT_W[8]) * 
+                      (11 - nextDifficulty) * Math.pow(stability, -DEFAULT_W[9]) * 
+                      (Math.exp((1 - retrievability) * DEFAULT_W[10]) - 1) * hardPenalty * easyBonus);
+      state = 'Review';
+    }
   }
-}
 
-function computeRev7dTransition(relevance: Relevance, performance: Performance): StageTransition {
-  if (relevance === 'Alta') {
-    if (performance === 'lte_60') return { nextStage: 'rev7d', daysUntilNext: 7, stageCompleted: false };
-    if (performance === 'range_61_79') return { nextStage: 'rev30d', daysUntilNext: 30, stageCompleted: true };
-    return { nextStage: 'rev60d', daysUntilNext: 60, stageCompleted: true }; // ≥80% — skip to 60d
-  }
-  if (relevance === 'Média') {
-    if (performance === 'lte_60') return { nextStage: 'rev7d', daysUntilNext: 14, stageCompleted: false };
-    if (performance === 'range_61_79') return { nextStage: 'rev30d', daysUntilNext: 30, stageCompleted: true };
-    return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true }; // ≥80%
-  }
-  // Baixa
-  if (performance === 'lte_60') return { nextStage: 'rev7d', daysUntilNext: 30, stageCompleted: false };
-  return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true };
-}
+  reps++;
+  scheduledDays = Math.max(1, Math.round(nextStability * FACTOR));
+  const nextReviewDate = new Date();
+  nextReviewDate.setDate(now.getDate() + scheduledDays);
 
-function computeRev30dTransition(relevance: Relevance, performance: Performance): StageTransition {
-  if (relevance === 'Alta') {
-    if (performance === 'lte_60') return { nextStage: 'rev30d', daysUntilNext: 7, stageCompleted: false };
-    if (performance === 'range_61_79') return { nextStage: 'rev60d', daysUntilNext: 60, stageCompleted: true };
-    return { nextStage: 'rev90d', daysUntilNext: 90, stageCompleted: true }; // ≥80% — skip to 90d
-  }
-  // Média — Rev 30D is the final stage
-  if (performance === 'lte_60') return { nextStage: 'rev30d', daysUntilNext: 14, stageCompleted: false };
-  return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true };
-}
-
-function computeRev60dTransition(performance: Performance): StageTransition {
-  // Only Alta relevance reaches Rev 60D
-  if (performance === 'lte_60') return { nextStage: 'rev60d', daysUntilNext: 7, stageCompleted: false };
-  if (performance === 'range_61_79') return { nextStage: 'rev90d', daysUntilNext: 90, stageCompleted: true };
-  return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true }; // ≥80%
-}
-
-function computeRev90dTransition(performance: Performance): StageTransition {
-  // Only Alta relevance reaches Rev 90D
-  if (performance === 'lte_60') return { nextStage: 'rev90d', daysUntilNext: 7, stageCompleted: false };
-  return { nextStage: 'concluido', daysUntilNext: 0, stageCompleted: true };
-}
-
-/** Adds days to a date and returns an ISO date string (YYYY-MM-DD). */
-export function addDays(date: Date, days: number): string {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result.toISOString().split('T')[0];
-}
-
-/** Returns today's date as an ISO date string (YYYY-MM-DD). */
-export function today(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-/** Computes the label for the next pending task. */
-export function getProximaTarefa(stage: ReviewStage): string {
-  const labels: Record<ReviewStage, string> = {
-    aula: 'Aula',
-    fixacao: 'Fixação 24H',
-    estudo_reverso: 'Estudo Reverso',
-    rev7d: 'Revisão 7 Dias',
-    rev30d: 'Revisão 30 Dias',
-    rev60d: 'Revisão 60 Dias',
-    rev90d: 'Revisão 90 Dias',
-    concluido: 'Concluído',
+  return {
+    stability: nextStability,
+    difficulty: nextDifficulty,
+    reps,
+    lapses,
+    state,
+    scheduledDays,
+    lastReviewDate: now.toISOString(),
+    nextReviewDate: nextReviewDate.toISOString().split('T')[0],
+    lastPerformance: rating.toString(),
+    performanceLevel: rating === 1 ? 'ruim' : rating === 2 ? 'medio' : rating === 3 ? 'bom' : 'excelente',
+    currentStage: state
   };
-  return labels[stage];
 }
 
-/** Returns the timing status relative to today. */
-export function getFormulaStatus(subject: Subject): string {
-  if (subject.currentStage === 'aula') return '';
-  if (subject.currentStage === 'concluido') return 'Concluído';
-  if (!subject.nextReviewDate) return '';
-
-  const todayStr = today();
-  if (subject.nextReviewDate < todayStr) return 'Atrasado';
-  if (subject.nextReviewDate === todayStr) return 'Hoje';
-  return 'No Prazo';
-}
-
-/**
- * Applies a "Resetar Ciclo" to a subject:
- * - Marks Estudo Reverso as done
- * - Resets all review stage flags
- * - Schedules Rev 7D for +7 days
- */
 export function resetCiclo(subject: Subject): Subject {
   return {
     ...subject,
-    fixacao24hFeita: true,
-    estudoReversoFeito: true,
-    rev7dFeita: false,
-    rev30dFeita: false,
-    rev60dFeita: false,
-    rev90dFeita: false,
-    currentStage: 'rev7d',
-    lastReviewDate: today(),
-    nextReviewDate: addDays(new Date(), 7),
-    lastPerformance: 'lte_60',
-    performanceLevel: 'lte_60',
+    reps: 0,
+    lapses: 0,
+    stability: 0,
+    difficulty: 0,
+    state: 'New',
+    currentStage: 'aula',
+    nextReviewDate: null,
+    lastReviewDate: null,
+    lastPerformance: null,
+    performanceLevel: 'nao_classificada'
   };
 }

@@ -1,6 +1,4 @@
-import { Pomodoro } from './Pomodoro';
 import type { Subject } from '../types';
-import { today } from '../services/algorithm';
 
 interface DashboardProps {
   subjects: Subject[];
@@ -8,112 +6,48 @@ interface DashboardProps {
 }
 
 export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
-  const todayISO = today();
-
-  const dueToday = subjects.filter((s) => s.nextReviewDate === todayISO);
-  const overdue  = subjects.filter(
-    (s) => s.nextReviewDate && s.nextReviewDate < todayISO && s.currentStage !== 'concluido',
-  );
-  const completed  = subjects.filter((s) => s.currentStage === 'concluido');
-  const notStarted = subjects.filter((s) => s.currentStage === 'aula');
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  const stats = {
+    total: subjects.length,
+    today: subjects.filter((s) => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
+    memorized: subjects.filter((s) => (s.stability || 0) > 30).length,
+  };
 
   return (
-    <div className="max-w-screen-xl mx-auto px-4 py-8">
-      {/* Hero */}
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Welcome */}
-        <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-navy mb-3">Bem-vindo(a)!</h2>
-          <p className="text-muted text-sm leading-relaxed">
-            Esse é o seu Planner de Revisão Espaçada! Utilize-o para organizar
-            seus estudos e todas as revisões durante o ano.
-          </p>
-          <p className="text-center font-semibold text-navy mt-4 text-sm">
-            <span className="text-yellow-500">★</span> Constância e estratégia!
-          </p>
-        </div>
-
-        {/* Pomodoro */}
-        <Pomodoro />
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Para Hoje"    value={dueToday.length}  color="text-[#FFC72C]"  bg="bg-yellow-50 border-yellow-200"  onClick={onNavigateCronograma} />
-        <StatCard label="Atrasados"    value={overdue.length}   color="text-red-500"    bg="bg-red-50 border-red-200"        onClick={onNavigateCronograma} />
-        <StatCard label="Concluídos"   value={completed.length} color="text-green-600"  bg="bg-green-50 border-green-200" />
-        <StatCard label="Não iniciados" value={notStarted.length} color="text-muted"   bg="bg-white border-[#e2e8f0]"      onClick={onNavigateCronograma} />
-      </div>
-
-      {/* Due today list */}
-      {dueToday.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-navy mb-4 flex items-center gap-2">
-            <span className="text-yellow-500">⚡</span> Revisões de Hoje ({dueToday.length})
-          </h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {dueToday.map((s) => (
-              <div
-                key={s.id}
-                className="bg-surface border border-[#e2e8f0] rounded-xl p-3 flex items-center gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-muted-light">{s.modulo}</div>
-                  <div className="text-sm text-navy font-medium truncate">{s.aulaPrincipal}</div>
-                </div>
-                {s.relevancia === 'Alta' ? (
-                  <span className="badge-alta shrink-0">Alta</span>
-                ) : s.relevancia === 'Média' ? (
-                  <span className="badge-media shrink-0">Média</span>
-                ) : (
-                  <span className="badge-baixa shrink-0">Baixa</span>
-                )}
-              </div>
-            ))}
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          { label: 'Total de Matérias', value: stats.total, color: 'text-white' },
+          { label: 'Revisões para Hoje', value: stats.today, color: 'text-orange-400' },
+          { label: 'Conhecimento Estável', value: stats.memorized, color: 'text-green-400' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5 shadow-xl">
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
+            <p className={`text-4xl font-black ${stat.color}`}>{stat.value}</p>
           </div>
+        ))}
+      </div>
+
+      <div className="bg-[#1a1a1a] rounded-3xl p-8 border border-white/5 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+          <span className="text-9xl font-black text-white">FSRS</span>
+        </div>
+        <div className="relative z-10 max-w-lg">
+          <h2 className="text-3xl font-black text-white mb-4 leading-tight uppercase tracking-tight">
+            Seu progresso é guiado por ciência.
+          </h2>
+          <p className="text-white/60 mb-8 leading-relaxed font-medium">
+            Utilizamos o algoritmo FSRS v6 para calcular a retenção ideal de cada tema, otimizando seu tempo de estudo de forma dinâmica.
+          </p>
           <button
             onClick={onNavigateCronograma}
-            className="mt-4 text-xs text-sky font-medium hover:text-sky-dark transition-colors"
+            className="bg-white text-black font-black py-4 px-8 rounded-full text-[10px] uppercase tracking-widest hover:scale-105 transition-transform shadow-2xl shadow-white/10"
           >
-            Ver no Cronograma →
+            IR PARA O CRONOGRAMA
           </button>
         </div>
-      )}
-
-      {overdue.length > 0 && dueToday.length === 0 && (
-        <div className="bg-red-50 rounded-2xl border border-red-200 p-5">
-          <p className="text-sm text-red-600">
-            🚨 Você tem <strong>{overdue.length}</strong> revisão(ões) atrasada(s).{' '}
-            <button onClick={onNavigateCronograma} className="underline hover:text-red-700">
-              Ver no Cronograma
-            </button>
-          </p>
-        </div>
-      )}
-
-      {dueToday.length === 0 && overdue.length === 0 && (
-        <div className="bg-green-50 rounded-2xl border border-green-200 p-5 text-center">
-          <p className="text-sm text-green-700">
-            ✅ Nenhuma revisão pendente para hoje. Bom trabalho!
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  label, value, color, bg, onClick,
-}: {
-  label: string; value: number; color: string; bg: string; onClick?: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className={`border rounded-2xl p-4 shadow-sm ${bg} ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-    >
-      <div className={`text-3xl font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-muted mt-1">{label}</div>
+      </div>
     </div>
   );
 }
