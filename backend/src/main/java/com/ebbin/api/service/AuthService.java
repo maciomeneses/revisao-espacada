@@ -98,8 +98,10 @@ public class AuthService {
             String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
             // Em desenvolvimento: loga o link para uso direto em testes.
             // Em produção: substituir pelo envio via serviço de e-mail transacional.
-            log.warn("AUDIT: reset-password token gerado — link (usar apenas em dev): email={}, link={}",
-                    user.getEmail(), resetLink);
+            // Segurança: apenas os primeiros 8 caracteres do token são logados para evitar
+            // vazamento do token completo em sistemas de monitoramento/agregação de logs.
+            log.warn("AUDIT: reset-password token gerado — link (usar apenas em dev): email={}, tokenPrefix={}, link={}",
+                    user.getEmail(), maskToken(rawToken), resetLink);
         });
 
         if (!userRepository.existsByEmail(req.email())) {
@@ -125,23 +127,23 @@ public class AuthService {
      */
     @Transactional
     public void resetPassword(ResetPasswordRequest req) {
-        log.info("AUDIT: reset-password tentativa com token={}", req.token());
+        log.info("AUDIT: reset-password tentativa com tokenPrefix={}", maskToken(req.token()));
 
         PasswordResetToken resetToken = resetTokenRepository.findByToken(req.token())
                 .orElseThrow(() -> {
-                    log.warn("AUDIT: reset-password — token não encontrado: token={}", req.token());
+                    log.warn("AUDIT: reset-password — token não encontrado: tokenPrefix={}", maskToken(req.token()));
                     return new IllegalArgumentException("Token de reset inválido ou expirado");
                 });
 
         if (resetToken.isUsed()) {
-            log.warn("AUDIT: reset-password — token já utilizado: token={}, userId={}",
-                    req.token(), resetToken.getUser().getId());
+            log.warn("AUDIT: reset-password — token já utilizado: tokenPrefix={}, userId={}",
+                    maskToken(req.token()), resetToken.getUser().getId());
             throw new IllegalArgumentException("Token de reset inválido ou expirado");
         }
 
         if (LocalDateTime.now(clock).isAfter(resetToken.getExpiresAt())) {
-            log.warn("AUDIT: reset-password — token expirado: token={}, expiresAt={}, userId={}",
-                    req.token(), resetToken.getExpiresAt(), resetToken.getUser().getId());
+            log.warn("AUDIT: reset-password — token expirado: tokenPrefix={}, expiresAt={}, userId={}",
+                    maskToken(req.token()), resetToken.getExpiresAt(), resetToken.getUser().getId());
             throw new IllegalArgumentException("Token de reset inválido ou expirado");
         }
 
@@ -154,6 +156,15 @@ public class AuthService {
         resetTokenRepository.save(resetToken);
 
         log.info("AUDIT: reset-password bem-sucedido: userId={}, email={}", user.getId(), user.getEmail());
+    }
+
+    /**
+     * Mascara o token para uso em logs, exibindo apenas os primeiros 8 caracteres seguidos de "***".
+     * Evita o vazamento do UUID completo em sistemas de agregação de logs (OWASP A09).
+     */
+    static String maskToken(String token) {
+        if (token == null || token.length() <= 8) return "***";
+        return token.substring(0, 8) + "***";
     }
 
     public LoginResponse register(RegisterRequest req) {

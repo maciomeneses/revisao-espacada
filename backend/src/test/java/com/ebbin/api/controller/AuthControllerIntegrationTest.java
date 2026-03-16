@@ -326,4 +326,69 @@ class AuthControllerIntegrationTest {
                                 """))
                 .andExpect(status().isConflict());
     }
+
+    // ---- HTTP Security Headers ----
+
+    @Test
+    @DisplayName("Respostas devem incluir X-Content-Type-Options, X-Frame-Options, CSP e Referrer-Policy")
+    void securityHeaders_presentOnResponse() throws Exception {
+        // Nota: Strict-Transport-Security só é enviado em conexões HTTPS; em testes MockMvc
+        // (HTTP simples) o Spring Security omite o header HSTS intencionalmente.
+        // Os demais headers de segurança devem estar presentes em todas as respostas.
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.5.1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@test.com","password":"admin123"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("X-Content-Type-Options"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().exists("X-Frame-Options"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().exists("Referrer-Policy"));
+    }
+
+    // ---- RFC 9457 para 401/403 do Spring Security ----
+
+    @Test
+    @DisplayName("GET /api/subjects sem token deve retornar 401 RFC 9457")
+    void unauthenticated_returns401WithProblemDetail() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/subjects")
+                        .header("X-Forwarded-For", "192.168.6.1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.type").value("urn:problem:unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.title").isNotEmpty())
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register com token USER deve retornar 403 RFC 9457")
+    void accessDenied_returns403WithProblemDetail() throws Exception {
+        // Cria um usuário USER para obter token com role USER
+        User userRole = new User();
+        userRole.setEmail("user-role@test.com");
+        userRole.setPassword(passwordEncoder.encode("senha123"));
+        userRole.setRole(User.Role.USER);
+        userRepository.save(userRole);
+        String userToken = jwtService.generateToken(userRole.getEmail());
+
+        // @PreAuthorize dispara AccessDeniedException → capturada pelo GlobalExceptionHandler
+        // que retorna ProblemDetail com content-type application/problem+json (RFC 9457 nativo)
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer " + userToken)
+                        .header("X-Forwarded-For", "192.168.6.2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"outro@test.com","password":"senha123","role":"USER"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.type").value("urn:problem:forbidden"))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.title").isNotEmpty())
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+    }
 }

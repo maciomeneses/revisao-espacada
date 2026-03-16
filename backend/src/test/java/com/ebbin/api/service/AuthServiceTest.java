@@ -280,4 +280,32 @@ class AuthServiceTest {
 
         verify(resetTokenRepository, never()).save(any());
     }
+
+    // ---- maskToken ----
+
+    @Test
+    @DisplayName("maskToken deve exibir apenas os primeiros 8 caracteres seguidos de '***'")
+    void maskToken_longToken_returnsPrefix() {
+        String result = AuthService.maskToken("abcdefgh-1234-5678-abcd-000000000000");
+        assertThat(result).isEqualTo("abcdefgh***");
+    }
+
+    @Test
+    @DisplayName("maskToken com token de exatamente 8 caracteres deve retornar '***'")
+    void maskToken_exactly8Chars_returnsMasked() {
+        String result = AuthService.maskToken("12345678");
+        assertThat(result).isEqualTo("***");
+    }
+
+    @Test
+    @DisplayName("maskToken com token curto deve retornar '***'")
+    void maskToken_shortToken_returnsMasked() {
+        assertThat(AuthService.maskToken("abc")).isEqualTo("***");
+    }
+
+    @Test
+    @DisplayName("maskToken com token nulo deve retornar '***'")
+    void maskToken_nullToken_returnsMasked() {
+        assertThat(AuthService.maskToken(null)).isEqualTo("***");
+    }
 }
