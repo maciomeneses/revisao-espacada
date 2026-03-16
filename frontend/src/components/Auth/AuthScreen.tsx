@@ -36,14 +36,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+    if (!email) {
+      setError('Por favor, insira seu e-mail.');
+      return;
+    }
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      if (email) {
-        setSuccessMessage('As instruções para redefinir sua senha foram enviadas para o seu e-mail.');
-      } else {
-        setError('Por favor, insira seu e-mail.');
-      }
+      await api.auth.forgotPassword(email);
+      // Mensagem genérica intencional — não revela se o e-mail existe (anti-user-enumeration)
+      setSuccessMessage('As instruções para redefinir sua senha foram enviadas para o seu e-mail.');
     } catch {
       setError('Erro ao processar solicitação. Tente novamente.');
     } finally {

@@ -60,7 +60,14 @@ public class Subject {
 
     private LocalDate nextReviewDate;
     private LocalDate lastReviewDate;
-    private String lastPerformance;
+
+    /**
+     * Desempenho registrado na última revisão.
+     * Armazenado como STRING no banco (mesmo padrão de {@link PerformanceLevel}).
+     * Nullable: null indica que ainda não houve revisão avaliada.
+     */
+    @Enumerated(EnumType.STRING)
+    private PerformanceLevel lastPerformance;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -111,8 +118,8 @@ public class Subject {
     public void setNextReviewDate(LocalDate v) { this.nextReviewDate = v; }
     public LocalDate getLastReviewDate() { return lastReviewDate; }
     public void setLastReviewDate(LocalDate v) { this.lastReviewDate = v; }
-    public String getLastPerformance() { return lastPerformance; }
-    public void setLastPerformance(String v) { this.lastPerformance = v; }
+    public PerformanceLevel getLastPerformance() { return lastPerformance; }
+    public void setLastPerformance(PerformanceLevel v) { this.lastPerformance = v; }
     public PerformanceLevel getPerformanceLevel() { return performanceLevel; }
     public void setPerformanceLevel(PerformanceLevel v) { this.performanceLevel = v; }
     public LocalDateTime getCreatedAt() { return createdAt; }

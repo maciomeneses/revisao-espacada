@@ -94,4 +94,50 @@ class AuthControllerIntegrationTest {
                                 """))
                 .andExpect(status().is4xxClientError());
     }
+
+    // ---- forgot-password ----
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password com e-mail cadastrado deve retornar 202")
+    void forgotPassword_existingEmail_returns202() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@test.com"}
+                                """))
+                .andExpect(status().isAccepted());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password com e-mail não cadastrado deve retornar 202 (anti-enumeration)")
+    void forgotPassword_unknownEmail_returns202() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"inexistente@test.com"}
+                                """))
+                .andExpect(status().isAccepted());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password com e-mail inválido deve retornar 400")
+    void forgotPassword_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nao_e_email"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/forgot-password sem corpo deve retornar 400")
+    void forgotPassword_emptyEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":""}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -42,3 +42,7 @@ app:
 logging:
   level:
     com.ebbin: DEBUG
+  pattern:
+    # Inclui requestId do MDC para correlação de logs em produção.
+    # %X{requestId} é removido automaticamente ao final de cada requisição pelo MdcRequestFilter.
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [rid=%X{requestId:-none}] - %msg%n"

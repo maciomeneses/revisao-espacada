@@ -179,4 +179,41 @@ class SubjectServiceTest {
 
         verify(subjectRepository).deleteByUserAndClientId(user, "client-1");
     }
+
+    // --- lastPerformance como PerformanceLevel enum ---
+
+    @Test
+    @DisplayName("upsertSubject deve persistir lastPerformance como enum quando valor válido")
+    void upsertSubject_persistsLastPerformanceEnum() {
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findByUserAndClientId(user, "client-1")).thenReturn(Optional.of(existingSubject));
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SubjectDto withPerformance = new SubjectDto(
+                "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
+                true, false, false, false, false, false, false, false, false,
+                "Review", LocalDate.now(), LocalDate.now().minusDays(7), "bom", "bom"
+        );
+
+        SubjectDto result = subjectService.upsertSubject("user@test.com", withPerformance);
+        assertThat(result.lastPerformance()).isEqualTo("bom");
+        assertThat(result.performanceLevel()).isEqualTo("bom");
+    }
+
+    @Test
+    @DisplayName("upsertSubject deve aceitar lastPerformance nulo (sem revisão prévia)")
+    void upsertSubject_acceptsNullLastPerformance() {
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findByUserAndClientId(user, "client-1")).thenReturn(Optional.of(existingSubject));
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SubjectDto withNullPerformance = new SubjectDto(
+                "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
+                false, false, false, false, false, false, false, false, false,
+                "aula", null, null, null, "nao_classificada"
+        );
+
+        SubjectDto result = subjectService.upsertSubject("user@test.com", withNullPerformance);
+        assertThat(result.lastPerformance()).isNull();
+    }
 }

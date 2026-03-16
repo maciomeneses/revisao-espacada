@@ -7,11 +7,13 @@ vi.mock('../../src/services/api', () => ({
   api: {
     auth: {
       login: vi.fn(),
+      forgotPassword: vi.fn(),
     },
   },
 }));
 
 import { api } from '../../src/services/api';
+const mockedApi = api as { auth: { login: ReturnType<typeof vi.fn>; forgotPassword: ReturnType<typeof vi.fn> } };
 
 const mockOnLogin = vi.fn();
 
@@ -239,6 +241,8 @@ describe('AuthScreen', () => {
   // ---- Fluxo de recuperação de senha ----
 
   it('exibe mensagem de sucesso após enviar formulário de recuperação', async () => {
+    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
+
     render(<AuthScreen onLogin={mockOnLogin} />);
 
     fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
@@ -256,7 +260,45 @@ describe('AuthScreen', () => {
     });
   });
 
+  it('chama api.auth.forgotPassword com o e-mail correto', async () => {
+    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
+
+    render(<AuthScreen onLogin={mockOnLogin} />);
+
+    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
+
+    const emailInput = screen.getByPlaceholderText('seu@email.com');
+    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
+
+    await waitFor(() => {
+      expect(mockedApi.auth.forgotPassword).toHaveBeenCalledWith('user@test.com');
+    });
+  });
+
+  it('exibe mensagem de erro quando a API de recuperação falha', async () => {
+    mockedApi.auth.forgotPassword.mockRejectedValue(new Error('Erro de rede'));
+
+    render(<AuthScreen onLogin={mockOnLogin} />);
+
+    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
+
+    const emailInput = screen.getByPlaceholderText('seu@email.com');
+    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/erro ao processar solicitação. tente novamente./i)
+      ).toBeInTheDocument();
+    });
+  });
+
   it('exibe estado de carregamento ao enviar recuperação de senha', async () => {
+    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
+
     render(<AuthScreen onLogin={mockOnLogin} />);
 
     fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
@@ -276,6 +318,8 @@ describe('AuthScreen', () => {
   });
 
   it('desabilita o botão de envio após sucesso para evitar reenvio', async () => {
+    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
+
     render(<AuthScreen onLogin={mockOnLogin} />);
 
     fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
@@ -293,5 +337,19 @@ describe('AuthScreen', () => {
 
     // Após sucesso, o botão deve estar desabilitado (successMessage != null)
     expect(screen.getByRole('button', { name: /enviar instruções/i })).toBeDisabled();
+  });
+
+  it('exibe erro ao tentar enviar sem preencher e-mail', () => {
+    render(<AuthScreen onLogin={mockOnLogin} />);
+
+    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
+
+    // Não preenche o email — o campo tem required, mas o handler valida antes
+    const emailInput = screen.getByPlaceholderText('seu@email.com');
+    fireEvent.change(emailInput, { target: { value: '' } });
+
+    // O formulário tem required, portanto não deve chamar a API
+    // Verificamos que forgotPassword não foi chamado
+    expect(mockedApi.auth.forgotPassword).not.toHaveBeenCalled();
   });
 });

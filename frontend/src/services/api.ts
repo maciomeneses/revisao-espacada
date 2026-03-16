@@ -46,6 +46,12 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+
+    forgotPassword: (email: string) =>
+      request<void>('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
   },
 
   admin: {

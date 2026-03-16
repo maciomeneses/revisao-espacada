@@ -2,6 +2,7 @@ package com.ebbin.api.config;
 
 import com.ebbin.api.security.JwtAuthenticationFilter;
 import com.ebbin.api.security.LoginRateLimitFilter;
+import com.ebbin.api.security.MdcRequestFilter;
 import com.ebbin.api.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,13 +29,16 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final LoginRateLimitFilter rateLimitFilter;
+    private final MdcRequestFilter mdcFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
                           LoginRateLimitFilter rateLimitFilter,
+                          MdcRequestFilter mdcFilter,
                           UserDetailsServiceImpl userDetailsService) {
         this.jwtFilter = jwtFilter;
         this.rateLimitFilter = rateLimitFilter;
+        this.mdcFilter = mdcFilter;
         this.userDetailsService = userDetailsService;
     }
 
@@ -50,6 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
+                // MDC deve ser o primeiro filtro para garantir requestId em todos os logs
+                .addFilterBefore(mdcFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

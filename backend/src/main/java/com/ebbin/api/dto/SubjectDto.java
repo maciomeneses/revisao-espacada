@@ -30,11 +30,13 @@ public record SubjectDto(
     @NotBlank String currentStage,
     LocalDate nextReviewDate,
     LocalDate lastReviewDate,
+    /** Valor serializado do {@link PerformanceLevel} da última revisão, ou null se ainda não avaliado. */
     String lastPerformance,
     @NotBlank String performanceLevel
 ) {
     /** Constrói um DTO a partir de uma entidade, serializando os enums para seus valores de String. */
     public static SubjectDto from(Subject s) {
+        PerformanceLevel lp = s.getLastPerformance();
         return new SubjectDto(
             s.getClientId(), s.getModulo(), s.getArea(), s.getAulaPrincipal(),
             s.getRelevancia(), s.isAulaAssistida(), s.isPreAulaFeita(),
@@ -42,7 +44,7 @@ public record SubjectDto(
             s.isRev7dFeita(), s.isRev30dFeita(), s.isRev60dFeita(), s.isRev90dFeita(),
             s.getCurrentStage().getValue(),
             s.getNextReviewDate(), s.getLastReviewDate(),
-            s.getLastPerformance(),
+            lp != null ? lp.getValue() : null,
             s.getPerformanceLevel().getValue()
         );
     }
@@ -66,7 +68,10 @@ public record SubjectDto(
         s.setCurrentStage(ReviewStage.fromValue(this.currentStage()));
         s.setNextReviewDate(this.nextReviewDate());
         s.setLastReviewDate(this.lastReviewDate());
-        s.setLastPerformance(this.lastPerformance());
+        // Converte String para enum; null permanece null (sem revisão avaliada)
+        s.setLastPerformance(this.lastPerformance() != null
+                ? PerformanceLevel.fromValue(this.lastPerformance())
+                : null);
         s.setPerformanceLevel(PerformanceLevel.fromValue(this.performanceLevel()));
     }
 }
