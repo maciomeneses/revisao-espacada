@@ -54,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0f0f0f]">
+    <div className="flex flex-col min-h-screen bg-surface">
       <Header
         activeView={activeView}
         onViewChange={(v) => setActiveView(v)}
@@ -64,13 +64,14 @@ export default function App() {
 
       {activeView === 'dashboard' && (
         <div
-          className="relative w-full h-40 md:h-52 overflow-hidden shrink-0"
-          style={{ background: 'linear-gradient(to bottom, #1a2a3a, #0f0f0f)' }}
+          className="relative w-full h-36 md:h-44 overflow-hidden shrink-0"
+          style={{ background: 'linear-gradient(135deg, #1F3A5F 0%, #2a4d7a 60%, #4FA3D1 100%)' }}
         >
           <div className="absolute inset-0 flex items-end px-6 pb-5">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              Ebbin
-            </h1>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbin</h1>
+              <p className="text-white/70 text-sm mt-1">Plataforma de Revisão Espaçada</p>
+            </div>
           </div>
         </div>
       )}

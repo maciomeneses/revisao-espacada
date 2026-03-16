@@ -35,10 +35,7 @@ export function Pomodoro() {
     if (running) {
       intervalRef.current = setInterval(() => {
         setSecondsLeft((s) => {
-          if (s <= 1) {
-            skipPhase();
-            return 0;
-          }
+          if (s <= 1) { skipPhase(); return 0; }
           return s - 1;
         });
       }, 1000);
@@ -48,14 +45,17 @@ export function Pomodoro() {
     return clearTimer;
   }, [running, skipPhase]);
 
-  const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-  const secs = String(secondsLeft % 60).padStart(2, '0');
+  const mins  = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+  const secs  = String(secondsLeft % 60).padStart(2, '0');
   const label = phase === 'focus' ? 'Time to focus!' : 'Break time!';
+  const bg    = phase === 'focus' ? '#1F3A5F' : '#4FA3D1';
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#b04040' }}>
-      <div className="px-6 py-3 text-center text-sm font-medium text-white/90">{label}</div>
-      <div className="mx-4 mb-2 rounded-lg bg-white/10 py-4 px-6">
+    <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: bg }}>
+      <div className="px-6 py-3 text-center text-sm font-semibold text-white/90 tracking-wide uppercase">
+        {label}
+      </div>
+      <div className="mx-4 mb-2 rounded-xl bg-white/10 py-4 px-6">
         <div className="text-5xl font-bold text-white text-center tracking-widest">
           {mins}:{secs}
         </div>
