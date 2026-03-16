@@ -1,5 +1,7 @@
 package com.ebbin.api.controller;
 
+import com.ebbin.api.model.PerformanceLevel;
+import com.ebbin.api.model.ReviewStage;
 import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.SubjectRepository;
@@ -72,15 +74,15 @@ class CascadeDeleteIntegrationTest {
         s1.setClientId("cascade-client-1");
         s1.setUser(cascadeUser);
         s1.setModulo("M1"); s1.setArea("A1"); s1.setAulaPrincipal("AP1");
-        s1.setRelevancia("Alta"); s1.setCurrentStage("aula");
-        s1.setPerformanceLevel("nao_classificada");
+        s1.setRelevancia("Alta"); s1.setCurrentStage(ReviewStage.AULA);
+        s1.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
 
         Subject s2 = new Subject();
         s2.setClientId("cascade-client-2");
         s2.setUser(cascadeUser);
         s2.setModulo("M2"); s2.setArea("A2"); s2.setAulaPrincipal("AP2");
-        s2.setRelevancia("Média"); s2.setCurrentStage("aula");
-        s2.setPerformanceLevel("nao_classificada");
+        s2.setRelevancia("Média"); s2.setCurrentStage(ReviewStage.AULA);
+        s2.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
 
         subjectRepository.saveAll(List.of(s1, s2));
     }

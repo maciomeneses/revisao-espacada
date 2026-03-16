@@ -1,0 +1,20 @@
+# Perfil de PRODUÇÃO — ativado via SPRING_PROFILES_ACTIVE=prod
+#
+# Diferenças em relação ao perfil padrão (development):
+#  - ddl-auto: validate — o Hibernate apenas valida que o schema existente bate com as entidades.
+#    Isso previne alterações acidentais de schema em produção.
+#  - Flyway habilitado — gerencia migrações versionadas de forma controlada.
+#  - logging.level.com.ebbin: INFO — reduz verbosidade de debug em produção.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+logging:
+  level:
+    com.ebbin: INFO

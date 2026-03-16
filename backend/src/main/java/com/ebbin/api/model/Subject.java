@@ -54,15 +54,17 @@ public class Subject {
     private boolean rev90dFeita = false;
 
     // Scheduling
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String currentStage = "aula";
+    private ReviewStage currentStage = ReviewStage.AULA;
 
     private LocalDate nextReviewDate;
     private LocalDate lastReviewDate;
     private String lastPerformance;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String performanceLevel = "nao_classificada";
+    private PerformanceLevel performanceLevel = PerformanceLevel.NAO_CLASSIFICADA;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -103,16 +105,16 @@ public class Subject {
     public void setRev60dFeita(boolean v) { this.rev60dFeita = v; }
     public boolean isRev90dFeita() { return rev90dFeita; }
     public void setRev90dFeita(boolean v) { this.rev90dFeita = v; }
-    public String getCurrentStage() { return currentStage; }
-    public void setCurrentStage(String v) { this.currentStage = v; }
+    public ReviewStage getCurrentStage() { return currentStage; }
+    public void setCurrentStage(ReviewStage v) { this.currentStage = v; }
     public LocalDate getNextReviewDate() { return nextReviewDate; }
     public void setNextReviewDate(LocalDate v) { this.nextReviewDate = v; }
     public LocalDate getLastReviewDate() { return lastReviewDate; }
     public void setLastReviewDate(LocalDate v) { this.lastReviewDate = v; }
     public String getLastPerformance() { return lastPerformance; }
     public void setLastPerformance(String v) { this.lastPerformance = v; }
-    public String getPerformanceLevel() { return performanceLevel; }
-    public void setPerformanceLevel(String v) { this.performanceLevel = v; }
+    public PerformanceLevel getPerformanceLevel() { return performanceLevel; }
+    public void setPerformanceLevel(PerformanceLevel v) { this.performanceLevel = v; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

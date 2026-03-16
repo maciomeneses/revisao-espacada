@@ -1,6 +1,8 @@
 package com.ebbin.api.service;
 
 import com.ebbin.api.dto.SubjectDto;
+import com.ebbin.api.model.PerformanceLevel;
+import com.ebbin.api.model.ReviewStage;
 import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.SubjectRepository;
@@ -50,8 +52,8 @@ class SubjectServiceTest {
         existingSubject.setArea("Área 1");
         existingSubject.setAulaPrincipal("Aula Principal 1");
         existingSubject.setRelevancia("Alta");
-        existingSubject.setCurrentStage("aula");
-        existingSubject.setPerformanceLevel("nao_classificada");
+        existingSubject.setCurrentStage(ReviewStage.AULA);
+        existingSubject.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
 
         subjectDto = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
@@ -106,7 +108,7 @@ class SubjectServiceTest {
         toDelete.setUser(user);
         toDelete.setModulo("M"); toDelete.setArea("A");
         toDelete.setAulaPrincipal("AP"); toDelete.setRelevancia("Alta");
-        toDelete.setCurrentStage("aula"); toDelete.setPerformanceLevel("nao_classificada");
+        toDelete.setCurrentStage(ReviewStage.AULA); toDelete.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
 
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(subjectRepository.findAllByUser(user))

@@ -1,10 +1,17 @@
 package com.ebbin.api.dto;
 
+import com.ebbin.api.model.PerformanceLevel;
+import com.ebbin.api.model.ReviewStage;
 import com.ebbin.api.model.Subject;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
 
+/**
+ * DTO de Subject que expõe {@code currentStage} e {@code performanceLevel} como String
+ * para manter compatibilidade com o contrato JSON do frontend, convertendo para enums
+ * internamente via {@link ReviewStage#fromValue} e {@link PerformanceLevel#fromValue}.
+ */
 public record SubjectDto(
     @NotBlank String id,
     @NotBlank String modulo,
@@ -26,17 +33,21 @@ public record SubjectDto(
     String lastPerformance,
     @NotBlank String performanceLevel
 ) {
+    /** Constrói um DTO a partir de uma entidade, serializando os enums para seus valores de String. */
     public static SubjectDto from(Subject s) {
         return new SubjectDto(
             s.getClientId(), s.getModulo(), s.getArea(), s.getAulaPrincipal(),
             s.getRelevancia(), s.isAulaAssistida(), s.isPreAulaFeita(),
             s.isFlashcardsFeitos(), s.isFixacao24hFeita(), s.isEstudoReversoFeito(),
             s.isRev7dFeita(), s.isRev30dFeita(), s.isRev60dFeita(), s.isRev90dFeita(),
-            s.getCurrentStage(), s.getNextReviewDate(), s.getLastReviewDate(),
-            s.getLastPerformance(), s.getPerformanceLevel()
+            s.getCurrentStage().getValue(),
+            s.getNextReviewDate(), s.getLastReviewDate(),
+            s.getLastPerformance(),
+            s.getPerformanceLevel().getValue()
         );
     }
 
+    /** Aplica os campos do DTO à entidade, convertendo Strings para enums com fallback seguro. */
     public void applyTo(Subject s) {
         s.setClientId(this.id());
         s.setModulo(this.modulo());
@@ -52,10 +63,10 @@ public record SubjectDto(
         s.setRev30dFeita(this.rev30dFeita());
         s.setRev60dFeita(this.rev60dFeita());
         s.setRev90dFeita(this.rev90dFeita());
-        s.setCurrentStage(this.currentStage());
+        s.setCurrentStage(ReviewStage.fromValue(this.currentStage()));
         s.setNextReviewDate(this.nextReviewDate());
         s.setLastReviewDate(this.lastReviewDate());
         s.setLastPerformance(this.lastPerformance());
-        s.setPerformanceLevel(this.performanceLevel());
+        s.setPerformanceLevel(PerformanceLevel.fromValue(this.performanceLevel()));
     }
 }
