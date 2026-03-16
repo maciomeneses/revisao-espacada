@@ -1,5 +1,6 @@
 package com.ebbin.api.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,13 +25,30 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /** Erros de validação de Bean Validation (@Valid) */
+    /** Erros de validação de Bean Validation (@Valid em @RequestBody) */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
         String detail = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         log.debug("Validação falhou: {}", detail);
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        pd.setType(URI.create("urn:problem:validation-error"));
+        pd.setTitle("Erro de validação");
+        return pd;
+    }
+
+    /**
+     * Erros de validação de restrições de método (@Validated em nível de classe).
+     * Disparado quando constraints como {@code @Size} ou {@code @NotBlank} são aplicadas
+     * diretamente em parâmetros de controller com {@code @Validated}.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintViolation(ConstraintViolationException ex) {
+        String detail = ex.getConstraintViolations().stream()
+                .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
+                .collect(Collectors.joining("; "));
+        log.debug("Constraint violation: {}", detail);
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
         pd.setType(URI.create("urn:problem:validation-error"));
         pd.setTitle("Erro de validação");

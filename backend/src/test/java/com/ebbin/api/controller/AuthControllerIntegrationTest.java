@@ -1,5 +1,9 @@
 package com.ebbin.api.controller;
 
+import com.ebbin.api.model.User;
+import com.ebbin.api.repository.UserRepository;
+import com.ebbin.api.service.JwtService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +40,24 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    JwtService jwtService;
+
+    private String adminToken;
+
+    @BeforeEach
+    void setUp() {
+        User admin = userRepository.findByEmail("admin@test.com")
+                .orElseThrow(() -> new IllegalStateException("Admin não criado pelo AdminInitializer"));
+        adminToken = jwtService.generateToken(admin.getEmail());
+    }
 
     @Test
     @DisplayName("POST /api/auth/login com credenciais válidas deve retornar 200 com token")
@@ -150,5 +173,36 @@ class AuthControllerIntegrationTest {
                                 {"email":""}
                                 """))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ---- POST /api/auth/register ----
+
+    @Test
+    @DisplayName("POST /api/auth/register com token ADMIN deve criar usuário e retornar 200")
+    void register_asAdmin_returns200WithToken() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .header("X-Forwarded-For", "192.168.3.1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"novo@test.com","password":"senha123","role":"USER"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.email").value("novo@test.com"))
+                .andExpect(jsonPath("$.role").value("USER"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register com e-mail já cadastrado deve retornar 409")
+    void register_duplicateEmail_returns409() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .header("X-Forwarded-For", "192.168.3.2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@test.com","password":"senha123","role":"USER"}
+                                """))
+                .andExpect(status().isConflict());
     }
 }
