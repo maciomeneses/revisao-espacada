@@ -153,6 +153,33 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("updateUser com senha em branco não deve recodificar a senha")
+    void updateUser_blankPassword_doesNotEncode() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UserDto dto = new UserDto(null, "user@test.com", "   ", User.Role.USER);
+        userService.updateUser(userId, dto);
+
+        // senha em branco não deve ser recodificada
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    @DisplayName("updateUser sem role não deve alterar o role atual do usuário")
+    void updateUser_nullRole_doesNotChangeRole() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UserDto dto = new UserDto(null, "user@test.com", null, null);
+        UserDto result = userService.updateUser(userId, dto);
+
+        // role permanece USER (valor original) quando dto.role() é null
+        assertThat(result.role()).isEqualTo(User.Role.USER);
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
     @DisplayName("updateUser com ID inexistente deve lançar UsernameNotFoundException")
     void updateUser_notFound_throws() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());

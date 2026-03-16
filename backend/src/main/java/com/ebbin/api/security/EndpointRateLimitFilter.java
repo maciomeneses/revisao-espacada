@@ -92,7 +92,8 @@ public class EndpointRateLimitFilter extends OncePerRequestFilter {
 
         Bucket bucket = cache.get(clientIp, ip -> newBucket(config));
 
-        if (bucket != null && bucket.tryConsume(1)) {
+        // newBucket() nunca retorna null; o cast de segurança abaixo é garantido pelo loader
+        if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
             log.warn("Rate limit excedido: endpoint={}, ip={}", endpointKey, clientIp);

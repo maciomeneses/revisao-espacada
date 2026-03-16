@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Date;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -51,12 +53,19 @@ class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("deve rejeitar token expirado")
+    @DisplayName("deve rejeitar token expirado (email correto mas token vencido pelo relógio injetado)")
     void isTokenValid_shouldReturnFalseForExpiredToken() {
-        JwtService shortLivedService = new JwtService(SECRET, -1L); // expira imediatamente
-        String token = shortLivedService.generateToken("user@test.com");
-        assertThatThrownBy(() -> shortLivedService.isTokenValid(token, "user@test.com"))
-                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+        // Gera um token com validade de 10 minutos usando relógio real
+        String email = "user@test.com";
+        String token = jwtService.generateToken(email);
+
+        // Cria um serviço com relógio que retorna uma data 2 dias no futuro:
+        // para o parser o token ainda é válido (clockSkewSeconds=MAX),
+        // mas isTokenExpired() compara com clock.get() → far-future → token parece expirado
+        Date futureDate = new Date(System.currentTimeMillis() + 2 * 86_400_000L);
+        JwtService futureClockService = new JwtService(SECRET, EXPIRATION_MS, () -> futureDate);
+
+        assertThat(futureClockService.isTokenValid(token, email)).isFalse();
     }
 
     @Test

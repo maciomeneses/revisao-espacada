@@ -73,6 +73,17 @@ class AuthServiceTest {
                 .isInstanceOf(BadCredentialsException.class);
     }
 
+    @Test
+    @DisplayName("login deve lançar UsernameNotFoundException quando usuário não existe no repositório após autenticação")
+    void login_userNotFoundAfterAuthentication_throwsUsernameNotFound() {
+        // Autenticação bem-sucedida, mas findByEmail retorna vazio (estado defensivo/anômalo)
+        when(userRepository.findByEmail("user@test.com")).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("user@test.com", "senha123")))
+                .isInstanceOf(org.springframework.security.core.userdetails.UsernameNotFoundException.class)
+                .hasMessageContaining("user@test.com");
+    }
+
     // --- register ---
 
     @Test

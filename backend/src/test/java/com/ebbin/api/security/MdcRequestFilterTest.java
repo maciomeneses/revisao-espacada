@@ -82,4 +82,19 @@ class MdcRequestFilterTest {
                 // O header recebido deve ser diferente do longId (foi gerado um novo UUID)
                 .andExpect(header().string("X-Request-ID", not(longId)));
     }
+
+    @Test
+    @DisplayName("Deve gerar novo requestId quando o header X-Request-ID é apenas espaços em branco")
+    void shouldGenerateNewIdWhenHeaderIsBlank() throws Exception {
+        // "   " → isBlank() = true → !isBlank() = false → condição completa é false → UUID gerado
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Request-ID", "   ")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@mdc.com","password":"admin123"}
+                                """))
+                .andExpect(header().exists("X-Request-ID"))
+                .andExpect(header().string("X-Request-ID", matchesPattern(
+                        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")));
+    }
 }

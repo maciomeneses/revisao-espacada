@@ -96,6 +96,26 @@ class EndpointRateLimitFilterUnitTest {
         assertThat(response.getStatus()).isNotEqualTo(429);
     }
 
+    @Test
+    @DisplayName("Deve usar servletPath diretamente quando não é nulo nem em branco")
+    void resolvePath_nonBlankServletPath_shouldUseItDirectly() throws Exception {
+        // Sobrescreve getServletPath() para retornar um path real e não-branco
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login") {
+            @Override
+            public String getServletPath() {
+                return "/api/auth/login";
+            }
+        };
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        // servletPath válido → endpoint reconhecido → rate limit aplicado → chain invocado
+        verify(chain, times(1)).doFilter(request, response);
+        assertThat(response.getStatus()).isNotEqualTo(429);
+    }
+
     // ---- resolveClientIp edge cases ----
 
     @Test
