@@ -116,15 +116,19 @@ export function useSubjects() {
         performanceLevel: 'nao_classificada',
         ...data,
       } as Subject;
-      
+
+      // Use functional updater to avoid stale closure — capture the resulting list
+      // for the sync call via a ref to avoid re-adding subjects as a dependency.
+      let nextSubjects: Subject[] = [];
       setSubjects((prev) => {
-        const next = [...prev, newSubject];
-        saveSubjects(next);
-        return next;
+        nextSubjects = [...prev, newSubject];
+        saveSubjects(nextSubjects);
+        return nextSubjects;
       });
-      await api.subjects.sync([...subjects, newSubject]);
+      // nextSubjects is set synchronously inside setSubjects callback
+      await api.subjects.sync(nextSubjects).catch(console.error);
     },
-    [subjects],
+    [],
   );
 
   const removeSubject = useCallback((id: string) => {

@@ -5,14 +5,22 @@ import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.SubjectRepository;
 import com.ebbin.api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class SubjectService {
+
+    private static final Logger log = LoggerFactory.getLogger(SubjectService.class);
 
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
@@ -22,38 +30,43 @@ public class SubjectService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<SubjectDto> getSubjects(String email) {
         User user = findUser(email);
-        return subjectRepository.findAllByUser(user).stream()
+        List<SubjectDto> result = subjectRepository.findAllByUser(user).stream()
                 .map(SubjectDto::from)
                 .toList();
+        log.debug("getSubjects: email={}, count={}", email, result.size());
+        return result;
     }
 
+    /**
+     * Sincronização completa — upsert dos subjects recebidos e remoção dos ausentes.
+     * Usa um Map para evitar N+1 queries na busca por clientId (O(n) em vez de O(n²)).
+     */
     @Transactional
     public List<SubjectDto> syncSubjects(String email, List<SubjectDto> dtos) {
         User user = findUser(email);
         List<Subject> existing = subjectRepository.findAllByUser(user);
 
-        // Upsert each incoming subject
+        // Indexa existentes por clientId para lookup O(1)
+        Map<String, Subject> existingByClientId = existing.stream()
+                .collect(Collectors.toMap(Subject::getClientId, Function.identity()));
+
         for (SubjectDto dto : dtos) {
-            Subject subject = existing.stream()
-                    .filter(s -> s.getClientId().equals(dto.id()))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        Subject s = new Subject();
-                        s.setUser(user);
-                        return s;
-                    });
+            Subject subject = existingByClientId.getOrDefault(dto.id(), createSubjectForUser(user));
             dto.applyTo(subject);
             subjectRepository.save(subject);
         }
 
-        // Remove subjects no longer present in the client list
-        var incomingIds = dtos.stream().map(SubjectDto::id).toList();
-        existing.stream()
+        // Remove subjects não presentes na lista do cliente
+        Set<String> incomingIds = dtos.stream().map(SubjectDto::id).collect(Collectors.toSet());
+        List<Subject> toDelete = existing.stream()
                 .filter(s -> !incomingIds.contains(s.getClientId()))
-                .forEach(subjectRepository::delete);
+                .toList();
+        subjectRepository.deleteAll(toDelete);
 
+        log.info("syncSubjects: email={}, upserted={}, deleted={}", email, dtos.size(), toDelete.size());
         return getSubjects(email);
     }
 
@@ -61,23 +74,28 @@ public class SubjectService {
     public SubjectDto upsertSubject(String email, SubjectDto dto) {
         User user = findUser(email);
         Subject subject = subjectRepository.findByUserAndClientId(user, dto.id())
-                .orElseGet(() -> {
-                    Subject s = new Subject();
-                    s.setUser(user);
-                    return s;
-                });
+                .orElseGet(() -> createSubjectForUser(user));
         dto.applyTo(subject);
-        return SubjectDto.from(subjectRepository.save(subject));
+        SubjectDto result = SubjectDto.from(subjectRepository.save(subject));
+        log.debug("upsertSubject: email={}, clientId={}", email, dto.id());
+        return result;
     }
 
     @Transactional
     public void deleteSubject(String email, String clientId) {
         User user = findUser(email);
         subjectRepository.deleteByUserAndClientId(user, clientId);
+        log.info("deleteSubject: email={}, clientId={}", email, clientId);
     }
 
     private User findUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
+    }
+
+    private Subject createSubjectForUser(User user) {
+        Subject s = new Subject();
+        s.setUser(user);
+        return s;
     }
 }

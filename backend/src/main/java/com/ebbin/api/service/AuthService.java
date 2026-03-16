@@ -5,13 +5,18 @@ import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.RegisterRequest;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -27,18 +32,22 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest req) {
+        log.info("Tentativa de login: email={}", req.email());
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.email(), req.password()));
 
         User user = userRepository.findByEmail(req.email())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + req.email()));
 
         String token = jwtService.generateToken(user.getEmail());
+        log.info("Login bem-sucedido: email={}, role={}", user.getEmail(), user.getRole());
         return LoginResponse.of(token, user);
     }
 
     public LoginResponse register(RegisterRequest req) {
+        log.info("Cadastro de usuário: email={}, role={}", req.email(), req.role());
         if (userRepository.existsByEmail(req.email())) {
+            log.warn("Tentativa de cadastro com e-mail duplicado: {}", req.email());
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
 
@@ -48,6 +57,7 @@ public class AuthService {
         user.setRole(req.role());
         userRepository.save(user);
 
+        log.info("Usuário criado com sucesso: email={}, role={}", user.getEmail(), user.getRole());
         String token = jwtService.generateToken(user.getEmail());
         return LoginResponse.of(token, user);
     }

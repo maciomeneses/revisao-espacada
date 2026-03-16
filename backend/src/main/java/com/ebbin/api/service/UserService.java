@@ -3,6 +3,9 @@ package com.ebbin.api.service;
 import com.ebbin.api.dto.UserDto;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +16,8 @@ import java.util.UUID;
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -21,29 +26,40 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional(readOnly = true)
     public List<UserDto> findAll() {
-        return userRepository.findAll().stream()
+        List<UserDto> users = userRepository.findAll().stream()
                 .map(UserDto::from)
                 .toList();
+        log.debug("findAll: count={}", users.size());
+        return users;
     }
 
     @Transactional
     public UserDto createUser(UserDto dto) {
+        log.info("Criando usuário via admin: email={}, role={}", dto.email(), dto.role());
+        if (dto.password() == null || dto.password().isBlank()) {
+            throw new IllegalArgumentException("Senha é obrigatória para criação de usuário");
+        }
         if (userRepository.existsByEmail(dto.email())) {
+            log.warn("Tentativa de criar usuário com e-mail duplicado: {}", dto.email());
             throw new IllegalArgumentException("E-mail já cadastrado");
         }
         User user = new User();
         user.setEmail(dto.email());
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setRole(dto.role() != null ? dto.role() : User.Role.USER);
-        return UserDto.from(userRepository.save(user));
+        UserDto result = UserDto.from(userRepository.save(user));
+        log.info("Usuário criado via admin: id={}, email={}", result.id(), result.email());
+        return result;
     }
 
     @Transactional
     public UserDto updateUser(UUID id, UserDto dto) {
+        log.info("Atualizando usuário: id={}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + id));
+
         user.setEmail(dto.email());
         if (dto.password() != null && !dto.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.password()));
@@ -51,11 +67,18 @@ public class UserService {
         if (dto.role() != null) {
             user.setRole(dto.role());
         }
-        return UserDto.from(userRepository.save(user));
+        UserDto result = UserDto.from(userRepository.save(user));
+        log.info("Usuário atualizado: id={}, email={}", result.id(), result.email());
+        return result;
     }
 
     @Transactional
     public void deleteUser(UUID id) {
+        log.warn("Removendo usuário: id={}", id);
+        if (!userRepository.existsById(id)) {
+            throw new UsernameNotFoundException("Usuário não encontrado: " + id);
+        }
         userRepository.deleteById(id);
+        log.info("Usuário removido: id={}", id);
     }
 }

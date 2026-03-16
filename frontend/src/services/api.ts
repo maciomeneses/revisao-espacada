@@ -31,7 +31,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `Erro ${res.status}`);
+    // Backend returns RFC 9457 ProblemDetail — field is "detail", not "message"
+    throw new Error(body.detail ?? body.message ?? `Erro ${res.status}`);
   }
 
   if (res.status === 204) return undefined as T;

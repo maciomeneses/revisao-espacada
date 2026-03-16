@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,8 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
@@ -54,8 +58,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (Exception ignored) {
-            // Token inválido/expirado — deixa passar sem autenticação
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.debug("JWT expirado para request={} {}", request.getMethod(), request.getRequestURI());
+        } catch (io.jsonwebtoken.JwtException e) {
+            log.warn("JWT inválido: {} — request={} {}", e.getMessage(), request.getMethod(), request.getRequestURI());
+        } catch (Exception e) {
+            log.error("Erro inesperado ao processar JWT: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);
