@@ -1,4 +1,13 @@
-export type ActiveView = 'dashboard' | 'cronograma' | 'agenda' | 'espiao';
+export type ActiveView = 'dashboard' | 'cronograma' | 'agenda' | 'espiao' | 'admin';
+
+export type Role = 'USER' | 'ADMIN';
+
+export interface User {
+  id: string;
+  email: string;
+  role: Role;
+  password?: string;
+}
 
 export type Area = string;
 export type Relevance = 'Alta' | 'Média' | 'Baixa' | string;

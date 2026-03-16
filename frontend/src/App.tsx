@@ -6,11 +6,13 @@ import { Agenda } from './components/Agenda';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { AuthScreen } from './components/Auth/AuthScreen';
+import { AdminArea } from './components/Admin/AdminArea';
 import { useSubjects } from './hooks/useSubjects';
-import type { ActiveView } from './types';
+import type { ActiveView, Role } from './types';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<Role | undefined>();
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
 
@@ -31,21 +33,26 @@ export default function App() {
     if (session) {
       try {
         const parsed = JSON.parse(session);
-        if (parsed.token) setIsAuthenticated(true);
+        if (parsed.token) {
+          setIsAuthenticated(true);
+          setUserRole(parsed.role);
+        }
       } catch {
         localStorage.removeItem('ebbin_session');
       }
     }
   }, []);
 
-  const handleLogin = (email: string, token: string) => {
-    localStorage.setItem('ebbin_session', JSON.stringify({ email, token, timestamp: Date.now() }));
+  const handleLogin = (email: string, token: string, role: string) => {
+    localStorage.setItem('ebbin_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
     setIsAuthenticated(true);
+    setUserRole(role as Role);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('ebbin_session');
     setIsAuthenticated(false);
+    setUserRole(undefined);
     setActiveView('dashboard');
   };
 
@@ -57,6 +64,7 @@ export default function App() {
     <div className="flex flex-col min-h-screen bg-surface">
       <Header
         activeView={activeView}
+        userRole={userRole}
         onViewChange={(v) => setActiveView(v)}
         onOpenGerenciar={() => setShowGerenciar(true)}
         onLogout={handleLogout}
@@ -108,6 +116,10 @@ export default function App() {
           <div className="flex-1 overflow-hidden">
             <EspiaoEstrategico subjects={subjects} />
           </div>
+        )}
+
+        {activeView === 'admin' && userRole === 'ADMIN' && (
+          <AdminArea />
         )}
       </main>
 

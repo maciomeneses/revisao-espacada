@@ -3,7 +3,7 @@ import { LogIn, Mail, Lock, ArrowLeft, KeyRound, AlertCircle } from 'lucide-reac
 import { api } from '../../services/api';
 
 interface AuthScreenProps {
-  onLogin: (email: string, token: string) => void;
+  onLogin: (email: string, token: string, role: string) => void;
 }
 
 type AuthMode = 'login' | 'forgot-password';
@@ -22,7 +22,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     setIsLoading(true);
     try {
       const res = await api.auth.login(email, password);
-      onLogin(res.email, res.token);
+      onLogin(res.email, res.token, res.role);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
     } finally {

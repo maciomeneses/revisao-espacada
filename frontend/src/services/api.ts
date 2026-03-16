@@ -1,10 +1,12 @@
+import { User, Role } from '../types';
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
 export interface AuthResponse {
   token: string;
   userId: string;
   email: string;
-  role: string;
+  role: Role;
 }
 
 function getToken(): string | null {
@@ -43,6 +45,24 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+  },
+
+  admin: {
+    users: {
+      list: () => request<User[]>('/api/admin/users'),
+      create: (user: Partial<User>) =>
+        request<User>('/api/admin/users', {
+          method: 'POST',
+          body: JSON.stringify(user),
+        }),
+      update: (id: string, user: Partial<User>) =>
+        request<User>(`/api/admin/users/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(user),
+        }),
+      delete: (id: string) =>
+        request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+    },
   },
 
   subjects: {
