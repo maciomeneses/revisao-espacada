@@ -53,8 +53,9 @@ public class EndpointRateLimitFilter extends OncePerRequestFilter {
 
     /** Mapeamento de path protegido → chave de configuração no RateLimitProperties. */
     private static final Map<String, String> PROTECTED_PATHS = Map.of(
-            "/api/auth/login",          "login",
-            "/api/auth/forgot-password", "forgot-password"
+            "/api/auth/login",           "login",
+            "/api/auth/forgot-password", "forgot-password",
+            "/api/auth/reset-password",  "reset-password"
     );
 
     private static final String POST = "POST";

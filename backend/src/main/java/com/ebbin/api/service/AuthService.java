@@ -4,31 +4,54 @@ import com.ebbin.api.dto.LoginRequest;
 import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
+import com.ebbin.api.dto.ResetPasswordRequest;
+import com.ebbin.api.model.PasswordResetToken;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.PasswordResetTokenRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
+    /** TTL do token de reset em minutos. */
+    private static final int RESET_TOKEN_TTL_MINUTES = 15;
+
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final Clock clock;
+    private final String frontendUrl;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       JwtService jwtService, AuthenticationManager authenticationManager) {
+    public AuthService(UserRepository userRepository,
+                       PasswordResetTokenRepository resetTokenRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       AuthenticationManager authenticationManager,
+                       Clock clock,
+                       @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.userRepository = userRepository;
+        this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.clock = clock;
+        this.frontendUrl = frontendUrl;
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -53,31 +76,84 @@ public class AuthService {
      *
      * <p><b>Segurança (OWASP A07):</b> a resposta é sempre idêntica independente de o e-mail
      * estar cadastrado ou não — isso previne <em>user enumeration</em> (enumeração de usuários).
-     * Em produção, este método deve delegar o envio do e-mail para um serviço de mensageria
-     * assíncrono (e.g., AWS SES, SendGrid) com um token de reset de uso único.</p>
      *
-     * <p><b>TODO (pendência de implementação):</b>
-     * <ol>
-     *   <li>Gerar token de reset único (UUID v4) com TTL de 1 hora e persistir em tabela {@code password_reset_tokens}.</li>
-     *   <li>Enviar e-mail transacional via serviço de mensageria (AWS SES / SendGrid) com link de reset.</li>
-     *   <li>Implementar endpoint {@code POST /api/auth/reset-password} que valida o token e atualiza a senha.</li>
-     *   <li>Invalidar token após uso único e expirar automaticamente os vencidos via job agendado.</li>
-     * </ol>
-     * Enquanto não implementado, o endpoint responde 202 sem enviar e-mail — fluxo é stub intencional.</p>
+     * <p>Em desenvolvimento, o link de reset é registrado nos logs com prefixo {@code AUDIT:}
+     * para facilitar testes. Em produção, configure {@code app.frontend-url} via variável de
+     * ambiente para que a URL construída aponte para o domínio correto; nesse ambiente o link
+     * deve ser enviado por um serviço de e-mail transacional (ex: AWS SES, SendGrid).</p>
      *
      * @param req payload contendo o e-mail solicitante
      */
+    @Transactional
     public void requestPasswordReset(PasswordResetRequest req) {
         log.info("AUDIT: forgot-password solicitado: email={}", req.email());
+
         // Verifica existência sem expor resultado ao chamador (anti-user-enumeration)
-        boolean exists = userRepository.existsByEmail(req.email());
-        if (exists) {
-            // TODO: gerar token de reset único + enviar e-mail via serviço de mensageria
-            log.warn("AUDIT: forgot-password stub — e-mail de reset NÃO enviado (implementação pendente): email={}", req.email());
-        } else {
+        userRepository.findByEmail(req.email()).ifPresent(user -> {
+            String rawToken = UUID.randomUUID().toString();
+            LocalDateTime expiresAt = LocalDateTime.now(clock).plusMinutes(RESET_TOKEN_TTL_MINUTES);
+            PasswordResetToken resetToken = new PasswordResetToken(user, rawToken, expiresAt);
+            resetTokenRepository.save(resetToken);
+
+            String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
+            // Em desenvolvimento: loga o link para uso direto em testes.
+            // Em produção: substituir pelo envio via serviço de e-mail transacional.
+            log.warn("AUDIT: reset-password token gerado — link (usar apenas em dev): email={}, link={}",
+                    user.getEmail(), resetLink);
+        });
+
+        if (!userRepository.existsByEmail(req.email())) {
             log.warn("AUDIT: forgot-password — e-mail não cadastrado (resposta genérica para evitar user-enumeration): email={}", req.email());
         }
+
         // Resposta deliberadamente genérica — não revela se o e-mail existe
+    }
+
+    /**
+     * Executa o reset de senha utilizando um token previamente emitido.
+     *
+     * <p>O token é validado quanto à existência, expiração e uso prévio. Se válido, a senha
+     * é atualizada e o token é marcado como usado (uso único). Em caso de token inválido,
+     * uma {@link IllegalArgumentException} é lançada — mapeada pelo
+     * {@link com.ebbin.api.exception.GlobalExceptionHandler} para HTTP 409.</p>
+     *
+     * <p><b>Segurança:</b> a mensagem de erro é genérica para não revelar qual condição
+     * (inexistente, expirado, já usado) falhou — OWASP A07.</p>
+     *
+     * @param req payload contendo o token e a nova senha
+     * @throws IllegalArgumentException se o token for inválido (inexistente, expirado ou já usado)
+     */
+    @Transactional
+    public void resetPassword(ResetPasswordRequest req) {
+        log.info("AUDIT: reset-password tentativa com token={}", req.token());
+
+        PasswordResetToken resetToken = resetTokenRepository.findByToken(req.token())
+                .orElseThrow(() -> {
+                    log.warn("AUDIT: reset-password — token não encontrado: token={}", req.token());
+                    return new IllegalArgumentException("Token de reset inválido ou expirado");
+                });
+
+        if (resetToken.isUsed()) {
+            log.warn("AUDIT: reset-password — token já utilizado: token={}, userId={}",
+                    req.token(), resetToken.getUser().getId());
+            throw new IllegalArgumentException("Token de reset inválido ou expirado");
+        }
+
+        if (LocalDateTime.now(clock).isAfter(resetToken.getExpiresAt())) {
+            log.warn("AUDIT: reset-password — token expirado: token={}, expiresAt={}, userId={}",
+                    req.token(), resetToken.getExpiresAt(), resetToken.getUser().getId());
+            throw new IllegalArgumentException("Token de reset inválido ou expirado");
+        }
+
+        // Token válido: atualiza senha e invalida o token
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(req.newPassword()));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        resetTokenRepository.save(resetToken);
+
+        log.info("AUDIT: reset-password bem-sucedido: userId={}, email={}", user.getId(), user.getEmail());
     }
 
     public LoginResponse register(RegisterRequest req) {

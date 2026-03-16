@@ -4,6 +4,7 @@ import com.ebbin.api.dto.LoginRequest;
 import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
+import com.ebbin.api.dto.ResetPasswordRequest;
 import com.ebbin.api.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -31,11 +32,29 @@ public class AuthController {
      * <p>Retorna sempre HTTP 202 (Accepted) com mensagem genérica para prevenir
      * <em>user enumeration</em> (OWASP A07). O corpo da resposta não revela se
      * o e-mail está cadastrado ou não.</p>
+     *
+     * <p>Rate limiting: protegido pelo {@code EndpointRateLimitFilter} com a chave
+     * {@code forgot-password} (3 requisições a cada 10 minutos por IP).</p>
      */
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody PasswordResetRequest req) {
         authService.requestPasswordReset(req);
         return ResponseEntity.accepted().build();
+    }
+
+    /**
+     * Finaliza o fluxo de reset de senha validando o token e atualizando a senha.
+     *
+     * <p>O token deve ser válido (existente, não expirado, não usado). Retorna HTTP 200
+     * em caso de sucesso ou HTTP 409 se o token for inválido (via GlobalExceptionHandler).
+     *
+     * <p>Rate limiting: protegido pelo {@code EndpointRateLimitFilter} com a chave
+     * {@code reset-password} (5 requisições a cada 15 minutos por IP).</p>
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPassword(req);
+        return ResponseEntity.ok().build();
     }
 
     /** Cadastro restrito a ADMINs autenticados */

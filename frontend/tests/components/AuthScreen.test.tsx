@@ -8,12 +8,19 @@ vi.mock('../../src/services/api', () => ({
     auth: {
       login: vi.fn(),
       forgotPassword: vi.fn(),
+      resetPassword: vi.fn(),
     },
   },
 }));
 
 import { api } from '../../src/services/api';
-const mockedApi = api as { auth: { login: ReturnType<typeof vi.fn>; forgotPassword: ReturnType<typeof vi.fn> } };
+const mockedApi = api as {
+  auth: {
+    login: ReturnType<typeof vi.fn>;
+    forgotPassword: ReturnType<typeof vi.fn>;
+    resetPassword: ReturnType<typeof vi.fn>;
+  };
+};
 
 const mockOnLogin = vi.fn();
 

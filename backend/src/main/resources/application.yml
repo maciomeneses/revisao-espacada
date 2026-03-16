@@ -25,6 +25,7 @@ server:
   port: ${PORT:8080}
 
 app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   jwt:
     secret: ${JWT_SECRET:TroqueEssaChaveEmProducaoComNoMinimo256BitsParaSegurancaAdequadaEmAmbienteRailway}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}  # 24h
@@ -54,6 +55,11 @@ app:
         refill-tokens: ${RATE_LIMIT_FORGOT_PASSWORD_REFILL_TOKENS:3}
         refill-minutes: ${RATE_LIMIT_FORGOT_PASSWORD_REFILL_MINUTES:10}
         ttl-minutes: 120
+      reset-password:
+        capacity: ${RATE_LIMIT_RESET_PASSWORD_CAPACITY:5}
+        refill-tokens: ${RATE_LIMIT_RESET_PASSWORD_REFILL_TOKENS:5}
+        refill-minutes: ${RATE_LIMIT_RESET_PASSWORD_REFILL_MINUTES:15}
+        ttl-minutes: 60
 
 logging:
   level:

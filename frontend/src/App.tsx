@@ -6,15 +6,23 @@ import { Agenda } from './components/Agenda';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { AuthScreen } from './components/Auth/AuthScreen';
+import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
 import { AdminArea } from './components/Admin/AdminArea';
 import { useSubjects } from './hooks/useSubjects';
 import type { ActiveView, Role } from './types';
+
+/** Extrai o valor do query param ?token= da URL atual. */
+function getResetTokenFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('token');
+}
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<Role | undefined>();
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
 
   const {
     subjects,
@@ -55,6 +63,23 @@ export default function App() {
     setUserRole(undefined);
     setActiveView('dashboard');
   };
+
+  /** Após reset bem-sucedido, limpa o token da URL e redireciona ao login. */
+  const handleResetSuccess = () => {
+    setResetToken(null);
+    // Remove o query param da URL sem recarregar a página
+    window.history.replaceState({}, '', window.location.pathname);
+  };
+
+  // Fluxo de reset de senha: exibe tela dedicada quando ?token= está presente na URL
+  if (resetToken) {
+    return (
+      <ResetPasswordScreen
+        token={resetToken}
+        onSuccess={handleResetSuccess}
+      />
+    );
+  }
 
   if (!isAuthenticated) {
     return <AuthScreen onLogin={handleLogin} />;
