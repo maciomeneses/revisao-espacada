@@ -30,8 +30,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
-    // Token expirado ou inválido: limpa sessão e recarrega para exibir tela de login
-    if (res.status === 401 && !path.startsWith('/api/auth/')) {
+    // Token expirado ou inválido: só recarrega se havia sessão ativa (evita loop em endpoints
+    // chamados antes do login, como api.subjects.list no useSubjects)
+    if (res.status === 401 && !path.startsWith('/api/auth/') && localStorage.getItem('ebbin_session')) {
       localStorage.removeItem('ebbin_session');
       window.location.reload();
       return undefined as T;
