@@ -30,6 +30,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
+    // Token expirado ou inválido: limpa sessão e recarrega para exibir tela de login
+    if (res.status === 401 && !path.startsWith('/api/auth/')) {
+      localStorage.removeItem('ebbin_session');
+      window.location.reload();
+      return undefined as T;
+    }
     const body = await res.json().catch(() => ({}));
     // Backend returns RFC 9457 ProblemDetail — field is "detail", not "message"
     throw new Error(body.detail ?? body.message ?? `Erro ${res.status}`);
