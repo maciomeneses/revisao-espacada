@@ -38,6 +38,7 @@ export function Cronograma({
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [form, setForm] = useState<ReviewForm>(defaultForm());
   const [formError, setFormError] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const openReview = (subject: Subject) => {
     setSelectedSubject(subject);
@@ -143,19 +144,34 @@ export function Cronograma({
                 REVISAR
               </button>
 
-              <div className="relative group/menu ml-1">
-                <button className="p-2 text-muted-light hover:text-navy transition-colors">
+              <div className="relative ml-1">
+                <button
+                  onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
+                  className="p-2 text-muted-light hover:text-navy transition-colors"
+                >
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
                 </button>
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-border rounded-xl hidden group-hover/menu:block z-20 shadow-xl py-1">
-                  <button onClick={() => onResetCiclo(s.id)} className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase">Resetar Ciclo</button>
-                  <button onClick={() => onRevertStage(s.id)} className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase border-t border-border">Reverter Estabilidade</button>
-                </div>
+                {openMenuId === s.id && (
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-xl z-20 shadow-xl py-1">
+                    <button
+                      onClick={() => { onResetCiclo(s.id); setOpenMenuId(null); }}
+                      className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase"
+                    >Resetar Ciclo</button>
+                    <button
+                      onClick={() => { onRevertStage(s.id); setOpenMenuId(null); }}
+                      className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase border-t border-border"
+                    >Reverter Estabilidade</button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {openMenuId && (
+        <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+      )}
 
       {selectedSubject && (
         <div className="fixed inset-0 bg-navy/20 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
