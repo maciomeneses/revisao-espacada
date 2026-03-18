@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Subject } from '../types';
 import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/algorithm';
 
@@ -38,6 +38,15 @@ export function Cronograma({
   const [form, setForm] = useState<ReviewForm>(defaultForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+
+  const areas = useMemo(() => {
+    const set = new Set(subjects.map((s) => s.area).filter(Boolean));
+    return Array.from(set).sort();
+  }, [subjects]);
+
+  const activeArea = selectedArea ?? areas[0] ?? null;
+  const visibleSubjects = activeArea ? subjects.filter((s) => s.area === activeArea) : subjects;
 
   const openModal = (subject: Subject, mode: 'review' | 'fixacao') => {
     setSelectedSubject(subject);
@@ -79,7 +88,7 @@ export function Cronograma({
   const todayStr = localDateStr(new Date());
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-navy uppercase tracking-tight">Cronograma</h2>
         <span className="text-muted text-[10px] font-black uppercase tracking-widest bg-white border border-border py-1 px-3 rounded-full">
@@ -87,8 +96,32 @@ export function Cronograma({
         </span>
       </div>
 
+      {/* Area tabs */}
+      {areas.length > 0 && (
+        <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+          <div className="flex gap-2 min-w-max pb-1">
+            {areas.map((area) => (
+              <button
+                key={area}
+                onClick={() => setSelectedArea(area)}
+                className={`py-1.5 px-4 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
+                  area === activeArea
+                    ? 'bg-navy text-white border-navy'
+                    : 'bg-white text-navy/60 border-border hover:border-navy/30 hover:text-navy'
+                }`}
+              >
+                {area}
+                <span className={`ml-1.5 text-[9px] ${area === activeArea ? 'text-white/70' : 'text-muted-light'}`}>
+                  {subjects.filter((s) => s.area === area).length}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4">
-        {subjects.map((s) => (
+        {visibleSubjects.map((s) => (
           <div key={s.id} className="bg-white p-6 rounded-2xl border border-border flex flex-col md:flex-row gap-6 items-start md:items-center justify-between group shadow-sm hover:shadow-md transition-shadow">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">

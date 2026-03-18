@@ -140,6 +140,8 @@ export function resetCiclo(subject: Subject): Subject {
     nextReviewDate: null,
     lastReviewDate: null,
     lastPerformance: null,
-    performanceLevel: 'nao_classificada'
+    performanceLevel: 'nao_classificada',
+    aulaAssistida: false,
+    flashcardsFeitos: false,
   };
 }
