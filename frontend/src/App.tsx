@@ -27,7 +27,6 @@ export default function App() {
   const {
     subjects,
     toggleAula,
-    togglePreAula,
     registerReview,
     registerFixacao,
     doResetCiclo,
