@@ -6,8 +6,8 @@ interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
   onTogglePreAula: (id: string) => void;
-  onToggleFlashcards: (id: string) => void;
   onRegisterReview: (id: string, numCorrect: number) => void;
+  onRegisterFixacao: (id: string, numCorrect: number) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
 }
@@ -30,24 +30,31 @@ export function Cronograma({
   subjects,
   onToggleAula,
   onTogglePreAula,
-  onToggleFlashcards,
   onRegisterReview,
+  onRegisterFixacao,
   onResetCiclo,
   onRevertStage,
 }: CronogramaProps) {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [modalMode, setModalMode] = useState<'review' | 'fixacao' | null>(null);
   const [form, setForm] = useState<ReviewForm>(defaultForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const openReview = (subject: Subject) => {
+  const openModal = (subject: Subject, mode: 'review' | 'fixacao') => {
     setSelectedSubject(subject);
+    setModalMode(mode);
     setForm(defaultForm());
     setFormError(null);
   };
 
-  const handleReview = () => {
-    if (!selectedSubject) return;
+  const closeModal = () => {
+    setSelectedSubject(null);
+    setModalMode(null);
+  };
+
+  const handleConfirm = () => {
+    if (!selectedSubject || !modalMode) return;
     const total = parseInt(form.totalQuestions);
     const time = parseInt(form.timeMinutes);
     if (!total || total <= 0) {
@@ -63,8 +70,12 @@ export function Cronograma({
       return;
     }
     const normalized = Math.round((form.numCorrect / total) * 10);
-    onRegisterReview(selectedSubject.id, normalized);
-    setSelectedSubject(null);
+    if (modalMode === 'fixacao') {
+      onRegisterFixacao(selectedSubject.id, normalized);
+    } else {
+      onRegisterReview(selectedSubject.id, normalized);
+    }
+    closeModal();
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -131,14 +142,14 @@ export function Cronograma({
                 Aula
               </button>
               <button
-                onClick={() => onToggleFlashcards(s.id)}
+                onClick={() => openModal(s, 'fixacao')}
                 className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.flashcardsFeitos ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
               >
-                Cards
+                Fixação
               </button>
 
               <button
-                onClick={() => openReview(s)}
+                onClick={() => openModal(s, 'review')}
                 className="bg-navy text-white py-2 px-6 rounded-full text-[10px] font-black uppercase hover:bg-navy-light transition-all shadow-sm active:scale-95 ml-2"
               >
                 REVISAR
@@ -173,10 +184,12 @@ export function Cronograma({
         <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
       )}
 
-      {selectedSubject && (
+      {selectedSubject && modalMode && (
         <div className="fixed inset-0 bg-navy/20 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white border border-border rounded-3xl p-8 max-w-lg w-full shadow-2xl">
-            <h4 className="text-xl font-black text-navy mb-1 uppercase tracking-tight">Registro de Revisão</h4>
+            <h4 className="text-xl font-black text-navy mb-1 uppercase tracking-tight">
+              {modalMode === 'fixacao' ? 'Registro de Fixação' : 'Registro de Revisão'}
+            </h4>
             <p className="text-muted text-[10px] font-bold uppercase mb-6 tracking-widest">
               {selectedSubject.area} — {selectedSubject.aulaPrincipal}
             </p>
@@ -273,13 +286,13 @@ export function Cronograma({
 
             <div className="flex gap-4 mt-6">
               <button
-                onClick={() => setSelectedSubject(null)}
+                onClick={closeModal}
                 className="flex-1 py-4 text-muted text-[10px] font-black uppercase hover:text-navy transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleReview}
+                onClick={handleConfirm}
                 className="flex-1 bg-navy text-white py-4 rounded-full text-[10px] font-black uppercase hover:bg-navy-light transition-all shadow-md active:scale-95"
               >
                 Confirmar

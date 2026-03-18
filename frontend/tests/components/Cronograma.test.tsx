@@ -30,8 +30,8 @@ const defaultProps = {
   subjects: [],
   onToggleAula: vi.fn(),
   onTogglePreAula: vi.fn(),
-  onToggleFlashcards: vi.fn(),
   onRegisterReview: vi.fn(),
+  onRegisterFixacao: vi.fn(),
   onResetCiclo: vi.fn(),
   onRevertStage: vi.fn(),
 };
@@ -73,14 +73,24 @@ describe('Cronograma', () => {
     expect(onTogglePreAula).toHaveBeenCalledWith('sub-test');
   });
 
-  it('chama onToggleFlashcards ao clicar no botão Cards', () => {
-    const onToggleFlashcards = vi.fn();
+  it('abre modal de fixação ao clicar no botão Fixação', () => {
     const subjects = [makeSubject({ id: 'sub-test' })];
-    render(<Cronograma {...defaultProps} subjects={subjects} onToggleFlashcards={onToggleFlashcards} />);
+    render(<Cronograma {...defaultProps} subjects={subjects} />);
 
-    const btn = screen.getByRole('button', { name: /cards/i });
-    fireEvent.click(btn);
-    expect(onToggleFlashcards).toHaveBeenCalledWith('sub-test');
+    fireEvent.click(screen.getByRole('button', { name: /fixação/i }));
+    expect(screen.getByText(/Registro de Fixação/i)).toBeInTheDocument();
+  });
+
+  it('chama onRegisterFixacao ao confirmar fixação', () => {
+    const onRegisterFixacao = vi.fn();
+    const subjects = [makeSubject({ id: 'sub-test' })];
+    render(<Cronograma {...defaultProps} subjects={subjects} onRegisterFixacao={onRegisterFixacao} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /fixação/i }));
+    // totalQuestions='10' (default), numCorrect=8 → normalized = round(8/10*10) = 8
+    fireEvent.change(screen.getByLabelText(/acertos/i), { target: { value: '8' } });
+    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+    expect(onRegisterFixacao).toHaveBeenCalledWith('sub-test', 8);
   });
 
   it('abre modal de revisão ao clicar em REVISAR', () => {

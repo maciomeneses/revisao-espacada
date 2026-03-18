@@ -101,6 +101,18 @@ export function useSubjects() {
     [updateSubject],
   );
 
+  const registerFixacao = useCallback(
+    (id: string, numCorrect: number) => {
+      const subject = subjectsRef.current.find((s) => s.id === id);
+      if (!subject) return;
+      // Força cálculo de primeira revisão zerando o estado FSRS
+      const fresh = { ...subject, reps: 0, stability: 0, difficulty: 0 };
+      const updates = calculateNextReview(fresh, numCorrect);
+      updateSubject({ ...subject, ...updates, flashcardsFeitos: true });
+    },
+    [updateSubject],
+  );
+
   const doResetCiclo = useCallback(
     (id: string) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
@@ -171,6 +183,7 @@ export function useSubjects() {
     togglePreAula,
     toggleFlashcards,
     registerReview,
+    registerFixacao,
     doResetCiclo,
     addSubject,
     removeSubject,

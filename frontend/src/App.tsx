@@ -28,8 +28,8 @@ export default function App() {
     subjects,
     toggleAula,
     togglePreAula,
-    toggleFlashcards,
     registerReview,
+    registerFixacao,
     doResetCiclo,
     addSubject,
     removeSubject,
@@ -124,8 +124,8 @@ export default function App() {
             subjects={subjects}
             onToggleAula={toggleAula}
             onTogglePreAula={togglePreAula}
-            onToggleFlashcards={toggleFlashcards}
             onRegisterReview={registerReview}
+            onRegisterFixacao={registerFixacao}
             onResetCiclo={doResetCiclo}
             onRevertStage={revertStage}
           />
