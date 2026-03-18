@@ -109,7 +109,7 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 overflow-hidden flex flex-col">
+      <main className="flex-1 overflow-hidden flex flex-col pb-16 md:pb-0">
         {activeView === 'dashboard' && (
           <div className="flex-1 overflow-y-auto">
             <Dashboard
