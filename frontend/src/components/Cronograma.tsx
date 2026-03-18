@@ -175,7 +175,7 @@ export function Cronograma({
                 <div className="flex flex-col">
                   <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Última Revisão</span>
                   <span className="text-navy text-xs font-bold">
-                    {fmtDate(s.lastReviewDate ? s.lastReviewDate.split('T')[0] : null) || 'Nunca'}
+                    {fmtDate(s.lastReviewDate ? localDateStr(new Date(s.lastReviewDate)) : null) || 'Nunca'}
                   </span>
                 </div>
                 <div className="flex flex-col">
