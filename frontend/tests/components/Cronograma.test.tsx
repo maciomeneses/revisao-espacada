@@ -90,8 +90,8 @@ describe('Cronograma', () => {
     const reviewBtn = screen.getByRole('button', { name: /revisar/i });
     fireEvent.click(reviewBtn);
 
-    expect(screen.getByText(/Registro de Bloco/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bloco de 10 questões/i)).toBeInTheDocument();
+    expect(screen.getByText(/Registro de Revisão/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/acertos/i)).toBeInTheDocument();
   });
 
   it('fecha modal ao clicar em Cancelar', () => {
@@ -99,10 +99,10 @@ describe('Cronograma', () => {
     render(<Cronograma {...defaultProps} subjects={subjects} />);
 
     fireEvent.click(screen.getByRole('button', { name: /revisar/i }));
-    expect(screen.getByText(/Registro de Bloco/i)).toBeInTheDocument();
+    expect(screen.getByText(/Registro de Revisão/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
-    expect(screen.queryByText(/Registro de Bloco/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Registro de Revisão/i)).not.toBeInTheDocument();
   });
 
   it('chama onRegisterReview com id e numCorrect ao confirmar revisão', () => {
@@ -112,9 +112,9 @@ describe('Cronograma', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /revisar/i }));
 
-    // Change slider to 9
-    const slider = screen.getByRole('slider');
-    fireEvent.change(slider, { target: { value: '9' } });
+    // totalQuestions = 10 (default), numCorrect = 9 → normalized = round(9/10 * 10) = 9
+    const acertosInput = screen.getByLabelText(/acertos/i);
+    fireEvent.change(acertosInput, { target: { value: '9' } });
 
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
     expect(onRegisterReview).toHaveBeenCalledWith('sub-test', 9);

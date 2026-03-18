@@ -197,10 +197,11 @@ export function Cronograma({
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                  <label htmlFor="review-num-correct" className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
                     Acertos
                   </label>
                   <input
+                    id="review-num-correct"
                     type="number"
                     min={0}
                     max={form.totalQuestions}
