@@ -54,7 +54,6 @@ public class Subject {
     private boolean rev90dFeita = false;
 
     // Scheduling
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReviewStage currentStage = ReviewStage.AULA;
 
@@ -66,10 +65,8 @@ public class Subject {
      * Armazenado como STRING no banco (mesmo padrão de {@link PerformanceLevel}).
      * Nullable: null indica que ainda não houve revisão avaliada.
      */
-    @Enumerated(EnumType.STRING)
     private PerformanceLevel lastPerformance;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PerformanceLevel performanceLevel = PerformanceLevel.NAO_CLASSIFICADA;
 
