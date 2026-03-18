@@ -14,16 +14,16 @@ interface CronogramaProps {
 
 interface ReviewForm {
   date: string;
-  totalQuestions: number;
+  totalQuestions: string;
   numCorrect: number;
-  timeMinutes: number;
+  timeMinutes: string;
 }
 
 const defaultForm = (): ReviewForm => ({
   date: new Date().toISOString().split('T')[0],
-  totalQuestions: 10,
+  totalQuestions: '10',
   numCorrect: 7,
-  timeMinutes: 30,
+  timeMinutes: '30',
 });
 
 export function Cronograma({
@@ -37,16 +37,31 @@ export function Cronograma({
 }: CronogramaProps) {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [form, setForm] = useState<ReviewForm>(defaultForm());
+  const [formError, setFormError] = useState<string | null>(null);
 
   const openReview = (subject: Subject) => {
     setSelectedSubject(subject);
     setForm(defaultForm());
+    setFormError(null);
   };
 
   const handleReview = () => {
     if (!selectedSubject) return;
-    // Normaliza acertos para escala 0-10 usada pelo FSRS
-    const normalized = Math.round((form.numCorrect / form.totalQuestions) * 10);
+    const total = parseInt(form.totalQuestions);
+    const time = parseInt(form.timeMinutes);
+    if (!total || total <= 0) {
+      setFormError('O número de questões deve ser maior que zero.');
+      return;
+    }
+    if (!time || time <= 0) {
+      setFormError('O tempo gasto deve ser maior que zero.');
+      return;
+    }
+    if (form.numCorrect > total) {
+      setFormError('Os acertos não podem ser maiores que o número de questões.');
+      return;
+    }
+    const normalized = Math.round((form.numCorrect / total) * 10);
     onRegisterReview(selectedSubject.id, normalized);
     setSelectedSubject(null);
   };
@@ -171,9 +186,9 @@ export function Cronograma({
                   </label>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     value={form.timeMinutes}
-                    onChange={(e) => setForm({ ...form, timeMinutes: Math.max(1, parseInt(e.target.value) || 1) })}
+                    onChange={(e) => setForm({ ...form, timeMinutes: e.target.value })}
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />
                 </div>
@@ -187,12 +202,9 @@ export function Cronograma({
                   </label>
                   <input
                     type="number"
-                    min={1}
+                    min={0}
                     value={form.totalQuestions}
-                    onChange={(e) => {
-                      const total = Math.max(1, parseInt(e.target.value) || 1);
-                      setForm({ ...form, totalQuestions: total, numCorrect: Math.min(form.numCorrect, total) });
-                    }}
+                    onChange={(e) => setForm({ ...form, totalQuestions: e.target.value })}
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />
                 </div>
@@ -204,36 +216,43 @@ export function Cronograma({
                     id="review-num-correct"
                     type="number"
                     min={0}
-                    max={form.totalQuestions}
+                    max={parseInt(form.totalQuestions) || undefined}
                     value={form.numCorrect}
-                    onChange={(e) => setForm({ ...form, numCorrect: Math.min(Math.max(0, parseInt(e.target.value) || 0), form.totalQuestions) })}
+                    onChange={(e) => setForm({ ...form, numCorrect: Math.max(0, parseInt(e.target.value) || 0) })}
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />
                 </div>
               </div>
 
               {/* Barra de desempenho */}
-              <div className="bg-surface rounded-2xl border border-border p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[9px] font-black text-muted-light uppercase tracking-widest">Aproveitamento</span>
-                  <span className="text-2xl font-black text-navy">
-                    {form.totalQuestions > 0 ? Math.round((form.numCorrect / form.totalQuestions) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-border rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${form.totalQuestions > 0 ? (form.numCorrect / form.totalQuestions) * 100 : 0}%`,
-                      backgroundColor: form.totalQuestions > 0 && form.numCorrect / form.totalQuestions >= 0.8
-                        ? '#16a34a'
-                        : form.totalQuestions > 0 && form.numCorrect / form.totalQuestions >= 0.6
-                        ? '#ca8a04'
-                        : '#dc2626',
-                    }}
-                  />
-                </div>
-              </div>
+              {(() => {
+                const total = parseInt(form.totalQuestions) || 0;
+                const pct = total > 0 ? (form.numCorrect / total) * 100 : 0;
+                return (
+                  <div className="bg-surface rounded-2xl border border-border p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[9px] font-black text-muted-light uppercase tracking-widest">Aproveitamento</span>
+                      <span className="text-2xl font-black text-navy">{total > 0 ? Math.round(pct) : '—'}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Erro de validação */}
+              {formError && (
+                <p className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                  {formError}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-4 mt-6">
