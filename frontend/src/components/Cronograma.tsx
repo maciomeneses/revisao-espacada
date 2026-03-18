@@ -45,7 +45,8 @@ export function Cronograma({
     return Array.from(set).sort();
   }, [subjects]);
 
-  const activeArea = selectedArea ?? areas[0] ?? null;
+  // null = default to first area; '__all__' = show all
+  const activeArea = selectedArea === '__all__' ? null : (selectedArea ?? areas[0] ?? null);
   const visibleSubjects = activeArea ? subjects.filter((s) => s.area === activeArea) : subjects;
 
   const openModal = (subject: Subject, mode: 'review' | 'fixacao') => {
@@ -87,6 +88,12 @@ export function Cronograma({
 
   const todayStr = localDateStr(new Date());
 
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return null;
+    const [y, m, d] = iso.split('-');
+    return `${d}-${m}-${y}`;
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
       <div className="flex items-center justify-between">
@@ -100,6 +107,21 @@ export function Cronograma({
       {areas.length > 0 && (
         <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
           <div className="flex gap-2 min-w-max pb-1">
+            {/* "Todos" tab */}
+            <button
+              onClick={() => setSelectedArea('__all__')}
+              className={`py-1.5 px-4 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border ${
+                selectedArea === '__all__'
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy/60 border-border hover:border-navy/30 hover:text-navy'
+              }`}
+            >
+              Todos
+              <span className={`ml-1.5 text-[9px] ${selectedArea === '__all__' ? 'text-white/70' : 'text-muted-light'}`}>
+                {subjects.length}
+              </span>
+            </button>
+
             {areas.map((area) => (
               <button
                 key={area}
@@ -145,15 +167,21 @@ export function Cronograma({
               <h3 className="text-lg font-black text-navy mb-0.5">{s.aulaPrincipal}</h3>
               <p className="text-muted text-[10px] font-bold uppercase tracking-widest">{s.modulo}</p>
 
-              <div className="flex items-center gap-8 mt-4">
+              <div className="flex items-center gap-8 mt-4 flex-wrap">
                 <div className="flex flex-col">
                   <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Estabilidade</span>
                   <span className="text-navy text-xs font-bold">{s.stability ? `${s.stability.toFixed(1)} dias` : 'Iniciante'}</span>
                 </div>
                 <div className="flex flex-col">
+                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Última Revisão</span>
+                  <span className="text-navy text-xs font-bold">
+                    {fmtDate(s.lastReviewDate ? s.lastReviewDate.split('T')[0] : null) || 'Nunca'}
+                  </span>
+                </div>
+                <div className="flex flex-col">
                   <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Próxima Revisão</span>
                   <span className={`text-xs font-bold ${s.nextReviewDate && s.nextReviewDate <= todayStr ? 'text-red-600' : 'text-navy'}`}>
-                    {s.nextReviewDate || 'A definir'}
+                    {fmtDate(s.nextReviewDate) || 'A definir'}
                   </span>
                 </div>
               </div>
