@@ -187,7 +187,7 @@ export function Cronograma({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+            <div className="flex items-center justify-between w-full md:w-auto md:justify-start md:gap-3">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onToggleAula(s.id)}
