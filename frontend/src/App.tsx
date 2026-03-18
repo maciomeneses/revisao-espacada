@@ -123,7 +123,6 @@ export default function App() {
           <Cronograma
             subjects={subjects}
             onToggleAula={toggleAula}
-            onTogglePreAula={togglePreAula}
             onRegisterReview={registerReview}
             onRegisterFixacao={registerFixacao}
             onResetCiclo={doResetCiclo}

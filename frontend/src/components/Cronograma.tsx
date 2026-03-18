@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import type { Subject } from '../types';
-import { getProximaTarefa, getFormulaStatus } from '../services/algorithm';
+import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/algorithm';
 
 interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
-  onTogglePreAula: (id: string) => void;
   onRegisterReview: (id: string, numCorrect: number) => void;
   onRegisterFixacao: (id: string, numCorrect: number) => void;
   onResetCiclo: (id: string) => void;
@@ -20,7 +19,7 @@ interface ReviewForm {
 }
 
 const defaultForm = (): ReviewForm => ({
-  date: new Date().toISOString().split('T')[0],
+  date: localDateStr(new Date()),
   totalQuestions: '10',
   numCorrect: 7,
   timeMinutes: '30',
@@ -29,7 +28,6 @@ const defaultForm = (): ReviewForm => ({
 export function Cronograma({
   subjects,
   onToggleAula,
-  onTogglePreAula,
   onRegisterReview,
   onRegisterFixacao,
   onResetCiclo,
@@ -78,7 +76,7 @@ export function Cronograma({
     closeModal();
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr(new Date());
 
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">
@@ -129,12 +127,6 @@ export function Cronograma({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => onTogglePreAula(s.id)}
-                className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.preAulaFeita ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
-              >
-                Pré-Aula
-              </button>
               <button
                 onClick={() => onToggleAula(s.id)}
                 className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.aulaAssistida ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
@@ -204,7 +196,7 @@ export function Cronograma({
                   <input
                     type="date"
                     value={form.date}
-                    max={new Date().toISOString().split('T')[0]}
+                    max={localDateStr(new Date())}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />

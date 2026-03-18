@@ -48,9 +48,10 @@ describe('getProximaTarefa', () => {
 });
 
 describe('getFormulaStatus', () => {
+  const _now = new Date();
   const todayStr = today();
-  const yesterday = addDays(new Date(todayStr), -1);
-  const tomorrow = addDays(new Date(todayStr), 1);
+  const yesterday = addDays(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() - 1), 0);
+  const tomorrow = addDays(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() + 1), 0);
 
   it('retorna string vazia para stage "aula"', () => {
     const s = makeSubject({ currentStage: 'aula' });
@@ -91,18 +92,18 @@ describe('today', () => {
 
 describe('addDays', () => {
   it('adiciona dias corretamente', () => {
-    expect(addDays(new Date('2026-03-16'), 7)).toBe('2026-03-23');
+    expect(addDays(new Date(2026, 2, 16), 7)).toBe('2026-03-23');
   });
 
   it('lida com overflow de mês', () => {
-    expect(addDays(new Date('2026-01-28'), 7)).toBe('2026-02-04');
+    expect(addDays(new Date(2026, 0, 28), 7)).toBe('2026-02-04');
   });
 
   it('adicionar 0 dias retorna a mesma data', () => {
-    expect(addDays(new Date('2026-03-16'), 0)).toBe('2026-03-16');
+    expect(addDays(new Date(2026, 2, 16), 0)).toBe('2026-03-16');
   });
 
   it('dias negativos voltam no tempo', () => {
-    expect(addDays(new Date('2026-03-16'), -7)).toBe('2026-03-09');
+    expect(addDays(new Date(2026, 2, 16), -7)).toBe('2026-03-09');
   });
 });

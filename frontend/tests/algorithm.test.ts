@@ -4,12 +4,12 @@ import type { Subject } from '../src/types';
 
 describe('addDays', () => {
   it('adds days correctly', () => {
-    const result = addDays(new Date('2026-01-01T00:00:00Z'), 7);
+    const result = addDays(new Date(2026, 0, 1), 7);
     expect(result).toBe('2026-01-08');
   });
 
   it('handles month overflow', () => {
-    const result = addDays(new Date('2026-01-28T00:00:00Z'), 7);
+    const result = addDays(new Date(2026, 0, 28), 7);
     expect(result).toBe('2026-02-04');
   });
 });

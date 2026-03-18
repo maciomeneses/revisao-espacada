@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { Subject } from '../types';
+import { localDateStr } from '../services/algorithm';
 
 interface DashboardProps {
   subjects: Subject[];
@@ -7,7 +8,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr(new Date());
 
   /**
    * Memoiza as estatísticas do dashboard para evitar recalcular a cada re-render

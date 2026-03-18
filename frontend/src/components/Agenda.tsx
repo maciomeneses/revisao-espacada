@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Subject } from '../types';
+import { localDateStr } from '../services/algorithm';
 
 interface AgendaProps {
   subjects: Subject[];
@@ -17,8 +18,8 @@ function toDateStr(year: number, month: number, day: number): string {
 }
 
 export function Agenda({ subjects }: AgendaProps) {
-  const todayStr = new Date().toISOString().split('T')[0];
   const todayDate = new Date();
+  const todayStr = localDateStr(todayDate);
 
   const [viewDate, setViewDate] = useState(
     new Date(todayDate.getFullYear(), todayDate.getMonth(), 1),

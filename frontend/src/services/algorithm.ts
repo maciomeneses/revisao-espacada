@@ -77,21 +77,25 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     state,
     scheduledDays,
     lastReviewDate: now.toISOString(),
-    nextReviewDate: nextReviewDate.toISOString().split('T')[0],
+    nextReviewDate: localDateStr(nextReviewDate),
     lastPerformance: rating.toString(),
     performanceLevel: rating === 1 ? 'ruim' : rating === 2 ? 'medio' : rating === 3 ? 'bom' : 'excelente',
     currentStage: state
   };
 }
 
+export function localDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export function addDays(date: Date, days: number): string {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
-  return result.toISOString().split('T')[0];
+  return localDateStr(result);
 }
 
 export function today(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr(new Date());
 }
 
 export function getProximaTarefa(stage: string): string {

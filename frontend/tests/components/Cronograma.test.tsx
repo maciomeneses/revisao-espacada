@@ -1,11 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { Cronograma } from '../../src/components/Cronograma';
+import { localDateStr } from '../../src/services/algorithm';
 import type { Subject } from '../../src/types';
 
-const today = new Date().toISOString().split('T')[0];
-const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+const _now = new Date();
+const today = localDateStr(_now);
+const yesterday = localDateStr(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() - 1));
+const tomorrow = localDateStr(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() + 1));
 
 function makeSubject(overrides: Partial<Subject> = {}): Subject {
   return {
@@ -29,7 +31,6 @@ function makeSubject(overrides: Partial<Subject> = {}): Subject {
 const defaultProps = {
   subjects: [],
   onToggleAula: vi.fn(),
-  onTogglePreAula: vi.fn(),
   onRegisterReview: vi.fn(),
   onRegisterFixacao: vi.fn(),
   onResetCiclo: vi.fn(),
@@ -61,16 +62,6 @@ describe('Cronograma', () => {
     const btn = screen.getByRole('button', { name: /^Aula$/i });
     fireEvent.click(btn);
     expect(onToggleAula).toHaveBeenCalledWith('sub-test');
-  });
-
-  it('chama onTogglePreAula ao clicar no botão Pré-Aula', () => {
-    const onTogglePreAula = vi.fn();
-    const subjects = [makeSubject({ id: 'sub-test' })];
-    render(<Cronograma {...defaultProps} subjects={subjects} onTogglePreAula={onTogglePreAula} />);
-
-    const btn = screen.getByRole('button', { name: /pré-aula/i });
-    fireEvent.click(btn);
-    expect(onTogglePreAula).toHaveBeenCalledWith('sub-test');
   });
 
   it('abre modal de fixação ao clicar no botão Fixação', () => {

@@ -1,11 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Dashboard } from '../../src/components/Dashboard';
+import { localDateStr } from '../../src/services/algorithm';
 import type { Subject } from '../../src/types';
 
-const today = new Date().toISOString().split('T')[0];
-const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+const _now = new Date();
+const today = localDateStr(_now);
+const yesterday = localDateStr(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() - 1));
+const tomorrow = localDateStr(new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() + 1));
 
 function makeSubject(overrides: Partial<Subject> = {}): Subject {
   return {
