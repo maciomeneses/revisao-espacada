@@ -126,46 +126,50 @@ export function Cronograma({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => onToggleAula(s.id)}
-                className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.aulaAssistida ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
-              >
-                Aula
-              </button>
-              <button
-                onClick={() => openModal(s, 'fixacao')}
-                className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.flashcardsFeitos ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
-              >
-                Fixação
-              </button>
-
-              <button
-                onClick={() => openModal(s, 'review')}
-                className="bg-navy text-white py-2 px-6 rounded-full text-[10px] font-black uppercase hover:bg-navy-light transition-all shadow-sm active:scale-95 ml-2"
-              >
-                REVISAR
-              </button>
-
-              <div className="relative ml-1">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
-                  className="p-2 text-muted-light hover:text-navy transition-colors"
+                  onClick={() => onToggleAula(s.id)}
+                  className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.aulaAssistida ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
                 >
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                  Aula
                 </button>
-                {openMenuId === s.id && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-xl z-20 shadow-xl py-1">
-                    <button
-                      onClick={() => { onResetCiclo(s.id); setOpenMenuId(null); }}
-                      className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase"
-                    >Resetar Ciclo</button>
-                    <button
-                      onClick={() => { onRevertStage(s.id); setOpenMenuId(null); }}
-                      className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase border-t border-border"
-                    >Reverter Estabilidade</button>
-                  </div>
-                )}
+                <button
+                  onClick={() => openModal(s, 'fixacao')}
+                  className={`py-2 px-4 rounded-xl text-[10px] font-black uppercase transition-all border ${s.flashcardsFeitos ? 'bg-green-600 border-green-600 text-white' : 'bg-surface border-border text-muted hover:bg-white hover:text-navy'}`}
+                >
+                  Fixação
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => openModal(s, 'review')}
+                  className="bg-navy text-white py-2 px-6 rounded-full text-[10px] font-black uppercase hover:bg-navy-light transition-all shadow-sm active:scale-95"
+                >
+                  REVISAR
+                </button>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
+                    className="p-2 text-muted-light hover:text-navy transition-colors"
+                  >
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                  </button>
+                  {openMenuId === s.id && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-xl z-20 shadow-xl py-1">
+                      <button
+                        onClick={() => { onResetCiclo(s.id); setOpenMenuId(null); }}
+                        className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase"
+                      >Resetar Ciclo</button>
+                      <button
+                        onClick={() => { onRevertStage(s.id); setOpenMenuId(null); }}
+                        className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase border-t border-border"
+                      >Reverter Estabilidade</button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
