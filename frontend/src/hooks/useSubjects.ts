@@ -19,6 +19,7 @@ export function useSubjects() {
 
   // Sync with API if possible, merging with local state
   useEffect(() => {
+    if (!localStorage.getItem('ebbin_session')) return;
     api.subjects.list().then((data) => {
       if (Array.isArray(data)) {
         setSubjects((prev) => {

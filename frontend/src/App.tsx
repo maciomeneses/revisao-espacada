@@ -63,8 +63,12 @@ export default function App() {
     setActiveView('dashboard');
   };
 
-  /** Após reset bem-sucedido, limpa o token da URL e redireciona ao login. */
+  /** Após reset bem-sucedido, faz logout e redireciona ao login. */
   const handleResetSuccess = () => {
+    // Invalida a sessão atual: o usuário deve re-autenticar com a nova senha
+    localStorage.removeItem('ebbin_session');
+    setIsAuthenticated(false);
+    setUserRole(undefined);
     setResetToken(null);
     // Remove o query param da URL sem recarregar a página
     window.history.replaceState({}, '', window.location.pathname);
