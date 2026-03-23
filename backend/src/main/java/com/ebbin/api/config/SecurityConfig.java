@@ -4,8 +4,8 @@ import com.ebbin.api.security.EndpointRateLimitFilter;
 import com.ebbin.api.security.JwtAuthenticationFilter;
 import com.ebbin.api.security.MdcRequestFilter;
 import com.ebbin.api.security.UserDetailsServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -37,18 +37,18 @@ public class SecurityConfig {
     private final EndpointRateLimitFilter rateLimitFilter;
     private final MdcRequestFilter mdcFilter;
     private final UserDetailsServiceImpl userDetailsService;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
                           EndpointRateLimitFilter rateLimitFilter,
                           MdcRequestFilter mdcFilter,
                           UserDetailsServiceImpl userDetailsService,
-                          ObjectMapper objectMapper) {
+                          JsonMapper jsonMapper) {
         this.jwtFilter = jwtFilter;
         this.rateLimitFilter = rateLimitFilter;
         this.mdcFilter = mdcFilter;
         this.userDetailsService = userDetailsService;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
     }
 
     @Bean
@@ -103,7 +103,7 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
-                            response.getWriter().write(objectMapper.writeValueAsString(Map.of(
+                            response.getWriter().write(jsonMapper.writeValueAsString(Map.of(
                                     "type",   "urn:problem:unauthorized",
                                     "title",  "Não autorizado",
                                     "status", 401,
@@ -114,7 +114,7 @@ public class SecurityConfig {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
-                            response.getWriter().write(objectMapper.writeValueAsString(Map.of(
+                            response.getWriter().write(jsonMapper.writeValueAsString(Map.of(
                                     "type",   "urn:problem:forbidden",
                                     "title",  "Acesso negado",
                                     "status", 403,

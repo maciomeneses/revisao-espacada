@@ -50,13 +50,13 @@ npm run test:watch       # Vitest watch mode
 - **Deploy base path**: `/revisao-espacada/` (configured in `vite.config.ts`)
 
 ### Backend
-- **Framework**: Spring Boot 3.5.0, Java 25
+- **Framework**: Spring Boot 4.0.3, Java 25
 - **Auth**: Stateless JWT (`JwtAuthenticationFilter`), JJWT 0.12.6
-- **Database**: PostgreSQL + Spring Data JPA + Flyway migrations (prod only)
+- **Database**: PostgreSQL + Spring Data JPA (open-in-view=false) + Flyway migrations (prod only)
 - **Caching**: Caffeine via Spring Cache (subjects list, rate-limit buckets)
 - **Rate limiting**: Bucket4j via `EndpointRateLimitFilter`
 - **3 REST controllers**: `AuthController`, `SubjectController`, `AdminUserController`
-- **Coverage enforced**: JaCoCo — 90% instruction, 85% branch, 90% line
+- **Coverage enforced**: JaCoCo 0.8.14 — 90% instruction, 85% branch, 90% line
 
 ### Data Model
 - **Subject**: modulo, area, aulaPrincipal, relevancia + FSRS fields (stability, difficulty, elapsedDays, scheduledDays, reps, lapses, reviewStage)

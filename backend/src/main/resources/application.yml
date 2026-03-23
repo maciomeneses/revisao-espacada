@@ -5,6 +5,7 @@ spring:
     password: ${PGPASSWORD:ebbin}
     driver-class-name: org.postgresql.Driver
   jpa:
+    open-in-view: false  # Libera conexões DB ao fim da transação, não ao fim do request HTTP
     hibernate:
       # Perfil padrão (desenvolvimento): cria/atualiza schema automaticamente.
       # Em produção, ative o perfil "prod" (SPRING_PROFILES_ACTIVE=prod) para usar "validate"

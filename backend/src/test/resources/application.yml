@@ -1,0 +1,10 @@
+# Configuração de recursos de teste — sobrescreve propriedades do application.yml principal
+# especificamente para o contexto H2 in-memory usado nos testes de integração.
+spring:
+  jpa:
+    properties:
+      hibernate:
+        # Hibernate 7 gera CHECK constraints DDL para campos @Enumerated que o H2 não suporta.
+        # Desabilitado em testes para evitar "Check constraint invalid: CONSTRAINT_X" no H2.
+        schema_management_tool:
+          check_constraint: false

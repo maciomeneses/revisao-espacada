@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.0'
+    id 'org.springframework.boot' version '4.0.3'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
     // OWASP Dependency-Check — varredura de CVEs nas dependências do projeto
@@ -51,6 +51,9 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    // Spring Boot 4 — modulos de test autoconfigure separados do starter
+    testImplementation 'org.springframework.boot:spring-boot-webmvc-test'    // @AutoConfigureMockMvc
+    testImplementation 'org.springframework.boot:spring-boot-jdbc-test'       // @AutoConfigureTestDatabase
     testRuntimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -61,8 +64,8 @@ tasks.named('test') {
 }
 
 jacoco {
-    // 0.8.13 introduz suporte a Java 25 (class file major version 69)
-    toolVersion = '0.8.13'
+    // 0.8.14 introduz suporte oficial ao Java 25 (class file major version 69)
+    toolVersion = '0.8.14'
 }
 
 jacocoTestReport {

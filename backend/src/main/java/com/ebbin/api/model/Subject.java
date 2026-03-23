@@ -54,8 +54,8 @@ public class Subject {
     private boolean rev90dFeita = false;
 
     // Scheduling
-    @Column(nullable = false)
-    private ReviewStage currentStage = ReviewStage.AULA;
+    @Column(nullable = false, name = "current_stage")
+    private String currentStage = ReviewStage.AULA.getValue();
 
     private LocalDate nextReviewDate;
     private LocalDate lastReviewDate;
@@ -65,10 +65,11 @@ public class Subject {
      * Armazenado como STRING no banco (mesmo padrão de {@link PerformanceLevel}).
      * Nullable: null indica que ainda não houve revisão avaliada.
      */
-    private PerformanceLevel lastPerformance;
+    @Column(name = "last_performance")
+    private String lastPerformance;
 
-    @Column(nullable = false)
-    private PerformanceLevel performanceLevel = PerformanceLevel.NAO_CLASSIFICADA;
+    @Column(nullable = false, name = "performance_level")
+    private String performanceLevel = PerformanceLevel.NAO_CLASSIFICADA.getValue();
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -109,16 +110,16 @@ public class Subject {
     public void setRev60dFeita(boolean v) { this.rev60dFeita = v; }
     public boolean isRev90dFeita() { return rev90dFeita; }
     public void setRev90dFeita(boolean v) { this.rev90dFeita = v; }
-    public ReviewStage getCurrentStage() { return currentStage; }
-    public void setCurrentStage(ReviewStage v) { this.currentStage = v; }
+    public ReviewStage getCurrentStage() { return ReviewStage.fromValue(currentStage); }
+    public void setCurrentStage(ReviewStage v) { this.currentStage = v != null ? v.getValue() : null; }
     public LocalDate getNextReviewDate() { return nextReviewDate; }
     public void setNextReviewDate(LocalDate v) { this.nextReviewDate = v; }
     public LocalDate getLastReviewDate() { return lastReviewDate; }
     public void setLastReviewDate(LocalDate v) { this.lastReviewDate = v; }
-    public PerformanceLevel getLastPerformance() { return lastPerformance; }
-    public void setLastPerformance(PerformanceLevel v) { this.lastPerformance = v; }
-    public PerformanceLevel getPerformanceLevel() { return performanceLevel; }
-    public void setPerformanceLevel(PerformanceLevel v) { this.performanceLevel = v; }
+    public PerformanceLevel getLastPerformance() { return lastPerformance == null ? null : PerformanceLevel.fromValue(lastPerformance); }
+    public void setLastPerformance(PerformanceLevel v) { this.lastPerformance = v != null ? v.getValue() : null; }
+    public PerformanceLevel getPerformanceLevel() { return PerformanceLevel.fromValue(performanceLevel); }
+    public void setPerformanceLevel(PerformanceLevel v) { this.performanceLevel = v != null ? v.getValue() : null; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
