@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Subject } from '../types';
 
 interface GerenciarConteudoProps {
@@ -8,6 +8,8 @@ interface GerenciarConteudoProps {
   onClose: () => void;
 }
 
+const NEW_VALUE = '__new__';
+
 export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: GerenciarConteudoProps) {
   const [formData, setFormData] = useState({
     modulo: '',
@@ -15,12 +17,53 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
     aulaPrincipal: '',
     relevancia: 'Alta'
   });
+  const [moduloMode, setModuloMode] = useState<'select' | 'new'>('select');
+  const [areaMode, setAreaMode] = useState<'select' | 'new'>('select');
+
+  const existingModulos = useMemo(() => {
+    const set = new Set(subjects.map(s => s.modulo).filter(Boolean));
+    return Array.from(set).sort();
+  }, [subjects]);
+
+  const existingAreas = useMemo(() => {
+    if (!formData.modulo || moduloMode === 'new') return [];
+    const set = new Set(
+      subjects.filter(s => s.modulo === formData.modulo).map(s => s.area).filter(Boolean)
+    );
+    return Array.from(set).sort();
+  }, [subjects, formData.modulo, moduloMode]);
+
+  const handleModuloSelect = (value: string) => {
+    if (value === NEW_VALUE) {
+      setModuloMode('new');
+      setFormData(f => ({ ...f, modulo: '', area: '' }));
+      setAreaMode('select');
+    } else {
+      setModuloMode('select');
+      setFormData(f => ({ ...f, modulo: value, area: '' }));
+      setAreaMode('select');
+    }
+  };
+
+  const handleAreaSelect = (value: string) => {
+    if (value === NEW_VALUE) {
+      setAreaMode('new');
+      setFormData(f => ({ ...f, area: '' }));
+    } else {
+      setAreaMode('select');
+      setFormData(f => ({ ...f, area: value }));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdd(formData);
     setFormData({ modulo: '', area: '', aulaPrincipal: '', relevancia: 'Alta' });
+    setModuloMode('select');
+    setAreaMode('select');
   };
+
+  const inputClass = "w-full bg-surface border border-border rounded-2xl px-6 py-4 text-navy text-sm focus:border-navy/20 focus:outline-none transition-colors";
 
   return (
     <div className="fixed inset-0 bg-navy/10 backdrop-blur-md z-[200] flex flex-col items-center justify-start p-6 overflow-y-auto">
@@ -34,18 +77,83 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
 
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-border mb-12 shadow-2xl space-y-6">
           <div className="grid grid-cols-2 gap-6">
+            {/* Módulo */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Módulo</label>
-              <input required value={formData.modulo} onChange={e => setFormData({...formData, modulo: e.target.value})} className="w-full bg-surface border border-border rounded-2xl px-6 py-4 text-navy text-sm focus:border-navy/20 focus:outline-none transition-colors" placeholder="Ex: Matemática" />
+              {existingModulos.length > 0 && moduloMode === 'select' ? (
+                <select
+                  required
+                  value={formData.modulo}
+                  onChange={e => handleModuloSelect(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Selecionar...</option>
+                  {existingModulos.map(m => <option key={m} value={m}>{m}</option>)}
+                  <option value={NEW_VALUE}>+ Novo módulo</option>
+                </select>
+              ) : (
+                <div className="space-y-1">
+                  <input
+                    required
+                    autoFocus={moduloMode === 'new'}
+                    value={formData.modulo}
+                    onChange={e => setFormData(f => ({ ...f, modulo: e.target.value }))}
+                    className={inputClass}
+                    placeholder="Ex: Matemática"
+                  />
+                  {existingModulos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setModuloMode('select'); setFormData(f => ({ ...f, modulo: '', area: '' })); setAreaMode('select'); }}
+                      className="text-[10px] text-navy/50 hover:text-navy ml-2 transition-colors"
+                    >
+                      ← Selecionar existente
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Área */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Área</label>
-              <input required value={formData.area} onChange={e => setFormData({...formData, area: e.target.value})} className="w-full bg-surface border border-border rounded-2xl px-6 py-4 text-navy text-sm focus:border-navy/20 focus:outline-none transition-colors" placeholder="Ex: Álgebra" />
+              {existingAreas.length > 0 && areaMode === 'select' ? (
+                <select
+                  required
+                  value={formData.area}
+                  onChange={e => handleAreaSelect(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Selecionar...</option>
+                  {existingAreas.map(a => <option key={a} value={a}>{a}</option>)}
+                  <option value={NEW_VALUE}>+ Nova área</option>
+                </select>
+              ) : (
+                <div className="space-y-1">
+                  <input
+                    required
+                    value={formData.area}
+                    onChange={e => setFormData(f => ({ ...f, area: e.target.value }))}
+                    className={inputClass}
+                    placeholder="Ex: Álgebra"
+                  />
+                  {existingAreas.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setAreaMode('select'); setFormData(f => ({ ...f, area: '' })); }}
+                      className="text-[10px] text-navy/50 hover:text-navy ml-2 transition-colors"
+                    >
+                      ← Selecionar existente
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
           <div className="space-y-2">
             <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Aula Principal</label>
-            <input required value={formData.aulaPrincipal} onChange={e => setFormData({...formData, aulaPrincipal: e.target.value})} className="w-full bg-surface border border-border rounded-2xl px-6 py-4 text-navy text-sm focus:border-navy/20 focus:outline-none transition-colors" placeholder="Ex: Funções de Primeiro Grau" />
+            <input required value={formData.aulaPrincipal} onChange={e => setFormData({...formData, aulaPrincipal: e.target.value})} className={inputClass} placeholder="Ex: Funções de Primeiro Grau" />
           </div>
           <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-navy-light transition-all active:scale-95 shadow-lg">
             ADICIONAR AO CRONOGRAMA
