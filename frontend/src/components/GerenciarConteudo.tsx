@@ -151,9 +151,23 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Aula Principal</label>
-            <input required value={formData.aulaPrincipal} onChange={e => setFormData({...formData, aulaPrincipal: e.target.value})} className={inputClass} placeholder="Ex: Funções de Primeiro Grau" />
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2 col-span-1">
+              <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Aula Principal</label>
+              <input required value={formData.aulaPrincipal} onChange={e => setFormData({...formData, aulaPrincipal: e.target.value})} className={inputClass} placeholder="Ex: Funções de Primeiro Grau" />
+            </div>
+            <div className="space-y-2 col-span-1">
+              <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Relevância</label>
+              <select
+                value={formData.relevancia}
+                onChange={e => setFormData({...formData, relevancia: e.target.value})}
+                className={inputClass}
+              >
+                <option value="Alta">Alta</option>
+                <option value="Média">Média</option>
+                <option value="Baixa">Baixa</option>
+              </select>
+            </div>
           </div>
           <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-navy-light transition-all active:scale-95 shadow-lg">
             ADICIONAR AO CRONOGRAMA
