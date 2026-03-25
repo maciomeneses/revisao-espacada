@@ -37,6 +37,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final Clock clock;
     private final String frontendUrl;
+    private final EmailService emailService;
 
     public AuthService(UserRepository userRepository,
                        PasswordResetTokenRepository resetTokenRepository,
@@ -44,7 +45,8 @@ public class AuthService {
                        JwtService jwtService,
                        AuthenticationManager authenticationManager,
                        Clock clock,
-                       @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
+                       @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl,
+                       EmailService emailService) {
         this.userRepository = userRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -52,6 +54,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.clock = clock;
         this.frontendUrl = frontendUrl;
+        this.emailService = emailService;
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -77,10 +80,8 @@ public class AuthService {
      * <p><b>Segurança (OWASP A07):</b> a resposta é sempre idêntica independente de o e-mail
      * estar cadastrado ou não — isso previne <em>user enumeration</em> (enumeração de usuários).
      *
-     * <p>Em desenvolvimento, o link de reset é registrado nos logs com prefixo {@code AUDIT:}
-     * para facilitar testes. Em produção, configure {@code app.frontend-url} via variável de
-     * ambiente para que a URL construída aponte para o domínio correto; nesse ambiente o link
-     * deve ser enviado por um serviço de e-mail transacional (ex: AWS SES, SendGrid).</p>
+     * <p>Configure {@code app.frontend-url} e {@code BREVO_SMTP_*} via variáveis de ambiente
+     * para que o link de reset seja enviado por e-mail transacional via Brevo.</p>
      *
      * @param req payload contendo o e-mail solicitante
      */
@@ -96,12 +97,9 @@ public class AuthService {
             resetTokenRepository.save(resetToken);
 
             String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
-            // Em desenvolvimento: loga o link para uso direto em testes.
-            // Em produção: substituir pelo envio via serviço de e-mail transacional.
-            // Segurança: apenas os primeiros 8 caracteres do token são logados para evitar
-            // vazamento do token completo em sistemas de monitoramento/agregação de logs.
-            log.warn("AUDIT: reset-password token gerado — link (usar apenas em dev): email={}, tokenPrefix={}, link={}",
-                    user.getEmail(), maskToken(rawToken), resetLink);
+            log.info("AUDIT: reset-password token gerado: email={}, tokenPrefix={}",
+                    user.getEmail(), maskToken(rawToken));
+            emailService.sendPasswordReset(user.getEmail(), resetLink);
         });
 
         if (!userRepository.existsByEmail(req.email())) {

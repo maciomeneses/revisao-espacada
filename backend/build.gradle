@@ -48,6 +48,9 @@ dependencies {
     // Spring Boot Actuator — health check e métricas operacionais
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // Spring Mail — envio de e-mails transacionais via SMTP (ex: Brevo)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

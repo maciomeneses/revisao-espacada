@@ -8,3 +8,18 @@ spring:
         # Desabilitado em testes para evitar "Check constraint invalid: CONSTRAINT_X" no H2.
         schema_management_tool:
           check_constraint: false
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+    test-connection: false
+
+app:
+  mail:
+    from: test@test.com
+
+management:
+  health:
+    mail:
+      enabled: false

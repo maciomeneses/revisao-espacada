@@ -34,6 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +47,7 @@ class AuthServiceTest {
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtService jwtService;
     @Mock AuthenticationManager authenticationManager;
+    @Mock EmailService emailService;
 
     // Relógio fixo para testes determinísticos de TTL
     private static final Instant FIXED_INSTANT = Instant.parse("2026-01-01T10:00:00Z");
@@ -63,7 +66,8 @@ class AuthServiceTest {
                 jwtService,
                 authenticationManager,
                 fixedClock,
-                "http://localhost:5173"
+                "http://localhost:5173",
+                emailService
         );
 
         user = new User();
@@ -169,6 +173,31 @@ class AuthServiceTest {
         LocalDateTime expectedExpiry = LocalDateTime.now(fixedClock).plusMinutes(15);
         assertThat(saved.getExpiresAt()).isEqualTo(expectedExpiry);
         assertThat(saved.isUsed()).isFalse();
+    }
+
+    @Test
+    @DisplayName("requestPasswordReset com e-mail cadastrado deve enviar e-mail com link de reset")
+    void requestPasswordReset_existingEmail_sendsEmail() {
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("user@test.com")).thenReturn(true);
+        when(resetTokenRepository.save(any(PasswordResetToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        authService.requestPasswordReset(new PasswordResetRequest("user@test.com"));
+
+        verify(emailService).sendPasswordReset(eq("user@test.com"),
+                contains("/reset-password?token="));
+    }
+
+    @Test
+    @DisplayName("requestPasswordReset com e-mail não cadastrado NÃO deve enviar e-mail (anti-user-enumeration)")
+    void requestPasswordReset_unknownEmail_doesNotSendEmail() {
+        when(userRepository.findByEmail("inexistente@test.com")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail("inexistente@test.com")).thenReturn(false);
+
+        authService.requestPasswordReset(new PasswordResetRequest("inexistente@test.com"));
+
+        verify(emailService, never()).sendPasswordReset(any(), any());
     }
 
     @Test
