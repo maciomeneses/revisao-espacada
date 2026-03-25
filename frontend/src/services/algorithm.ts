@@ -65,7 +65,7 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     }  }
 
   reps++;
-  scheduledDays = Math.max(1, Math.round(nextStability * FACTOR));
+  scheduledDays = Math.max(1, Math.round(nextStability));
   const nextReviewDate = new Date();
   nextReviewDate.setDate(now.getDate() + scheduledDays);
 
