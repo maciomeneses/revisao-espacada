@@ -21,16 +21,6 @@ spring:
   threads:
     virtual:
       enabled: true
-  mail:
-    host: ${BREVO_SMTP_HOST:smtp-relay.brevo.com}
-    port: ${BREVO_SMTP_PORT:587}
-    username: ${BREVO_SMTP_USER:}
-    password: ${BREVO_SMTP_KEY:}
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-    test-connection: false
-
 server:
   port: ${PORT:8080}
 
@@ -38,6 +28,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   mail:
     from: ${MAIL_FROM:noreply@revisao-espacada.com}
+    brevo-api-key: ${BREVO_API_KEY:}
   jwt:
     secret: ${JWT_SECRET:TroqueEssaChaveEmProducaoComNoMinimo256BitsParaSegurancaAdequadaEmAmbienteRailway}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}  # 24h

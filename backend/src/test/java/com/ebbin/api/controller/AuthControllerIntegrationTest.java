@@ -4,6 +4,7 @@ import com.ebbin.api.model.PasswordResetToken;
 import com.ebbin.api.model.User;
 import com.ebbin.api.repository.PasswordResetTokenRepository;
 import com.ebbin.api.repository.UserRepository;
+import com.ebbin.api.service.EmailService;
 import com.ebbin.api.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,7 +14,6 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
@@ -52,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerIntegrationTest {
 
     @MockitoBean
-    JavaMailSender mailSender;
+    EmailService emailService;
 
     @Autowired
     MockMvc mockMvc;
