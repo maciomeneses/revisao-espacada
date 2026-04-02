@@ -1,75 +1,216 @@
 import { useMemo } from 'react';
+import {
+  TrendingUp, BookOpen, BarChart3, CheckCircle2, Calendar,
+  Zap, Target, Trophy, AlertCircle,
+} from 'lucide-react';
 import type { Subject } from '../types';
+import { localDateStr } from '../services/algorithm';
 
 interface EspiaoEstrategicoProps {
   subjects: Subject[];
 }
 
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  deltaStr?: string | null;
+  color: string;
+  icon: React.ElementType;
+}
+
+function StatCard({ label, value, deltaStr, color, icon: Icon }: StatCardProps) {
+  return (
+    <div className="bg-white p-6 rounded-2xl border border-border shadow-sm">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-muted-light text-[10px] font-black uppercase tracking-widest leading-snug">{label}</p>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-navy/5 shrink-0 ml-2">
+          <Icon className="w-4 h-4 text-navy/40" />
+        </div>
+      </div>
+      <p className={`text-4xl font-black ${color} mb-2`}>{value}</p>
+      {deltaStr != null && (
+        <div className="flex items-center gap-1">
+          <TrendingUp className="w-3 h-3 text-green-500 shrink-0" />
+          <p className="text-[10px] font-black text-green-600">{deltaStr} nos últimos 7 dias</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
-  /**
-   * Memoiza o cálculo de estabilidade média para evitar iteração redundante
-   * sobre a lista de subjects a cada re-render do componente pai.
-   */
-  const avgStability = useMemo(() => {
-    const subjectsWithStability = subjects.filter(s => (s.stability || 0) > 0);
-    return subjectsWithStability.length > 0
-      ? subjectsWithStability.reduce((acc, s) => acc + (s.stability || 0), 0) / subjectsWithStability.length
+  const stats = useMemo(() => {
+    const today = localDateStr(new Date());
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 7);
+    const cutoff = localDateStr(cutoffDate);
+
+    const recent = subjects.filter(s => s.lastReviewDate && s.lastReviewDate >= cutoff);
+
+    const totalAssuntos = subjects.length;
+    // Subjects whose first review happened in the last 7 days
+    const totalAssuntosRecent = subjects.filter(
+      s => s.reps === 1 && s.lastReviewDate && s.lastReviewDate >= cutoff,
+    ).length;
+
+    // Each review session ≈ 10 questions (proxy derived from reps count)
+    const totalQuestoes = subjects.reduce((acc, s) => acc + (s.reps || 0) * 10, 0);
+    const totalQuestoesRecent = recent.length * 10;
+
+    const revisoesConcluidas = subjects.reduce((acc, s) => acc + (s.reps || 0), 0);
+    const revisoesConcluidasRecent = recent.length;
+
+    const revisoesHoje = subjects.filter(s => s.nextReviewDate && s.nextReviewDate <= today).length;
+
+    const conhecimentoEstavel = subjects.filter(s => (s.stability || 0) > 30).length;
+    const conhecimentoEstavelRecent = recent.filter(s => (s.stability || 0) > 30).length;
+
+    const withReps = subjects.filter(s => (s.reps || 0) > 0);
+    const avgAcc = withReps.length > 0
+      ? withReps.reduce((acc, s) => acc + ((s.reps! - (s.lapses || 0)) / s.reps!) * 100, 0) / withReps.length
       : 0;
+
+    const recentWithReps = recent.filter(s => (s.reps || 0) > 0);
+    const avgAccRecent = recentWithReps.length > 0
+      ? recentWithReps.reduce((acc, s) => acc + ((s.reps! - (s.lapses || 0)) / s.reps!) * 100, 0) / recentWithReps.length
+      : null;
+
+    return {
+      totalAssuntos, totalAssuntosRecent,
+      totalQuestoes, totalQuestoesRecent,
+      revisoesConcluidas, revisoesConcluidasRecent,
+      revisoesHoje,
+      conhecimentoEstavel, conhecimentoEstavelRecent,
+      avgAcc, avgAccRecent,
+    };
   }, [subjects]);
-  
+
+  const performerData = useMemo(() => {
+    const ranked = subjects
+      .filter(s => (s.reps || 0) > 0)
+      .map(s => ({ ...s, acc: ((s.reps! - (s.lapses || 0)) / s.reps!) * 100 }))
+      .sort((a, b) => b.acc - a.acc);
+    return {
+      top: ranked.slice(0, 5),
+      bottom: ranked.slice(-5).reverse(),
+    };
+  }, [subjects]);
+
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-black text-navy uppercase tracking-tight">Espião Estratégico</h2>
-        <div className="text-right">
-          <p className="text-muted-light text-[10px] font-black uppercase tracking-widest">Média de Estabilidade</p>
-          <p className="text-2xl font-black text-green-600">{avgStability.toFixed(1)} dias</p>
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-black text-navy uppercase tracking-tight">Estatísticas</h2>
+        <p className="text-muted text-sm mt-1 font-medium">Visão geral do seu progresso de estudos</p>
+      </div>
+
+      {/* Stat cards */}
+      <div>
+        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">Visão Geral</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <StatCard
+            label="Total de Assuntos"
+            value={stats.totalAssuntos}
+            deltaStr={stats.totalAssuntosRecent > 0 ? `+${stats.totalAssuntosRecent}` : null}
+            color="text-navy"
+            icon={BookOpen}
+          />
+          <StatCard
+            label="Total de Questões"
+            value={stats.totalQuestoes.toLocaleString('pt-BR')}
+            deltaStr={stats.totalQuestoesRecent > 0 ? `+${stats.totalQuestoesRecent}` : null}
+            color="text-indigo-600"
+            icon={BarChart3}
+          />
+          <StatCard
+            label="Revisões Concluídas"
+            value={stats.revisoesConcluidas}
+            deltaStr={stats.revisoesConcluidasRecent > 0 ? `+${stats.revisoesConcluidasRecent}` : null}
+            color="text-green-600"
+            icon={CheckCircle2}
+          />
+          <StatCard
+            label="Revisões para Hoje"
+            value={stats.revisoesHoje}
+            color="text-yellow-dark"
+            icon={Calendar}
+          />
+          <StatCard
+            label="Conhecimento Estável"
+            value={stats.conhecimentoEstavel}
+            deltaStr={stats.conhecimentoEstavelRecent > 0 ? `+${stats.conhecimentoEstavelRecent}` : null}
+            color="text-green-600"
+            icon={Zap}
+          />
+          <StatCard
+            label="Acurácia Média"
+            value={`${stats.avgAcc.toFixed(1)}%`}
+            deltaStr={stats.avgAccRecent != null ? `${stats.avgAccRecent.toFixed(1)}%` : null}
+            color="text-amber-500"
+            icon={Target}
+          />
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-border overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-surface border-b border-border">
-                <th className="px-6 py-5 text-[10px] font-black text-navy/40 uppercase tracking-widest">Matéria</th>
-                <th className="px-6 py-5 text-[10px] font-black text-navy/40 uppercase tracking-widest">Performance</th>
-                <th className="px-6 py-5 text-[10px] font-black text-navy/40 uppercase tracking-widest text-center">Estabilidade</th>
-                <th className="px-6 py-5 text-[10px] font-black text-navy/40 uppercase tracking-widest text-center">Dificuldade</th>
-                <th className="px-6 py-5 text-[10px] font-black text-navy/40 uppercase tracking-widest text-right">Reps</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjects.map((s) => (
-                <tr key={s.id} className="border-b border-border hover:bg-surface/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-navy mb-0.5">{s.aulaPrincipal}</p>
-                    <p className="text-[10px] text-muted-light uppercase font-black tracking-widest">{s.area}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
-                      s.performanceLevel === 'excelente' ? 'bg-green-50 text-green-600 border-green-200' :
-                      s.performanceLevel === 'bom' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                      s.performanceLevel === 'medio' ? 'bg-yellow/10 text-yellow-dark border-yellow-200' :
-                      s.performanceLevel === 'ruim' ? 'bg-red-50 text-red-600 border-red-200' :
-                      'bg-surface text-muted-light border-border'
-                    }`}>
-                      {s.performanceLevel === 'nao_classificada' ? 'N/A' : s.performanceLevel}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm font-black text-navy">{s.stability ? `${s.stability.toFixed(1)}d` : '-'}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-sm font-black text-navy">{s.difficulty ? s.difficulty.toFixed(1) : '-'}</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="text-xs font-black text-muted-light">{s.reps || 0}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Performance lists */}
+      <div>
+        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">Desempenho por Assunto</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Maiores desempenhos */}
+          <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+              <Trophy className="w-4 h-4 text-green-500 shrink-0" />
+              <span className="font-black text-navy text-sm uppercase tracking-tight">Maiores Desempenhos</span>
+            </div>
+            <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
+              {performerData.top.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhum dado ainda</p>
+                </div>
+              ) : (
+                performerData.top.map(s => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between bg-surface rounded-xl px-4 py-3 border border-border/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-navy font-bold text-sm truncate">{s.aulaPrincipal}</p>
+                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">{s.area}</p>
+                    </div>
+                    <span className="text-green-600 font-black text-sm shrink-0 ml-3">{s.acc.toFixed(2)}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Menores desempenhos */}
+          <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="font-black text-navy text-sm uppercase tracking-tight">Menores Desempenhos</span>
+            </div>
+            <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
+              {performerData.bottom.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhum dado ainda</p>
+                </div>
+              ) : (
+                performerData.bottom.map(s => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between bg-surface rounded-xl px-4 py-3 border border-border/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-navy font-bold text-sm truncate">{s.aulaPrincipal}</p>
+                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">{s.area}</p>
+                    </div>
+                    <span className="text-amber-600 font-black text-sm shrink-0 ml-3">{s.acc.toFixed(2)}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

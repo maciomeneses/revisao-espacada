@@ -44,13 +44,6 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
 
-  const stats = useMemo(() => ({
-    total: subjects.length,
-    today: subjects.filter((s) => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
-    memorized: subjects.filter((s) => (s.stability || 0) > 30).length,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [subjects]);
-
   const reviewsByDate = useMemo(() => {
     const map = new Map<string, Subject[]>();
     for (const s of subjects) {
@@ -75,20 +68,6 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {/* ── Stat cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Total de Matérias',    value: stats.total,     color: 'text-navy' },
-          { label: 'Revisões para Hoje',   value: stats.today,     color: 'text-yellow-dark' },
-          { label: 'Conhecimento Estável', value: stats.memorized, color: 'text-green-600' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl border border-border shadow-sm">
-            <p className="text-muted-light text-[10px] font-black uppercase tracking-widest mb-2">{stat.label}</p>
-            <p className={`text-4xl font-black ${stat.color}`}>{stat.value}</p>
-          </div>
-        ))}
-      </div>
-
       {/* ── Revisões de Hoje + Atrasadas ────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Revisões do dia selecionado */}

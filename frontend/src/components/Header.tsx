@@ -20,7 +20,7 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
   const navItems: { id: ActiveView; label: string; adminOnly?: boolean }[] = [
     { id: 'dashboard',  label: 'Dashboard' },
     { id: 'cronograma', label: 'Cronograma' },
-    { id: 'espiao',     label: 'Espião' },
+    { id: 'espiao',     label: 'Estatísticas' },
     { id: 'admin',      label: 'Admin', adminOnly: true },
   ];
 
