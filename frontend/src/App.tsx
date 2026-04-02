@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Cronograma } from './components/Cronograma';
-import { Agenda } from './components/Agenda';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { AuthScreen } from './components/Auth/AuthScreen';
@@ -131,12 +130,6 @@ export default function App() {
             onResetCiclo={doResetCiclo}
             onRevertStage={revertStage}
           />
-        )}
-
-        {activeView === 'agenda' && (
-          <div className="flex-1 overflow-y-auto">
-            <Agenda subjects={subjects} />
-          </div>
         )}
 
         {activeView === 'espiao' && (

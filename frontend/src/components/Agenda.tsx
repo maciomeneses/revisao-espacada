@@ -58,7 +58,7 @@ export function Agenda({ subjects }: AgendaProps) {
   const selectedIsPast = selectedDay < todayStr;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-4xl mx-auto w-full space-y-6">
+    <div className="p-4 md:p-0 max-w-4xl mx-auto w-full space-y-6">
       <h2 className="text-2xl font-black text-navy uppercase tracking-tight">Agenda</h2>
 
       {/* ── Calendar card ─────────────────────────────────────────── */}

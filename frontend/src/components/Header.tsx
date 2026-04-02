@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar, BookOpen, TrendingUp, Shield } from 'lucide-react';
+import { LayoutDashboard, Calendar, TrendingUp, Shield } from 'lucide-react';
 import type { ActiveView, Role } from '../types';
 
 interface HeaderProps {
@@ -12,7 +12,6 @@ interface HeaderProps {
 const NAV_ICONS: Record<string, React.ElementType> = {
   dashboard:  LayoutDashboard,
   cronograma: Calendar,
-  agenda:     BookOpen,
   espiao:     TrendingUp,
   admin:      Shield,
 };
@@ -21,7 +20,6 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
   const navItems: { id: ActiveView; label: string; adminOnly?: boolean }[] = [
     { id: 'dashboard',  label: 'Dashboard' },
     { id: 'cronograma', label: 'Cronograma' },
-    { id: 'agenda',     label: 'Agenda' },
     { id: 'espiao',     label: 'Espião' },
     { id: 'admin',      label: 'Admin', adminOnly: true },
   ];

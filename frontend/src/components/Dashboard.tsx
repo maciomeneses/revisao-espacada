@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Subject } from '../types';
 import { localDateStr } from '../services/algorithm';
+import { Agenda } from './Agenda';
 
 interface DashboardProps {
   subjects: Subject[];
@@ -55,6 +56,8 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
           </button>
         </div>
       </div>
+
+      <Agenda subjects={subjects} />
     </div>
   );
 }

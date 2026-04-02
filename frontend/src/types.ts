@@ -1,4 +1,4 @@
-export type ActiveView = 'dashboard' | 'cronograma' | 'agenda' | 'espiao' | 'admin';
+export type ActiveView = 'dashboard' | 'cronograma' | 'espiao' | 'admin';
 
 export type Role = 'USER' | 'ADMIN';
 
