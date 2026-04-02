@@ -10,6 +10,18 @@ interface EspiaoEstrategicoProps {
   subjects: Subject[];
 }
 
+// Maps performanceLevel to an approximate accuracy % based on numCorrect thresholds.
+// lapses-based formula always returns 100% after fixação (first review never increments lapses).
+function subjectAcc(s: Subject): number | null {
+  switch (s.performanceLevel) {
+    case 'excelente': return 95;  // numCorrect 9–10
+    case 'bom':       return 75;  // numCorrect 7–8
+    case 'medio':     return 55;  // numCorrect 5–6
+    case 'ruim':      return 20;  // numCorrect 0–4
+    default:          return null;
+  }
+}
+
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -65,14 +77,14 @@ export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
     const conhecimentoEstavel = subjects.filter(s => (s.stability || 0) > 30).length;
     const conhecimentoEstavelRecent = recent.filter(s => (s.stability || 0) > 30).length;
 
-    const withReps = subjects.filter(s => (s.reps || 0) > 0);
-    const avgAcc = withReps.length > 0
-      ? withReps.reduce((acc, s) => acc + ((s.reps! - (s.lapses || 0)) / s.reps!) * 100, 0) / withReps.length
+    const withAcc = subjects.map(subjectAcc).filter((v): v is number => v !== null);
+    const avgAcc = withAcc.length > 0
+      ? withAcc.reduce((a, v) => a + v, 0) / withAcc.length
       : 0;
 
-    const recentWithReps = recent.filter(s => (s.reps || 0) > 0);
-    const avgAccRecent = recentWithReps.length > 0
-      ? recentWithReps.reduce((acc, s) => acc + ((s.reps! - (s.lapses || 0)) / s.reps!) * 100, 0) / recentWithReps.length
+    const recentWithAcc = recent.map(subjectAcc).filter((v): v is number => v !== null);
+    const avgAccRecent = recentWithAcc.length > 0
+      ? recentWithAcc.reduce((a, v) => a + v, 0) / recentWithAcc.length
       : null;
 
     return {
@@ -87,8 +99,8 @@ export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
 
   const performerData = useMemo(() => {
     const ranked = subjects
-      .filter(s => (s.reps || 0) > 0)
-      .map(s => ({ ...s, acc: ((s.reps! - (s.lapses || 0)) / s.reps!) * 100 }))
+      .map(s => ({ ...s, acc: subjectAcc(s) }))
+      .filter((s): s is typeof s & { acc: number } => s.acc !== null)
       .sort((a, b) => b.acc - a.acc);
     return {
       top: ranked.slice(0, 5),
