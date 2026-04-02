@@ -20,7 +20,8 @@ public record ReviewEventDto(
     @NotNull LocalDate reviewDate,
     @NotBlank String performance,
     int reps,
-    int questions
+    int questions,
+    int accuracy
 ) {
     public static ReviewEventDto from(ReviewEvent e) {
         return new ReviewEventDto(
@@ -30,7 +31,8 @@ public record ReviewEventDto(
             e.getReviewDate(),
             e.getPerformance().getValue(),
             e.getReps(),
-            e.getQuestions()
+            e.getQuestions(),
+            e.getAccuracy()
         );
     }
 
@@ -41,5 +43,6 @@ public record ReviewEventDto(
         e.setPerformance(PerformanceLevel.fromValue(this.performance()));
         e.setReps(this.reps());
         e.setQuestions(this.questions());
+        e.setAccuracy(this.accuracy());
     }
 }

@@ -62,7 +62,7 @@ class ReviewEventControllerIntegrationTest {
 
     private static final String VALID_EVENT_JSON = """
             {"subjectId":"subj-1","subjectName":"Aula de Biologia",
-            "reviewDate":"%s","performance":"bom","reps":1,"questions":10}
+            "reviewDate":"%s","performance":"bom","reps":1,"questions":10,"accuracy":75}
             """.formatted(LocalDate.now());
 
     @BeforeEach
@@ -151,7 +151,7 @@ class ReviewEventControllerIntegrationTest {
     void create_blankSubjectId_returns400() throws Exception {
         String invalid = """
                 {"subjectId":"","subjectName":"Aula X",
-                "reviewDate":"%s","performance":"bom","reps":1,"questions":10}
+                "reviewDate":"%s","performance":"bom","reps":1,"questions":10,"accuracy":75}
                 """.formatted(TODAY);
 
         mockMvc.perform(post("/api/review-events")
@@ -166,7 +166,7 @@ class ReviewEventControllerIntegrationTest {
     void create_blankSubjectName_returns400() throws Exception {
         String invalid = """
                 {"subjectId":"subj-1","subjectName":"",
-                "reviewDate":"%s","performance":"bom","reps":1,"questions":10}
+                "reviewDate":"%s","performance":"bom","reps":1,"questions":10,"accuracy":75}
                 """.formatted(TODAY);
 
         mockMvc.perform(post("/api/review-events")
@@ -181,7 +181,7 @@ class ReviewEventControllerIntegrationTest {
     void create_nullReviewDate_returns400() throws Exception {
         String invalid = """
                 {"subjectId":"subj-1","subjectName":"Aula X",
-                "reviewDate":null,"performance":"bom","reps":1,"questions":10}
+                "reviewDate":null,"performance":"bom","reps":1,"questions":10,"accuracy":75}
                 """;
 
         mockMvc.perform(post("/api/review-events")

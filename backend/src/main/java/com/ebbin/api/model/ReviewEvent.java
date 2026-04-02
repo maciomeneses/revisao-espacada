@@ -49,9 +49,13 @@ public class ReviewEvent {
     @Column(nullable = false)
     private int reps = 1;
 
-    /** Questões respondidas nesta sessão (proxy: 1 sessão ≈ 10 questões). */
+    /** Questões respondidas nesta sessão. */
     @Column(nullable = false)
     private int questions = 10;
+
+    /** Percentual real de acertos (0–100). */
+    @Column(nullable = false)
+    private int accuracy = 0;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -81,6 +85,9 @@ public class ReviewEvent {
 
     public int getQuestions() { return questions; }
     public void setQuestions(int questions) { this.questions = questions; }
+
+    public int getAccuracy() { return accuracy; }
+    public void setAccuracy(int accuracy) { this.accuracy = accuracy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

@@ -8,6 +8,7 @@ export interface ReviewEventPayload {
   performance: string;       // 'ruim' | 'medio' | 'bom' | 'excelente' | 'nao_classificada'
   reps: number;
   questions: number;
+  accuracy: number;          // 0–100 real accuracy %
 }
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';

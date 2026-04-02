@@ -16,9 +16,12 @@ interface EspiaoEstrategicoProps {
   reviewEvents: ReviewEventPayload[];
 }
 
-// Maps performanceLevel/performance string to an accuracy %.
-function performanceToAcc(perf: string): number | null {
-  switch (perf) {
+// Returns the real accuracy % from the event, falling back to a proxy for
+// legacy events that predate the accuracy field (accuracy === 0).
+function getAccuracy(e: ReviewEventPayload): number | null {
+  if (e.accuracy > 0) return e.accuracy;
+  // Fallback proxy for old data
+  switch (e.performance) {
     case 'excelente': return 95;
     case 'bom':       return 75;
     case 'medio':     return 55;
@@ -88,7 +91,7 @@ function buildWeeklyData(events: ReviewEventPayload[], numWeeks: number): ChartD
       e => e.reviewDate >= startStr && e.reviewDate <= endStr,
     );
 
-    const withAcc = inBucket.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
+    const withAcc = inBucket.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
     const acuraciaMedia = withAcc.length > 0
       ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
       : 0;
@@ -124,7 +127,7 @@ function buildMonthlyData(events: ReviewEventPayload[], numMonths: number): Char
       e => e.reviewDate >= startStr && e.reviewDate <= endStr,
     );
 
-    const withAcc = inBucket.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
+    const withAcc = inBucket.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
     const acuraciaMedia = withAcc.length > 0
       ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
       : 0;
@@ -257,12 +260,12 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
     const recentSubjects = subjects.filter(s => s.lastReviewDate && s.lastReviewDate >= cutoff);
     const conhecimentoEstavelRecent = recentSubjects.filter(s => (s.stability || 0) > 30).length;
 
-    const withAcc = reviewEvents.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
+    const withAcc = reviewEvents.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
     const avgAcc = withAcc.length > 0
       ? withAcc.reduce((a, v) => a + v, 0) / withAcc.length
       : 0;
 
-    const recentWithAcc = recentEvents.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
+    const recentWithAcc = recentEvents.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
     const avgAccRecent = recentWithAcc.length > 0
       ? recentWithAcc.reduce((a, v) => a + v, 0) / recentWithAcc.length
       : null;
@@ -281,7 +284,7 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
     // Aggregate per-subject accuracy from event history
     const subjectAccMap = new Map<string, { name: string; area: string; accValues: number[] }>();
     for (const e of reviewEvents) {
-      const acc = performanceToAcc(e.performance);
+      const acc = getAccuracy(e);
       if (acc === null) continue;
       if (!subjectAccMap.has(e.subjectId)) {
         // Try to find area from current subjects list

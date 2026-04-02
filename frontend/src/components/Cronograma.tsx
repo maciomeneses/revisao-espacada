@@ -5,8 +5,8 @@ import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/al
 interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
-  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number) => void;
-  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number) => void;
+  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number, accuracy: number) => void;
+  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number, accuracy: number) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
   /** ID do assunto a destacar e rolar até ele (vindo do Dashboard). */
@@ -19,14 +19,12 @@ interface ReviewForm {
   date: string;
   totalQuestions: string;
   numCorrect: number;
-  timeMinutes: string;
 }
 
 const defaultForm = (): ReviewForm => ({
   date: localDateStr(new Date()),
   totalQuestions: '10',
   numCorrect: 7,
-  timeMinutes: '30',
 });
 
 export function Cronograma({
@@ -97,13 +95,8 @@ export function Cronograma({
   const handleConfirm = () => {
     if (!selectedSubject || !modalMode) return;
     const total = parseInt(form.totalQuestions);
-    const time = parseInt(form.timeMinutes);
     if (!total || total <= 0) {
       setFormError('O número de questões deve ser maior que zero.');
-      return;
-    }
-    if (!time || time <= 0) {
-      setFormError('O tempo gasto deve ser maior que zero.');
       return;
     }
     if (form.numCorrect > total) {
@@ -111,10 +104,11 @@ export function Cronograma({
       return;
     }
     const normalized = Math.round((form.numCorrect / total) * 10);
+    const accuracy = Math.round((form.numCorrect / total) * 100);
     if (modalMode === 'fixacao') {
-      onRegisterFixacao(selectedSubject.id, normalized, total);
+      onRegisterFixacao(selectedSubject.id, normalized, total, accuracy);
     } else {
-      onRegisterReview(selectedSubject.id, normalized, total);
+      onRegisterReview(selectedSubject.id, normalized, total, accuracy);
     }
     closeModal();
   };
@@ -293,32 +287,18 @@ export function Cronograma({
             </p>
 
             <div className="space-y-4">
-              {/* Data e Tempo */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
-                    Data da revisão
-                  </label>
-                  <input
-                    type="date"
-                    value={form.date}
-                    max={localDateStr(new Date())}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
-                    Tempo gasto (min)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={form.timeMinutes}
-                    onChange={(e) => setForm({ ...form, timeMinutes: e.target.value })}
-                    className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
-                  />
-                </div>
+              {/* Data da revisão */}
+              <div>
+                <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                  Data da revisão
+                </label>
+                <input
+                  type="date"
+                  value={form.date}
+                  max={localDateStr(new Date())}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+                />
               </div>
 
               {/* Total de questões e Acertos */}
