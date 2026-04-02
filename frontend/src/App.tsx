@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Cronograma } from './components/Cronograma';
@@ -6,9 +7,10 @@ import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { AuthScreen } from './components/Auth/AuthScreen';
 import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
+import { LandingPage } from './components/LandingPage';
 import { AdminArea } from './components/Admin/AdminArea';
 import { useSubjects } from './hooks/useSubjects';
-import type { ActiveView, Role } from './types';
+import type { Role } from './types';
 
 /** Extrai o valor do query param ?token= da URL atual. */
 function getResetTokenFromUrl(): string | null {
@@ -16,13 +18,15 @@ function getResetTokenFromUrl(): string | null {
   return params.get('token');
 }
 
-export default function App() {
+export function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<Role | undefined>();
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
   const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | undefined>();
+  
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const {
     subjects,
@@ -55,27 +59,25 @@ export default function App() {
     localStorage.setItem('ebbin_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
     setIsAuthenticated(true);
     setUserRole(role as Role);
+    navigate('/dashboard');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('ebbin_session');
     setIsAuthenticated(false);
     setUserRole(undefined);
-    setActiveView('dashboard');
+    navigate('/');
   };
 
-  /** Após reset bem-sucedido, faz logout e redireciona ao login. */
   const handleResetSuccess = () => {
-    // Invalida a sessão atual: o usuário deve re-autenticar com a nova senha
     localStorage.removeItem('ebbin_session');
     setIsAuthenticated(false);
     setUserRole(undefined);
     setResetToken(null);
-    // Remove o query param da URL sem recarregar a página
     window.history.replaceState({}, '', window.location.pathname);
+    navigate('/login');
   };
 
-  // Fluxo de reset de senha: exibe tela dedicada quando ?token= está presente na URL
   if (resetToken) {
     return (
       <ResetPasswordScreen
@@ -85,69 +87,84 @@ export default function App() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AuthScreen onLogin={handleLogin} />;
-  }
+  const isLogin = location.pathname === '/login';
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
-      <Header
-        activeView={activeView}
-        userRole={userRole}
-        onViewChange={(v) => setActiveView(v)}
-        onOpenGerenciar={() => setShowGerenciar(true)}
-        onLogout={handleLogout}
-      />
-
-      {activeView === 'dashboard' && (
-        <div
-          className="relative w-full h-36 md:h-44 overflow-hidden shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1F3A5F 0%, #2a4d7a 60%, #4FA3D1 100%)' }}
-        >
-          <div className="absolute inset-0 flex items-end px-6 pb-5">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbin</h1>
-              <p className="text-white/70 text-sm mt-1">Plataforma de Revisão Espaçada</p>
-            </div>
-          </div>
-        </div>
+      {isAuthenticated && !isLogin && (
+        <Header
+          activeView={location.pathname.substring(1) as any}
+          userRole={userRole}
+          onViewChange={(v) => navigate(`/${v}`)}
+          onOpenGerenciar={() => setShowGerenciar(true)}
+          onLogout={handleLogout}
+        />
       )}
 
       <main className="flex-1 overflow-hidden flex flex-col pb-16 md:pb-0">
-        {activeView === 'dashboard' && (
-          <div className="flex-1 overflow-y-auto">
-            <Dashboard
-              subjects={subjects}
-              onNavigateCronograma={(subjectId?: string) => {
-                setHighlightedSubjectId(subjectId);
-                setActiveView('cronograma');
-              }}
-            />
-          </div>
-        )}
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthScreen onLogin={handleLogin} />
+          } />
+          
+          <Route path="/dashboard" element={
+            isAuthenticated ? (
+              <div className="flex-1 overflow-y-auto flex flex-col">
+                <div
+                  className="relative w-full h-36 md:h-44 overflow-hidden shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #1F3A5F 0%, #2a4d7a 60%, #4FA3D1 100%)' }}
+                >
+                  <div className="absolute inset-0 flex items-end px-6 pb-5">
+                    <div>
+                      <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbin</h1>
+                      <p className="text-white/70 text-sm mt-1">Plataforma de Revisão Espaçada</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <Dashboard
+                    subjects={subjects}
+                    onNavigateCronograma={(subjectId?: string) => {
+                      setHighlightedSubjectId(subjectId);
+                      navigate('/cronograma');
+                    }}
+                  />
+                </div>
+              </div>
+            ) : <Navigate to="/login" replace />
+          } />
+          
+          <Route path="/cronograma" element={
+            isAuthenticated ? (
+              <Cronograma
+                subjects={subjects}
+                onToggleAula={toggleAula}
+                onRegisterReview={registerReview}
+                onRegisterFixacao={registerFixacao}
+                onResetCiclo={doResetCiclo}
+                onRevertStage={revertStage}
+                highlightedSubjectId={highlightedSubjectId}
+                onHighlightCleared={() => setHighlightedSubjectId(undefined)}
+              />
+            ) : <Navigate to="/login" replace />
+          } />
+          
+          <Route path="/espiao" element={
+            isAuthenticated ? (
+              <div className="flex-1 overflow-hidden">
+                <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
+              </div>
+            ) : <Navigate to="/login" replace />
+          } />
 
-        {activeView === 'cronograma' && (
-          <Cronograma
-            subjects={subjects}
-            onToggleAula={toggleAula}
-            onRegisterReview={registerReview}
-            onRegisterFixacao={registerFixacao}
-            onResetCiclo={doResetCiclo}
-            onRevertStage={revertStage}
-            highlightedSubjectId={highlightedSubjectId}
-            onHighlightCleared={() => setHighlightedSubjectId(undefined)}
-          />
-        )}
+          <Route path="/admin" element={
+            (isAuthenticated && userRole === 'ADMIN') ? <AdminArea /> : <Navigate to="/dashboard" replace />
+          } />
 
-        {activeView === 'espiao' && (
-          <div className="flex-1 overflow-hidden">
-            <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
-          </div>
-        )}
-
-        {activeView === 'admin' && userRole === 'ADMIN' && (
-          <AdminArea />
-        )}
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
+        </Routes>
       </main>
 
       {showGerenciar && (
@@ -161,3 +178,12 @@ export default function App() {
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+

@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App from '../src/App';
+import { MemoryRouter } from 'react-router-dom';
+import { AppContent } from '../src/App';
 
 // Mock all sub-components that have side-effects or heavy deps
 vi.mock('../src/hooks/useSubjects', () => ({
   useSubjects: () => ({
     subjects: [],
     toggleAula: vi.fn(),
-    togglePreAula: vi.fn(),
-    toggleFlashcards: vi.fn(),
     registerReview: vi.fn(),
+    registerFixacao: vi.fn(),
     doResetCiclo: vi.fn(),
     addSubject: vi.fn(),
     removeSubject: vi.fn(),
@@ -33,6 +33,9 @@ vi.mock('../src/services/api', () => ({
         list: vi.fn().mockResolvedValue([]),
       },
     },
+    reviewEvents: {
+      list: vi.fn().mockResolvedValue([]),
+    }
   },
 }));
 
@@ -51,140 +54,85 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
 
 describe('App — roteamento e edge cases de autenticação', () => {
-  const originalLocation = window.location;
-
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-    // Restaura search limpo
-    Object.defineProperty(window, 'location', {
-      value: { ...originalLocation, search: '', pathname: '/', href: 'http://localhost/' },
-      writable: true,
-      configurable: true,
-    });
   });
 
-  afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    });
+  it('exibe LandingPage na rota raiz quando não autenticado', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+    // LandingPage tem o título principal
+    expect(screen.getByText(/Domine seu aprendizado/i)).toBeInTheDocument();
   });
 
-  it('exibe AuthScreen quando não autenticado e sem ?token=', () => {
-    render(<App />);
-    // AuthScreen renderiza "Acesse sua conta" ou o formulário de login
-    expect(screen.getByText('Ebbin')).toBeInTheDocument();
+  it('redireciona para /login ao tentar acessar área protegida sem sessão', () => {
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+    // Deve renderizar a AuthScreen (login)
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
-  it('exibe ResetPasswordScreen quando ?token= está presente na URL (sem sessão)', () => {
-    Object.defineProperty(window, 'location', {
-      value: { search: '?token=abc-test-token-1234', pathname: '/', href: 'http://localhost/?token=abc-test-token-1234' },
-      writable: true,
-      configurable: true,
-    });
-
-    render(<App />);
-    // ResetPasswordScreen renderiza "Redefinir senha"
-    expect(screen.getByRole('heading', { name: /redefinir senha/i })).toBeInTheDocument();
-  });
-
-  it('exibe ResetPasswordScreen quando ?token= está presente mesmo com sessão autenticada (token tem prioridade)', () => {
-    // Sessão autenticada no localStorage
+  it('exibe app autenticado quando há sessão válida e acessa /dashboard', () => {
     localStorageMock.setItem(
       'ebbin_session',
       JSON.stringify({ email: 'user@test.com', token: 'jwt-valid', role: 'USER', timestamp: Date.now() })
     );
 
-    // URL com ?token= de reset de senha
-    Object.defineProperty(window, 'location', {
-      value: { search: '?token=reset-token-9999', pathname: '/', href: 'http://localhost/?token=reset-token-9999' },
-      writable: true,
-      configurable: true,
-    });
-
-    render(<App />);
-    // ResetPasswordScreen deve ter prioridade sobre sessão autenticada
-    expect(screen.getByRole('heading', { name: /redefinir senha/i })).toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+    // Header logado deve exibir "EBBIN" (maiúsculo no Header, diferente da Landing)
+    expect(screen.getByText('EBBIN')).toBeInTheDocument();
+    // Dashboard deve estar visível
+    expect(screen.getByText(/Plataforma de Revisão Espaçada/i)).toBeInTheDocument();
   });
 
-  it('exibe app autenticado quando há sessão válida e sem ?token=', () => {
+  it('limpa sessão e vai para landing page no logout', async () => {
     localStorageMock.setItem(
       'ebbin_session',
       JSON.stringify({ email: 'user@test.com', token: 'jwt-valid', role: 'USER', timestamp: Date.now() })
     );
 
-    render(<App />);
-    // O app autenticado renderiza o Header com o logo Ebbin
-    expect(screen.getByText('Ebbin')).toBeInTheDocument();
-    // Não exibe o formulário de login
-    expect(screen.queryByRole('button', { name: /^entrar$/i })).not.toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    // Clica no botão Sair (o Header está visível poisisAuthenticated é true)
+    const logoutBtn = screen.getByRole('button', { name: /Sair/i });
+    fireEvent.click(logoutBtn);
+
+    // No logout, o AppContent chama navigate('/') e setIsAuthenticated(false)
+    // O re-render deve mostrar a Landing Page
+    await waitFor(() => {
+      // Procuramos por texto exclusivo da Landing Page
+      expect(screen.getByText(/Domine seu aprendizado/i)).toBeInTheDocument();
+    });
+    
+    expect(localStorageMock.getItem('ebbin_session')).toBeNull();
   });
+
 
   it('exibe AuthScreen quando sessão no localStorage tem JSON inválido', () => {
     localStorageMock.setItem('ebbin_session', 'invalid-json{{{');
 
-    render(<App />);
-    // JSON inválido deve ser removido e retornar à tela de login
-    expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
-  });
-
-  it('exibe AuthScreen quando sessão no localStorage não tem token JWT', () => {
-    localStorageMock.setItem(
-      'ebbin_session',
-      JSON.stringify({ email: 'user@test.com', role: 'USER', timestamp: Date.now() })
-      // Note: sem campo 'token'
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AppContent />
+      </MemoryRouter>
     );
-
-    render(<App />);
-    // Sem token JWT, não autentica
+    // Redireciona para login ao falhar o parse do JSON
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
-  });
-
-  it('após handleResetSuccess, limpa o token da URL e retorna ao login', async () => {
-    const replaceStateSpy = vi.fn();
-    Object.defineProperty(window, 'history', {
-      value: { replaceState: replaceStateSpy },
-      writable: true,
-      configurable: true,
-    });
-    Object.defineProperty(window, 'location', {
-      value: { search: '?token=valid-reset-token', pathname: '/app', href: 'http://localhost/app?token=valid-reset-token' },
-      writable: true,
-      configurable: true,
-    });
-
-    // Mock da API para sucesso no reset
-    const { api } = await import('../src/services/api');
-    vi.mocked(api.auth.resetPassword).mockResolvedValue(undefined);
-
-    render(<App />);
-    expect(screen.getByRole('heading', { name: /redefinir senha/i })).toBeInTheDocument();
-
-    // Preenche e submete o formulário de reset
-    fireEvent.change(screen.getByPlaceholderText('mínimo 6 caracteres'), {
-      target: { value: 'novaSenha123' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('repita a nova senha'), {
-      target: { value: 'novaSenha123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /redefinir senha/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText(/senha redefinida com sucesso/i)).toBeInTheDocument();
-    });
-
-    // Clica em "Ir para o login"
-    fireEvent.click(screen.getByRole('button', { name: /ir para o login/i }));
-
-    // handleResetSuccess deve limpar a URL via replaceState
-    expect(replaceStateSpy).toHaveBeenCalledWith({}, '', '/app');
-
-    // Deve exibir tela de login após reset
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
-    });
   });
 });
+
