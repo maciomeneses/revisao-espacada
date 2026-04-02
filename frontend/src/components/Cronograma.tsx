@@ -5,8 +5,8 @@ import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/al
 interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
-  onRegisterReview: (id: string, numCorrect: number) => void;
-  onRegisterFixacao: (id: string, numCorrect: number) => void;
+  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number) => void;
+  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
   /** ID do assunto a destacar e rolar até ele (vindo do Dashboard). */
@@ -112,9 +112,9 @@ export function Cronograma({
     }
     const normalized = Math.round((form.numCorrect / total) * 10);
     if (modalMode === 'fixacao') {
-      onRegisterFixacao(selectedSubject.id, normalized);
+      onRegisterFixacao(selectedSubject.id, normalized, total);
     } else {
-      onRegisterReview(selectedSubject.id, normalized);
+      onRegisterReview(selectedSubject.id, normalized, total);
     }
     closeModal();
   };
