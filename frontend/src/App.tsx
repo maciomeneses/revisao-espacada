@@ -22,6 +22,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [showGerenciar, setShowGerenciar] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
+  const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | undefined>();
 
   const {
     subjects,
@@ -117,7 +118,10 @@ export default function App() {
           <div className="flex-1 overflow-y-auto">
             <Dashboard
               subjects={subjects}
-              onNavigateCronograma={() => setActiveView('cronograma')}
+              onNavigateCronograma={(subjectId?: string) => {
+                setHighlightedSubjectId(subjectId);
+                setActiveView('cronograma');
+              }}
             />
           </div>
         )}
@@ -130,6 +134,8 @@ export default function App() {
             onRegisterFixacao={registerFixacao}
             onResetCiclo={doResetCiclo}
             onRevertStage={revertStage}
+            highlightedSubjectId={highlightedSubjectId}
+            onHighlightCleared={() => setHighlightedSubjectId(undefined)}
           />
         )}
 

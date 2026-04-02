@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/algorithm';
 
@@ -9,6 +9,10 @@ interface CronogramaProps {
   onRegisterFixacao: (id: string, numCorrect: number) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
+  /** ID do assunto a destacar e rolar até ele (vindo do Dashboard). */
+  highlightedSubjectId?: string;
+  /** Chamado assim que o highlight é consumido (para limpar no pai). */
+  onHighlightCleared?: () => void;
 }
 
 interface ReviewForm {
@@ -32,6 +36,8 @@ export function Cronograma({
   onRegisterFixacao,
   onResetCiclo,
   onRevertStage,
+  highlightedSubjectId,
+  onHighlightCleared,
 }: CronogramaProps) {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [modalMode, setModalMode] = useState<'review' | 'fixacao' | null>(null);
@@ -39,6 +45,8 @@ export function Cronograma({
   const [formError, setFormError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const areas = useMemo(() => {
     const set = new Set(subjects.map((s) => s.area).filter(Boolean));
@@ -48,6 +56,31 @@ export function Cronograma({
   // null = default to first area; '__all__' = show all
   const activeArea = selectedArea === '__all__' ? null : (selectedArea ?? areas[0] ?? null);
   const visibleSubjects = activeArea ? subjects.filter((s) => s.area === activeArea) : subjects;
+
+  // Scroll to and flash a highlighted subject coming from the Dashboard
+  useEffect(() => {
+    if (!highlightedSubjectId) return;
+    const target = subjects.find(s => s.id === highlightedSubjectId);
+    if (!target) return;
+
+    // 1. Make the subject visible — switch to its area (or show all)
+    setSelectedArea(target.area ?? '__all__');
+
+    // 2. After the area tab switch renders, scroll + flash
+    const timer = setTimeout(() => {
+      const el = cardRefs.current[highlightedSubjectId];
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setFlashId(highlightedSubjectId);
+      // Remove flash ring after animation
+      setTimeout(() => {
+        setFlashId(null);
+        onHighlightCleared?.();
+      }, 1800);
+    }, 80);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightedSubjectId]);
 
   const openModal = (subject: Subject, mode: 'review' | 'fixacao') => {
     setSelectedSubject(subject);
@@ -144,7 +177,15 @@ export function Cronograma({
 
       <div className="grid grid-cols-1 gap-4">
         {visibleSubjects.map((s) => (
-          <div key={s.id} className="bg-white p-6 rounded-2xl border border-border flex flex-col md:flex-row gap-6 items-start md:items-center justify-between group shadow-sm hover:shadow-md transition-shadow">
+          <div
+            key={s.id}
+            ref={el => { cardRefs.current[s.id] = el; }}
+            className={`bg-white p-6 rounded-2xl border flex flex-col md:flex-row gap-6 items-start md:items-center justify-between group shadow-sm hover:shadow-md transition-all ${
+              flashId === s.id
+                ? 'border-amber-400 ring-2 ring-amber-300 ring-offset-1'
+                : 'border-border'
+            }`}
+          >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10px] font-bold bg-navy text-white px-2 py-0.5 rounded uppercase tracking-wider">{s.area}</span>

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpe
 
 interface DashboardProps {
   subjects: Subject[];
-  onNavigateCronograma: () => void;
+  onNavigateCronograma: (subjectId?: string) => void;
 }
 
 function shiftDate(dateStr: string, n: number): string {
@@ -152,7 +152,7 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
                     </div>
                   </div>
                   <button
-                    onClick={onNavigateCronograma}
+                    onClick={() => onNavigateCronograma()}
                     className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shrink-0"
                     title="Ir para o Cronograma"
                   >
@@ -200,7 +200,7 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
                       </p>
                     </div>
                     <button
-                      onClick={onNavigateCronograma}
+                      onClick={() => onNavigateCronograma(s.id)}
                       className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shrink-0 mt-0.5"
                       title="Ir para o Cronograma"
                     >
@@ -230,7 +230,7 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
             Utilizamos o algoritmo FSRS v6 para calcular a retenção ideal de cada tema, otimizando seu tempo de estudo de forma dinâmica e personalizada.
           </p>
           <button
-            onClick={onNavigateCronograma}
+            onClick={() => onNavigateCronograma()}
             className="bg-navy text-white font-black py-4 px-10 rounded-full text-[10px] uppercase tracking-widest hover:bg-navy-light transition-all shadow-md active:scale-95"
           >
             IR PARA O CRONOGRAMA
