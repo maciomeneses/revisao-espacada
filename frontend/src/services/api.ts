@@ -1,5 +1,15 @@
 import { User, Role } from '../types';
 
+export interface ReviewEventPayload {
+  id?: number;
+  subjectId: string;
+  subjectName: string;
+  reviewDate: string;        // ISO date: YYYY-MM-DD
+  performance: string;       // 'ruim' | 'medio' | 'bom' | 'excelente' | 'nao_classificada'
+  reps: number;
+  questions: number;
+}
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
 
 export interface AuthResponse {
@@ -102,5 +112,15 @@ export const api = {
 
     delete: (id: string) =>
       request<void>(`/api/subjects/${id}`, { method: 'DELETE' }),
+  },
+
+  reviewEvents: {
+    list: () => request<ReviewEventPayload[]>('/api/review-events'),
+
+    create: (payload: ReviewEventPayload) =>
+      request<ReviewEventPayload>('/api/review-events', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
   },
 };

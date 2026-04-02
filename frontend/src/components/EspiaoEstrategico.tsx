@@ -8,20 +8,21 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { Subject } from '../types';
+import type { ReviewEventPayload } from '../services/api';
 import { localDateStr } from '../services/algorithm';
 
 interface EspiaoEstrategicoProps {
   subjects: Subject[];
+  reviewEvents: ReviewEventPayload[];
 }
 
-// Maps performanceLevel to an approximate accuracy % based on numCorrect thresholds.
-// lapses-based formula always returns 100% after fixação (first review never increments lapses).
-function subjectAcc(s: Subject): number | null {
-  switch (s.performanceLevel) {
-    case 'excelente': return 95;  // numCorrect 9–10
-    case 'bom':       return 75;  // numCorrect 7–8
-    case 'medio':     return 55;  // numCorrect 5–6
-    case 'ruim':      return 20;  // numCorrect 0–4
+// Maps performanceLevel/performance string to an accuracy %.
+function performanceToAcc(perf: string): number | null {
+  switch (perf) {
+    case 'excelente': return 95;
+    case 'bom':       return 75;
+    case 'medio':     return 55;
+    case 'ruim':      return 20;
     default:          return null;
   }
 }
@@ -70,7 +71,7 @@ interface ChartDataPoint {
 
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-function buildWeeklyData(subjects: Subject[], numWeeks: number): ChartDataPoint[] {
+function buildWeeklyData(events: ReviewEventPayload[], numWeeks: number): ChartDataPoint[] {
   const today = new Date();
   const buckets: ChartDataPoint[] = [];
 
@@ -83,11 +84,11 @@ function buildWeeklyData(subjects: Subject[], numWeeks: number): ChartDataPoint[
     const startStr = localDateStr(startDate);
     const endStr = localDateStr(endDate);
 
-    const inBucket = subjects.filter(
-      s => s.lastReviewDate && s.lastReviewDate >= startStr && s.lastReviewDate <= endStr,
+    const inBucket = events.filter(
+      e => e.reviewDate >= startStr && e.reviewDate <= endStr,
     );
 
-    const withAcc = inBucket.map(subjectAcc).filter((v): v is number => v !== null);
+    const withAcc = inBucket.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
     const acuraciaMedia = withAcc.length > 0
       ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
       : 0;
@@ -96,9 +97,9 @@ function buildWeeklyData(subjects: Subject[], numWeeks: number): ChartDataPoint[
 
     buckets.push({
       label,
-      totalQuestoes: inBucket.length * 10,
+      totalQuestoes: inBucket.reduce((sum, e) => sum + e.questions, 0),
       acuraciaMedia,
-      assuntosNovos: inBucket.filter(s => (s.reps ?? 0) <= 1).length,
+      assuntosNovos: inBucket.filter(e => e.reps === 1).length,
       revisoesConcluidas: inBucket.length,
     });
   }
@@ -106,7 +107,7 @@ function buildWeeklyData(subjects: Subject[], numWeeks: number): ChartDataPoint[
   return buckets;
 }
 
-function buildMonthlyData(subjects: Subject[], numMonths: number): ChartDataPoint[] {
+function buildMonthlyData(events: ReviewEventPayload[], numMonths: number): ChartDataPoint[] {
   const today = new Date();
   const buckets: ChartDataPoint[] = [];
 
@@ -119,11 +120,11 @@ function buildMonthlyData(subjects: Subject[], numMonths: number): ChartDataPoin
     const lastDay = new Date(year, month + 1, 0).getDate();
     const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const inBucket = subjects.filter(
-      s => s.lastReviewDate && s.lastReviewDate >= startStr && s.lastReviewDate <= endStr,
+    const inBucket = events.filter(
+      e => e.reviewDate >= startStr && e.reviewDate <= endStr,
     );
 
-    const withAcc = inBucket.map(subjectAcc).filter((v): v is number => v !== null);
+    const withAcc = inBucket.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
     const acuraciaMedia = withAcc.length > 0
       ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
       : 0;
@@ -132,9 +133,9 @@ function buildMonthlyData(subjects: Subject[], numMonths: number): ChartDataPoin
 
     buckets.push({
       label,
-      totalQuestoes: inBucket.length * 10,
+      totalQuestoes: inBucket.reduce((sum, e) => sum + e.questions, 0),
       acuraciaMedia,
-      assuntosNovos: inBucket.filter(s => (s.reps ?? 0) <= 1).length,
+      assuntosNovos: inBucket.filter(e => e.reps === 1).length,
       revisoesConcluidas: inBucket.length,
     });
   }
@@ -142,11 +143,11 @@ function buildMonthlyData(subjects: Subject[], numMonths: number): ChartDataPoin
   return buckets;
 }
 
-function getChartData(subjects: Subject[], filter: ChartFilter): ChartDataPoint[] {
+function getChartData(events: ReviewEventPayload[], filter: ChartFilter): ChartDataPoint[] {
   switch (filter) {
-    case 'semanas': return buildWeeklyData(subjects, 8);
-    case '3meses':  return buildWeeklyData(subjects, 12);
-    case '6meses':  return buildMonthlyData(subjects, 6);
+    case 'semanas': return buildWeeklyData(events, 8);
+    case '3meses':  return buildWeeklyData(events, 12);
+    case '6meses':  return buildMonthlyData(events, 6);
   }
 }
 
@@ -225,7 +226,7 @@ function MiniChart({ data, dataKey, label, color, gradientId, icon: Icon, unit =
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
+export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoProps) {
   const [chartFilter, setChartFilter] = useState<ChartFilter>('semanas');
 
   const stats = useMemo(() => {
@@ -234,32 +235,34 @@ export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
     cutoffDate.setDate(cutoffDate.getDate() - 7);
     const cutoff = localDateStr(cutoffDate);
 
-    const recent = subjects.filter(s => s.lastReviewDate && s.lastReviewDate >= cutoff);
+    const recentEvents = reviewEvents.filter(e => e.reviewDate >= cutoff);
 
     const totalAssuntos = subjects.length;
-    // Subjects whose first review happened in the last 7 days
-    const totalAssuntosRecent = subjects.filter(
-      s => s.reps === 1 && s.lastReviewDate && s.lastReviewDate >= cutoff,
-    ).length;
+    // New subjects: events with reps === 1 in the last 7 days (unique subjects)
+    const newSubjectIds = new Set(
+      reviewEvents.filter(e => e.reps === 1 && e.reviewDate >= cutoff).map(e => e.subjectId),
+    );
+    const totalAssuntosRecent = newSubjectIds.size;
 
-    // Each review session ≈ 10 questions (proxy derived from reps count)
-    const totalQuestoes = subjects.reduce((acc, s) => acc + (s.reps || 0) * 10, 0);
-    const totalQuestoesRecent = recent.length * 10;
+    // Total questions from event history
+    const totalQuestoes = reviewEvents.reduce((sum, e) => sum + e.questions, 0);
+    const totalQuestoesRecent = recentEvents.reduce((sum, e) => sum + e.questions, 0);
 
-    const revisoesConcluidas = subjects.reduce((acc, s) => acc + (s.reps || 0), 0);
-    const revisoesConcluidasRecent = recent.length;
+    const revisoesConcluidas = reviewEvents.length;
+    const revisoesConcluidasRecent = recentEvents.length;
 
     const revisoesHoje = subjects.filter(s => s.nextReviewDate && s.nextReviewDate <= today).length;
 
     const conhecimentoEstavel = subjects.filter(s => (s.stability || 0) > 30).length;
-    const conhecimentoEstavelRecent = recent.filter(s => (s.stability || 0) > 30).length;
+    const recentSubjects = subjects.filter(s => s.lastReviewDate && s.lastReviewDate >= cutoff);
+    const conhecimentoEstavelRecent = recentSubjects.filter(s => (s.stability || 0) > 30).length;
 
-    const withAcc = subjects.map(subjectAcc).filter((v): v is number => v !== null);
+    const withAcc = reviewEvents.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
     const avgAcc = withAcc.length > 0
       ? withAcc.reduce((a, v) => a + v, 0) / withAcc.length
       : 0;
 
-    const recentWithAcc = recent.map(subjectAcc).filter((v): v is number => v !== null);
+    const recentWithAcc = recentEvents.map(e => performanceToAcc(e.performance)).filter((v): v is number => v !== null);
     const avgAccRecent = recentWithAcc.length > 0
       ? recentWithAcc.reduce((a, v) => a + v, 0) / recentWithAcc.length
       : null;
@@ -272,22 +275,40 @@ export function EspiaoEstrategico({ subjects }: EspiaoEstrategicoProps) {
       conhecimentoEstavel, conhecimentoEstavelRecent,
       avgAcc, avgAccRecent,
     };
-  }, [subjects]);
+  }, [subjects, reviewEvents]);
 
   const performerData = useMemo(() => {
-    const ranked = subjects
-      .map(s => ({ ...s, acc: subjectAcc(s) }))
-      .filter((s): s is typeof s & { acc: number } => s.acc !== null)
+    // Aggregate per-subject accuracy from event history
+    const subjectAccMap = new Map<string, { name: string; area: string; accValues: number[] }>();
+    for (const e of reviewEvents) {
+      const acc = performanceToAcc(e.performance);
+      if (acc === null) continue;
+      if (!subjectAccMap.has(e.subjectId)) {
+        // Try to find area from current subjects list
+        const subj = subjects.find(s => s.id === e.subjectId);
+        subjectAccMap.set(e.subjectId, { name: e.subjectName, area: subj?.area ?? '', accValues: [] });
+      }
+      subjectAccMap.get(e.subjectId)!.accValues.push(acc);
+    }
+
+    const ranked = Array.from(subjectAccMap.entries())
+      .map(([id, { name, area, accValues }]) => ({
+        id,
+        aulaPrincipal: name,
+        area,
+        acc: accValues.reduce((a, v) => a + v, 0) / accValues.length,
+      }))
       .sort((a, b) => b.acc - a.acc);
+
     return {
       top: ranked.slice(0, 5),
       bottom: ranked.slice(-5).reverse(),
     };
-  }, [subjects]);
+  }, [subjects, reviewEvents]);
 
   const chartData = useMemo(
-    () => getChartData(subjects, chartFilter),
-    [subjects, chartFilter],
+    () => getChartData(reviewEvents, chartFilter),
+    [reviewEvents, chartFilter],
   );
 
   return (

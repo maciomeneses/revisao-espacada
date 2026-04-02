@@ -1,11 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
-import { calculateNextReview, resetCiclo } from '../services/algorithm';
+import { calculateNextReview, resetCiclo, localDateStr } from '../services/algorithm';
 import { api } from '../services/api';
+import type { ReviewEventPayload } from '../services/api';
+
+export type { ReviewEventPayload };
 
 export function useSubjects() {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects());
+  const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
 
   /**
    * Ref que espelha o estado atual de subjects para que callbacks estáveis
@@ -17,7 +21,7 @@ export function useSubjects() {
     subjectsRef.current = subjects;
   }, [subjects]);
 
-  // Sync with API if possible, merging with local state
+  // Sync subjects with API if possible, merging with local state
   useEffect(() => {
     if (!localStorage.getItem('ebbin_session')) return;
     api.subjects.list().then((data) => {
@@ -46,6 +50,12 @@ export function useSubjects() {
         });
       }
     }).catch(console.error);
+  }, []);
+
+  // Load review event history on mount
+  useEffect(() => {
+    if (!localStorage.getItem('ebbin_session')) return;
+    api.reviewEvents.list().then(setReviewEvents).catch(console.error);
   }, []);
 
   const updateSubject = useCallback(async (updated: Subject) => {
@@ -92,12 +102,34 @@ export function useSubjects() {
     [updateSubject],
   );
 
+  /** Converte numCorrect (0–10 de 10) para PerformanceLevel. */
+  function numCorrectToPerformance(numCorrect: number): string {
+    if (numCorrect >= 9) return 'excelente';
+    if (numCorrect >= 7) return 'bom';
+    if (numCorrect >= 5) return 'medio';
+    return 'ruim';
+  }
+
   const registerReview = useCallback(
     (id: string, numCorrect: number) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
-      updateSubject({ ...subject, ...updates });
+      const updated = { ...subject, ...updates };
+      updateSubject(updated);
+
+      // Fire-and-forget: log review event to backend
+      const event: ReviewEventPayload = {
+        subjectId: subject.id,
+        subjectName: subject.aulaPrincipal,
+        reviewDate: localDateStr(new Date()),
+        performance: numCorrectToPerformance(numCorrect),
+        reps: (updated.reps ?? 1),
+        questions: 10,
+      };
+      api.reviewEvents.create(event)
+        .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
+        .catch(console.error);
     },
     [updateSubject],
   );
@@ -109,7 +141,21 @@ export function useSubjects() {
       // Força cálculo de primeira revisão zerando o estado FSRS
       const fresh = { ...subject, reps: 0, stability: 0, difficulty: 0 };
       const updates = calculateNextReview(fresh, numCorrect);
-      updateSubject({ ...subject, ...updates, flashcardsFeitos: true });
+      const updated = { ...subject, ...updates, flashcardsFeitos: true };
+      updateSubject(updated);
+
+      // Fire-and-forget: log fixacao event as reps=1
+      const event: ReviewEventPayload = {
+        subjectId: subject.id,
+        subjectName: subject.aulaPrincipal,
+        reviewDate: localDateStr(new Date()),
+        performance: numCorrectToPerformance(numCorrect),
+        reps: 1,
+        questions: 10,
+      };
+      api.reviewEvents.create(event)
+        .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
+        .catch(console.error);
     },
     [updateSubject],
   );
@@ -180,6 +226,7 @@ export function useSubjects() {
 
   return {
     subjects,
+    reviewEvents,
     toggleAula,
     togglePreAula,
     toggleFlashcards,

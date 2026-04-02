@@ -25,6 +25,7 @@ export default function App() {
 
   const {
     subjects,
+    reviewEvents,
     toggleAula,
     registerReview,
     registerFixacao,
@@ -134,7 +135,7 @@ export default function App() {
 
         {activeView === 'espiao' && (
           <div className="flex-1 overflow-hidden">
-            <EspiaoEstrategico subjects={subjects} />
+            <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
           </div>
         )}
 
