@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Subject } from '../types';
 import { localDateStr } from '../services/algorithm';
 import { Agenda } from './Agenda';
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpen, Zap } from 'lucide-react';
 
 interface DashboardProps {
   subjects: Subject[];
@@ -44,6 +44,13 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
 
+  const dashStats = useMemo(() => ({
+    totalMaterias: subjects.length,
+    revisoesHoje: subjects.filter(s => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
+    conhecimentoEstavel: subjects.filter(s => (s.stability || 0) > 30).length,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [subjects]);
+
   const reviewsByDate = useMemo(() => {
     const map = new Map<string, Subject[]>();
     for (const s of subjects) {
@@ -68,6 +75,27 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
+      {/* ── Stat cards ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: 'Total de Matérias',    value: dashStats.totalMaterias,        icon: BookOpen },
+          { label: 'Revisões para Hoje',   value: dashStats.revisoesHoje,         icon: Calendar },
+          { label: 'Conhecimento Estável', value: dashStats.conhecimentoEstavel,  icon: Zap },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-white p-5 rounded-2xl border border-border shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-muted-light text-[10px] font-black uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-3xl font-black text-navy">{value}</p>
+              </div>
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center bg-navy/5 shrink-0 ml-3">
+                <Icon className="w-3.5 h-3.5 text-navy/40" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* ── Revisões de Hoje + Atrasadas ────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Revisões do dia selecionado */}
