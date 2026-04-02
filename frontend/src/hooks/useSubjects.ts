@@ -111,7 +111,7 @@ export function useSubjects() {
   }
 
   const registerReview = useCallback(
-    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0) => {
+    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0, reviewDate?: string) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
@@ -122,7 +122,7 @@ export function useSubjects() {
       const event: ReviewEventPayload = {
         subjectId: subject.id,
         subjectName: subject.aulaPrincipal,
-        reviewDate: localDateStr(new Date()),
+        reviewDate: reviewDate || localDateStr(new Date()),
         performance: numCorrectToPerformance(numCorrect),
         reps: (updated.reps ?? 1),
         questions: totalQuestions,
@@ -136,7 +136,7 @@ export function useSubjects() {
   );
 
   const registerFixacao = useCallback(
-    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0) => {
+    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0, reviewDate?: string) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       // Força cálculo de primeira revisão zerando o estado FSRS
@@ -149,7 +149,7 @@ export function useSubjects() {
       const event: ReviewEventPayload = {
         subjectId: subject.id,
         subjectName: subject.aulaPrincipal,
-        reviewDate: localDateStr(new Date()),
+        reviewDate: reviewDate || localDateStr(new Date()),
         performance: numCorrectToPerformance(numCorrect),
         reps: 1,
         questions: totalQuestions,

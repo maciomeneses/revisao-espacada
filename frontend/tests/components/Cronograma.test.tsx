@@ -81,7 +81,7 @@ describe('Cronograma', () => {
     // totalQuestions='10' (default), numCorrect=8 → normalized = round(8/10*10) = 8
     fireEvent.change(screen.getByLabelText(/acertos/i), { target: { value: '8' } });
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
-    expect(onRegisterFixacao).toHaveBeenCalledWith('sub-test', 8, 10, 80);
+    expect(onRegisterFixacao).toHaveBeenCalledWith('sub-test', 8, 10, 80, today);
   });
 
   it('abre modal de revisão ao clicar em REVISAR', () => {
@@ -118,7 +118,7 @@ describe('Cronograma', () => {
     fireEvent.change(acertosInput, { target: { value: '9' } });
 
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
-    expect(onRegisterReview).toHaveBeenCalledWith('sub-test', 9, 10, 90);
+    expect(onRegisterReview).toHaveBeenCalledWith('sub-test', 9, 10, 90, today);
   });
 
   it('exibe badge "Atrasado" para subjects com nextReviewDate no passado', () => {
