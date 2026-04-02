@@ -162,8 +162,8 @@ export function AppContent() {
             (isAuthenticated && userRole === 'ADMIN') ? <AdminArea /> : <Navigate to="/dashboard" replace />
           } />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
+          {/* Catch-all: vai para a Landing Page se a rota não existir */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 

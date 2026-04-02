@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LogIn, Mail, Lock, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
+import { LogIn, Mail, Lock, ArrowLeft, KeyRound, AlertCircle, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 
 interface AuthScreenProps {
@@ -9,6 +10,7 @@ interface AuthScreenProps {
 type AuthMode = 'login' | 'forgot-password';
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,8 +55,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full relative">
+        {/* Back to Landing link */}
+        <button 
+          onClick={() => navigate('/')}
+          className="absolute -top-12 left-0 flex items-center gap-2 text-navy/40 hover:text-navy text-xs font-black uppercase tracking-widest transition-all group"
+        >
+          <Home className="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" />
+          Voltar ao site
+        </button>
+
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-md" style={{ backgroundColor: '#1F3A5F' }}>
