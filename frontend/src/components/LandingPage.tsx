@@ -13,6 +13,8 @@ import {
 export function LandingPage() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  const [isDemoActive, setIsDemoActive] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -20,33 +22,46 @@ export function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Timer para a animação da demo
+  useEffect(() => {
+    let timer: any;
+    if (isDemoActive) {
+      timer = setInterval(() => {
+        setDemoStep((prev) => (prev + 1) % 5);
+      }, 2500);
+    } else {
+      setDemoStep(0);
+    }
+    return () => clearInterval(timer);
+  }, [isDemoActive]);
+
   return (
-    <div className="min-h-screen bg-[#0A0F1E] text-white selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#0A0F1E] text-white selection:bg-cyan-500/30 font-sans">
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-[#0A0F1E]/80 backdrop-blur-md border-b border-white/5 py-4' : 'bg-transparent py-6'
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled ? 'bg-[#0A0F1E]/90 backdrop-blur-xl border-b border-white/10 py-3' : 'bg-transparent py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <Brain className="text-white w-6 h-6" />
+          <div className="flex items-center gap-3 group cursor-pointer">
+            <div className="w-10 h-10 bg-[#FFC72C] rounded-xl flex items-center justify-center shadow-lg shadow-[#FFC72C]/20 transition-transform group-hover:rotate-12">
+              <Brain className="text-[#1F3A5F] w-6 h-6" />
             </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+            <span className="text-2xl font-black tracking-tighter uppercase italic">
               Ebbin
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#como-funciona" className="text-sm font-medium text-white/60 hover:text-white transition-colors">Como funciona</a>
-            <a href="#algoritmo" className="text-sm font-medium text-white/60 hover:text-white transition-colors">Algoritmo FSRS</a>
-            <a href="#beneficios" className="text-sm font-medium text-white/60 hover:text-white transition-colors">Benefícios</a>
+          <div className="hidden md:flex items-center gap-10">
+            <a href="#como-funciona" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Como funciona</a>
+            <a href="#algoritmo" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Algoritmo</a>
+            <a href="#beneficios" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Benefícios</a>
           </div>
 
           <button 
             onClick={() => navigate('/login')}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 bg-[#FFC72C] hover:bg-[#e6b000] text-[#1F3A5F] px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-[#FFC72C]/10"
           >
-            Login
+            Acessar Plataforma
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -54,76 +69,142 @@ export function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-cyan-500/10 rounded-full blur-[120px] -z-10" />
-        <div className="absolute top-40 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] -z-10" />
+        {/* Glow Effects */}
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] -z-10 animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] -z-10" />
 
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-[0.2em] text-cyan-400 mb-6 animate-fade-in">
-              <Cpu className="w-3 h-3" />
-              Powered by FSRS v4 Algorithm
+        <div className="max-w-7xl mx-auto px-6 text-center md:text-left grid md:grid-cols-2 gap-16 items-center">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-[10px] uppercase font-black tracking-[0.2em] text-[#FFC72C] mb-8 animate-fade-in shadow-inner">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFC72C] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFC72C]"></span>
+              </span>
+              Inteligência Artificial FSRS v4.0
             </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
-              Domine seu aprendizado com <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">precisão científica.</span>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.05]">
+              Elimine o <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFC72C] via-[#FFD700] to-cyan-400">esquecimento.</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/60 mb-10 leading-relaxed font-medium">
-              O Ebbin utiliza algoritmos de ponta para prever o momento exato do seu esquecimento. Revise menos, memorize mais e alcance a excelência acadêmica.
+            <p className="text-lg md:text-xl text-white/50 mb-10 leading-relaxed font-medium max-w-xl">
+              Nossa tecnologia prevê o momento exato em que seu cérebro deixará de lembrar. Transforme horas de estudo em conhecimento permanente.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
               <button 
                 onClick={() => navigate('/login')}
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-cyan-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                className="bg-white text-[#0A0F1E] px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/90 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-white/5"
               >
                 Começar agora
                 <ChevronRight className="w-5 h-5" />
               </button>
-              <a 
-                href="#como-funciona"
-                className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/10 transition-all text-center flex items-center justify-center"
+              <button 
+                onClick={() => setIsDemoActive(!isDemoActive)}
+                className={`group border ${isDemoActive ? 'border-[#FFC72C] text-[#FFC72C]' : 'border-white/10 text-white'} px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/5 transition-all text-center flex items-center justify-center gap-3`}
               >
-                Ver demonstração
-              </a>
+                {isDemoActive ? 'Parar Demonstração' : 'Ver demonstração'}
+                <div className={`w-2 h-2 rounded-full ${isDemoActive ? 'bg-[#FFC72C] animate-ping' : 'bg-white/20'}`} />
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Dashboard Mockup Preview */}
-        <div className="mt-20 max-w-7xl mx-auto px-6 relative translate-y-12 animate-float">
-          <div className="rounded-[2.5rem] border border-white/10 bg-[#161C2E]/40 backdrop-blur-2xl p-4 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
-            <div className="aspect-[16/9] bg-[#0A0F1E] rounded-[1.8rem] overflow-hidden border border-white/5 p-6 flex flex-col gap-6">
-              <div className="flex justify-between items-center pb-6 border-b border-white/5">
-                <div className="flex gap-2">
-                  <div className="w-10 h-3 bg-white/10 rounded-full" />
-                  <div className="w-16 h-3 bg-white/5 rounded-full" />
+          {/* Interactive Hero Dashboard */}
+          <div className="relative group transition-all duration-700 hover:rotate-1">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+            
+            <div className="relative rounded-[2.8rem] border border-white/10 bg-[#0D1225] p-3 shadow-2xl overflow-hidden">
+              {/* Fake Browser Toolbar */}
+              <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-white/5" />
-                  <div className="w-24 h-8 rounded-full bg-cyan-500/20" />
+                <div className="ml-4 flex-1 h-6 bg-white/5 rounded-full flex items-center px-4">
+                  <div className="w-20 h-1.5 bg-white/10 rounded-full" />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-6 flex-1">
-                <div className="bg-white/5 rounded-3xl p-6 flex flex-col justify-end">
-                   <div className="w-full h-1/2 bg-gradient-to-t from-cyan-500/20 to-transparent rounded-2xl mb-4" />
-                   <div className="w-1/2 h-4 bg-white/10 rounded-full" />
+
+              {/* Real-ish Dashboard Mockup */}
+              <div className="p-6 bg-[#0A0F1E] aspect-[4/3] rounded-[2rem] flex flex-col gap-6 overflow-hidden">
+                {/* Header Mockup */}
+                <div className="flex justify-between items-center animate-pulse">
+                  <div className="w-24 h-4 bg-white/10 rounded-full" />
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[#FFC72C]/10 flex items-center justify-center">
+                       <Database className="w-4 h-4 text-[#FFC72C]" />
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-white/5" />
+                  </div>
                 </div>
-                <div className="col-span-2 bg-white/5 rounded-3xl p-6 relative overflow-hidden">
-                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-                   <div className="w-1/3 h-6 bg-white/20 rounded-full mb-6" />
-                   <div className="space-y-3">
-                     {[1,2,3,4].map(i => (
-                       <div key={i} className="flex justify-between items-center py-3 border-b border-white/5">
-                         <div className="w-1/2 h-3 bg-white/10 rounded-full" />
-                         <div className="w-12 h-3 bg-white/5 rounded-full" />
-                       </div>
-                     ))}
+
+                {/* Dashboard Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                   <div className={`p-4 rounded-2xl border transition-all duration-500 ${demoStep === 1 ? 'bg-cyan-500/10 border-cyan-500/40 scale-105' : 'bg-white/5 border-white/5'}`}>
+                      <div className="w-1/2 h-2 bg-white/20 rounded-full mb-3" />
+                      <div className="text-2xl font-black text-cyan-400">93%</div>
                    </div>
+                   <div className={`p-4 rounded-2xl border transition-all duration-500 ${demoStep === 4 ? 'bg-[#FFC72C]/10 border-[#FFC72C]/40 scale-105' : 'bg-white/5 border-white/5'}`}>
+                      <div className="w-1/2 h-2 bg-white/20 rounded-full mb-3" />
+                      <div className="text-2xl font-black text-[#FFC72C]">24</div>
+                   </div>
+                </div>
+
+                {/* Review List Demo */}
+                <div className="flex-1 bg-white/5 rounded-[1.5rem] p-4 flex flex-col gap-3 relative">
+                   <div className="flex justify-between items-center mb-2 px-2">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Próximas Revisões</div>
+                      <div className="w-3 h-3 rounded-full bg-red-400 animate-ping" />
+                   </div>
+
+                   {[
+                     { name: 'Citologia', delay: 'Atrasado', color: 'bg-red-400' },
+                     { name: 'Cinemática', delay: '2h', color: 'bg-orange-400' },
+                     { name: 'História Geral', delay: 'Amanhã', color: 'bg-cyan-400' }
+                   ].map((item, i) => (
+                     <div 
+                        key={item.name} 
+                        className={`flex justify-between items-center p-3 rounded-xl border border-white/5 transition-all duration-700 ${demoStep === 2 && i === 0 ? 'bg-white/10 scale-102 border-white/20' : 'bg-white/5 opacity-50'}`}
+                      >
+                       <div className="flex items-center gap-3">
+                         <div className={`w-2 h-2 rounded-full ${item.color}`} />
+                         <span className="text-sm font-bold">{item.name}</span>
+                       </div>
+                       <span className={`text-[9px] font-black uppercase px-2 py-1 rounded bg-white/5 text-white/40`}>{item.delay}</span>
+                     </div>
+                   ))}
+
+                   {/* Simulated Modal Overlay (Demo Step 3 & 4) */}
+                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                      <Brain className="w-10 h-10 text-cyan-400 mb-4 animate-bounce" />
+                      <h4 className="font-bold mb-1">Revisão: Citologia</h4>
+                      <p className="text-[10px] text-white/40 mb-6">Como foi seu desempenho?</p>
+
+                      <div className="flex gap-2 mb-6">
+                        {[1,2,3,4].map(btn => (
+                          <div key={btn} className={`w-8 h-8 rounded-lg ${demoStep === 4 && btn === 3 ? 'bg-[#FFC72C] scale-110 shadow-lg' : 'bg-white/10'}`} />
+                        ))}
+                      </div>
+                      
+                      <div className={`w-full py-2 rounded-xl bg-cyan-400 text-[#0A0F1E] text-[10px] font-black uppercase translate-y-${demoStep === 4 ? '0 opacity-100' : '4 opacity-0'} transition-all`}>
+                        Salvando Progresso...
+                      </div>
+                   </div>
+
+                   {/* Virtual Cursor */}
+                   <div className={`absolute w-6 h-6 bg-white/20 border-2 border-white/40 rounded-full z-[100] pointer-events-none transition-all duration-1000 mix-blend-difference hidden md:block
+                     ${demoStep === 0 ? 'top-10 left-10' : ''}
+                     ${demoStep === 1 ? 'top-20 left-40' : ''}
+                     ${demoStep === 2 ? 'top-1/2 left-20' : ''}
+                     ${demoStep === 3 ? 'top-2/3 left-1/2' : ''}
+                     ${demoStep === 4 ? 'top-3/4 left-1/2' : ''}
+                   `} />
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Stats Quick Look */}
       <section className="py-20 bg-white/[0.02] border-y border-white/5">
