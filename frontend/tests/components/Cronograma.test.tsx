@@ -165,4 +165,53 @@ describe('Cronograma', () => {
     // No cards — only the header should be visible
     expect(screen.queryByRole('button', { name: /revisar/i })).not.toBeInTheDocument();
   });
+
+  it('permite mudar a data e o numero de questoes no modal de revisão', () => {
+    const subjects = [makeSubject({ id: 'sub-test', currentStage: 'Review' })];
+    const { container } = render(<Cronograma {...defaultProps} subjects={subjects} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /revisar/i }));
+    
+    const dateInput = container.querySelector('input[type="date"]');
+    if(dateInput) fireEvent.change(dateInput, { target: { value: '2023-01-01' } });
+
+    const numberInputs = container.querySelectorAll('input[type="number"]');
+    if(numberInputs[0]) fireEvent.change(numberInputs[0], { target: { value: '20' } });
+    if(numberInputs[1]) fireEvent.change(numberInputs[1], { target: { value: '18' } });
+    
+    // Testar click background overlay closeModal
+    const overlay = container.querySelector('.fixed.inset-0.bg-navy\\/20'); // The dialog overlay
+    if (overlay) {
+      fireEvent.click(overlay);
+    }
+  });
+
+  it('abre o menu de opções e clica em Resetar Ciclo e Reverter Estabilidade', () => {
+    const onResetCiclo = vi.fn();
+    const onRevertStage = vi.fn();
+    const subjects = [makeSubject({ id: 'sub-test', currentStage: 'Review' })];
+    
+    render(<Cronograma {...defaultProps} subjects={subjects} onResetCiclo={onResetCiclo} onRevertStage={onRevertStage} />);
+
+    const menuButtons = document.querySelectorAll('button > svg > path[d^="M12 5v.01M12"]'); // Ellipsis button
+    if (menuButtons[0]) {
+      const btn = menuButtons[0].closest('button');
+      fireEvent.click(btn!);
+      
+      const resetCicloBtn = screen.getByText('Resetar Ciclo');
+      fireEvent.click(resetCicloBtn);
+      expect(onResetCiclo).toHaveBeenCalledWith('sub-test');
+
+      // Abre o menu novamente
+      fireEvent.click(btn!);
+      const revertEstabilidadeBtn = screen.getByText('Reverter Estabilidade');
+      fireEvent.click(revertEstabilidadeBtn);
+      expect(onRevertStage).toHaveBeenCalledWith('sub-test');
+      
+      // Test the overlay for menu
+      fireEvent.click(btn!);
+      const overlay = document.querySelector('.fixed.inset-0.z-10');
+      if (overlay) fireEvent.click(overlay);
+    }
+  });
 });

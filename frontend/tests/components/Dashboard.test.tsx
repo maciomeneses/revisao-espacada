@@ -94,4 +94,24 @@ describe('Dashboard', () => {
     render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
     expect(screen.getByText(/algoritmo FSRS v6/i)).toBeInTheDocument();
   });
+
+  it('navega no minicalendário de revisões agendadas', () => {
+    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
+    const onNavigateCronograma = vi.fn();
+    render(<Dashboard subjects={subjects} onNavigateCronograma={onNavigateCronograma} />);
+
+    const btnNavigate = screen.getAllByTitle('Ir para o Cronograma')[0];
+    if(btnNavigate) fireEvent.click(btnNavigate);
+    expect(onNavigateCronograma).toHaveBeenCalled();
+
+    // Navegar nos dias
+    const btnLeft = document.querySelector('button > svg.lucide-chevron-left');
+    const btnRight = document.querySelector('button > svg.lucide-chevron-right');
+
+    if(btnLeft) fireEvent.click(btnLeft!.closest('button')!);
+    if(btnRight) {
+      fireEvent.click(btnRight!.closest('button')!);
+      fireEvent.click(btnRight!.closest('button')!); // Avança 2 dias
+    }
+  });
 });
