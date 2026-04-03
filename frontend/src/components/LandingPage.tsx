@@ -98,7 +98,7 @@ export function LandingPage() {
           <div className="relative group transition-all duration-700 hover:rotate-1">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-[3rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
             
-            <div className="relative rounded-[2.8rem] border border-white/10 bg-[#0D1225] p-3 shadow-2xl overflow-hidden">
+            <div className="relative rounded-[2.8rem] border border-white/10 bg-[#0D1225] p-3 shadow-2xl overflow-hidden scale-[0.85] sm:scale-100 origin-top">
               {/* Fake Browser Toolbar */}
               <div className="flex items-center gap-2 px-6 py-4 border-b border-white/5">
                 <div className="flex gap-1.5">
@@ -212,6 +212,7 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+          <div className="md:hidden h-20" /> {/* Spacer for scaled mockup on mobile */}
         </div>
       </section>
 
@@ -263,17 +264,17 @@ export function LandingPage() {
           </svg>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
           <div className="order-2 md:order-1">
-            <div className="relative rounded-[3rem] overflow-hidden border border-white/10 group aspect-square shadow-2xl">
+            <div className="relative rounded-[2rem] md:rounded-[3rem] overflow-hidden border border-white/10 group aspect-video md:aspect-square shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F1E] via-transparent to-transparent z-10" />
               <img 
                 src="https://images.unsplash.com/photo-1544652252-870098df2462?auto=format&fit=crop&q=80&w=1000" 
-                alt="Vision of Knowledge"
+                alt=""
                 className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-1000 opacity-60"
               />
-              <div className="absolute bottom-8 left-8 right-8 z-20">
-                <blockquote className="text-xl font-bold italic text-white/90 leading-relaxed mb-4">
+              <div className="absolute bottom-6 md:bottom-8 left-6 md:left-8 right-6 md:right-8 z-20">
+                <blockquote className="text-lg md:text-xl font-bold italic text-white/90 leading-relaxed mb-4">
                   "As representações mentais duram menos do que se imagina, mas a ciência pode torná-las imortais."
                 </blockquote>
                 <div className="flex items-center gap-3">
@@ -315,13 +316,13 @@ export function LandingPage() {
             <div className="flex items-center gap-6 pt-6 border-t border-white/5">
               <div className="flex -space-x-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0F1E] bg-white/5 flex items-center justify-center backdrop-blur-sm overflow-hidden">
-                    <img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="User" />
+                  <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0F1E] bg-white/10 flex items-center justify-center backdrop-blur-sm overflow-hidden">
+                    <img src={`/revisao-espacada/avatars/teen${i}.png`} alt="Estudante" className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
               <div>
-                <p className="text-sm font-black text-white">+100k estudantes</p>
+                <p className="text-sm font-black text-white">+100k vestibulandos</p>
                 <p className="text-xs text-white/30 font-bold uppercase tracking-widest">Domando o esquecimento</p>
               </div>
             </div>
