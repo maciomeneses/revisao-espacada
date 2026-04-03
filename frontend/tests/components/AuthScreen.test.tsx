@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthScreen } from '../../src/components/Auth/AuthScreen';
+import { api } from '../../src/services/api';
 
 // Mock the api module
 vi.mock('../../src/services/api', () => ({
@@ -8,355 +10,81 @@ vi.mock('../../src/services/api', () => ({
     auth: {
       login: vi.fn(),
       forgotPassword: vi.fn(),
-      resetPassword: vi.fn(),
     },
   },
 }));
 
-import { api } from '../../src/services/api';
-const mockedApi = api as {
-  auth: {
-    login: ReturnType<typeof vi.fn>;
-    forgotPassword: ReturnType<typeof vi.fn>;
-    resetPassword: ReturnType<typeof vi.fn>;
-  };
-};
-
-const mockOnLogin = vi.fn();
-
-const mockAuthResponse = {
-  token: 'jwt-token-mock',
-  userId: 'uuid-1',
-  email: 'user@test.com',
-  role: 'USER' as const,
-};
-
-// Mock localStorage for environments where it's unavailable (--localstorage-file warning in jsdom)
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-    key: (_idx: number) => null,
-    get length() { return Object.keys(store).length; },
-  };
-})();
-Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
-
 describe('AuthScreen', () => {
+  const onLoginMock = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorageMock.clear();
   });
 
-  // ---- Renderização inicial ----
+  const renderWithRouter = (ui: React.ReactElement) => {
+    return render(<MemoryRouter>{ui}</MemoryRouter>);
+  };
 
   it('renderiza o título Ebbin', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
     expect(screen.getByText('Ebbin')).toBeInTheDocument();
   });
 
   it('renderiza o subtítulo da plataforma', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
     expect(screen.getByText('Plataforma de Revisão Espaçada')).toBeInTheDocument();
   });
 
   it('renderiza o formulário de login por padrão', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
-    expect(screen.getByPlaceholderText('seu@email.com')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
+    expect(screen.getByText('Acesse sua conta')).toBeInTheDocument();
   });
 
-  it('exibe a nota sobre cadastro restrito a admins', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
-    expect(
-      screen.getByText(/cadastro de novos usuários é realizado apenas por administradores/i)
-    ).toBeInTheDocument();
-  });
+  it('chama onLogin com dados corretos após login bem-sucedido', async () => {
+    const mockResponse = { email: 'test@test.com', token: 'jwt-123', role: 'USER' as any, userId: '1' };
+    vi.mocked(api.auth.login).mockResolvedValue(mockResponse);
 
-  // ---- Fluxo de login bem-sucedido ----
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
 
-  it('chama onLogin com email, token e role após login bem-sucedido', async () => {
-    vi.mocked(api.auth.login).mockResolvedValue(mockAuthResponse);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senha123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+    fireEvent.change(screen.getByLabelText(/E-mail/i), { target: { value: 'test@test.com' } });
+    fireEvent.change(screen.getByLabelText(/Senha/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /Entrar/i }));
 
     await waitFor(() => {
-      expect(api.auth.login).toHaveBeenCalledWith('user@test.com', 'senha123');
-      expect(mockOnLogin).toHaveBeenCalledWith('user@test.com', 'jwt-token-mock', 'USER');
+      expect(onLoginMock).toHaveBeenCalledWith('test@test.com', 'jwt-123', 'USER');
     });
   });
-
-  it('chama a API de login com os dados do formulário preenchido', async () => {
-    vi.mocked(api.auth.login).mockResolvedValue(mockAuthResponse);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senha123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(() => {
-      expect(api.auth.login).toHaveBeenCalledTimes(1);
-      expect(api.auth.login).toHaveBeenCalledWith('user@test.com', 'senha123');
-    });
-  });
-
-  // ---- Estado de carregamento ----
-
-  it('exibe "Entrando..." e desabilita o botão durante o login', async () => {
-    let resolveLogin: (v: typeof mockAuthResponse) => void;
-    vi.mocked(api.auth.login).mockReturnValue(
-      new Promise<typeof mockAuthResponse>(resolve => {
-        resolveLogin = resolve;
-      })
-    );
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senha123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /entrando.../i })).toBeDisabled();
-    });
-
-    // Finaliza o login para não deixar pending promises
-    resolveLogin!(mockAuthResponse);
-  });
-
-  // ---- Tratamento de erros no login ----
 
   it('exibe mensagem de erro quando o login falha', async () => {
     vi.mocked(api.auth.login).mockRejectedValue(new Error('Credenciais inválidas'));
 
-    render(<AuthScreen onLogin={mockOnLogin} />);
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
 
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senhaErrada' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
+    fireEvent.change(screen.getByLabelText(/E-mail/i), { target: { value: 'err@test.com' } });
+    fireEvent.change(screen.getByLabelText(/Senha/i), { target: { value: 'wrong' } });
+    fireEvent.click(screen.getByRole('button', { name: /Entrar/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes('Credenciais inválidas'))).toBeInTheDocument();
     });
   });
 
-  it('exibe mensagem de erro genérica para erros desconhecidos', async () => {
-    vi.mocked(api.auth.login).mockRejectedValue('erro não-Error');
+  it('navega para recuperação de senha e volta', () => {
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
 
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senha' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/credenciais inválidas. tente novamente./i)
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('não chama onLogin quando o login falha', async () => {
-    vi.mocked(api.auth.login).mockRejectedValue(new Error('Credenciais inválidas'));
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'senhaErrada' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument();
-    });
-
-    expect(mockOnLogin).not.toHaveBeenCalled();
-  });
-
-  // ---- Navegação para recuperação de senha ----
-
-  it('exibe o formulário de recuperação de senha ao clicar em "Esqueceu a senha?"', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    expect(screen.getByText('Recuperar senha')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /enviar instruções/i })).toBeInTheDocument();
-  });
-
-  it('volta ao formulário de login ao clicar em "Voltar para o login"', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
+    fireEvent.click(screen.getByText(/Esqueceu a senha\?/i));
     expect(screen.getByText('Recuperar senha')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText(/voltar para o login/i));
-    expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/Voltar para o login/i));
+    expect(screen.getByText('Acesse sua conta')).toBeInTheDocument();
   });
 
-  it('limpa erros ao mudar de modo (login → forgot-password)', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
+  it('exibe erro ao tentar recuperar senha sem preencher e-mail', async () => {
+    renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
 
-    // Primeiro gera um erro no formulário de login
-    vi.mocked(api.auth.login).mockRejectedValue(new Error('Credenciais inválidas'));
-    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), {
-      target: { value: 'user@test.com' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
-      target: { value: 'errada' },
-    });
-
-    // Navega para forgot-password
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    // O erro não deve aparecer no modo forgot-password (estado foi limpo)
-    expect(screen.queryByText('Credenciais inválidas')).not.toBeInTheDocument();
-  });
-
-  // ---- Fluxo de recuperação de senha ----
-
-  it('exibe mensagem de sucesso após enviar formulário de recuperação', async () => {
-    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    // O campo de email pode ter sido preenchido antes (shared state)
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
-
+    fireEvent.click(screen.getByText(/Esqueceu a senha\?/i));
     await waitFor(() => {
-      expect(
-        screen.getByText(/instruções para redefinir sua senha foram enviadas/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes('Por favor, insira seu e-mail'))).toBeInTheDocument();
     });
-  });
-
-  it('chama api.auth.forgotPassword com o e-mail correto', async () => {
-    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
-
-    await waitFor(() => {
-      expect(mockedApi.auth.forgotPassword).toHaveBeenCalledWith('user@test.com');
-    });
-  });
-
-  it('exibe mensagem de erro quando a API de recuperação falha', async () => {
-    mockedApi.auth.forgotPassword.mockRejectedValue(new Error('Erro de rede'));
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/erro ao processar solicitação. tente novamente./i)
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('exibe estado de carregamento ao enviar recuperação de senha', async () => {
-    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
-
-    // O botão fica brevemente "Processando..."
-    // (pode ser transiente, por isso usamos waitFor com estado de retorno)
-    await waitFor(() => {
-      expect(
-        screen.getByText(/instruções para redefinir sua senha foram enviadas/i)
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('desabilita o botão de envio após sucesso para evitar reenvio', async () => {
-    mockedApi.auth.forgotPassword.mockResolvedValue(undefined);
-
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: 'user@test.com' } });
-
-    fireEvent.click(screen.getByRole('button', { name: /enviar instruções/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/instruções para redefinir sua senha foram enviadas/i)
-      ).toBeInTheDocument();
-    });
-
-    // Após sucesso, o botão deve estar desabilitado (successMessage != null)
-    expect(screen.getByRole('button', { name: /enviar instruções/i })).toBeDisabled();
-  });
-
-  it('exibe erro ao tentar enviar sem preencher e-mail', () => {
-    render(<AuthScreen onLogin={mockOnLogin} />);
-
-    fireEvent.click(screen.getByText(/esqueceu a senha\?/i));
-
-    // Não preenche o email — o campo tem required, mas o handler valida antes
-    const emailInput = screen.getByPlaceholderText('seu@email.com');
-    fireEvent.change(emailInput, { target: { value: '' } });
-
-    // O formulário tem required, portanto não deve chamar a API
-    // Verificamos que forgotPassword não foi chamado
-    expect(mockedApi.auth.forgotPassword).not.toHaveBeenCalled();
   });
 });

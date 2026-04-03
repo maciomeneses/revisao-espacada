@@ -85,12 +85,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
+                  <label htmlFor="email" className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
                     E-mail
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
                     <input
+                      id="email"
                       type="email"
                       required
                       name="email"
@@ -105,7 +106,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-navy uppercase tracking-wide">
+                    <label htmlFor="password" className="block text-xs font-semibold text-navy uppercase tracking-wide">
                       Senha
                     </label>
                     <button
@@ -119,6 +120,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
                     <input
+                      id="password"
                       type="password"
                       required
                       name="password"
@@ -173,12 +175,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
+                  <label htmlFor="recover-email" className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
                     E-mail cadastrado
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
                     <input
+                      id="recover-email"
                       type="email"
                       required
                       value={email}
