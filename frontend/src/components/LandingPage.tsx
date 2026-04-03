@@ -5,7 +5,6 @@ import {
   TrendingUp, 
   ShieldCheck, 
   ArrowRight, 
-  Cpu,
   ChevronRight,
   Database
 } from 'lucide-react';
