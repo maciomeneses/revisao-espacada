@@ -21,7 +21,7 @@ export interface AuthResponse {
 }
 
 function getToken(): string | null {
-  const session = localStorage.getItem('ebbin_session');
+  const session = localStorage.getItem('ebbing_session');
   if (!session) return null;
   try {
     return JSON.parse(session).token ?? null;
@@ -43,8 +43,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     // Token expirado ou inválido: só recarrega se havia sessão ativa (evita loop em endpoints
     // chamados antes do login, como api.subjects.list no useSubjects)
-    if (res.status === 401 && !path.startsWith('/api/auth/') && localStorage.getItem('ebbin_session')) {
-      localStorage.removeItem('ebbin_session');
+    if (res.status === 401 && !path.startsWith('/api/auth/') && localStorage.getItem('ebbing_session')) {
+      localStorage.removeItem('ebbing_session');
       window.location.reload();
       return undefined as T;
     }

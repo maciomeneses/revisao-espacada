@@ -41,7 +41,7 @@ export function AppContent() {
   } = useSubjects();
 
   useEffect(() => {
-    const session = localStorage.getItem('ebbin_session');
+    const session = localStorage.getItem('ebbing_session');
     if (session) {
       try {
         const parsed = JSON.parse(session);
@@ -50,27 +50,27 @@ export function AppContent() {
           setUserRole(parsed.role);
         }
       } catch {
-        localStorage.removeItem('ebbin_session');
+        localStorage.removeItem('ebbing_session');
       }
     }
   }, []);
 
   const handleLogin = (email: string, token: string, role: string) => {
-    localStorage.setItem('ebbin_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
+    localStorage.setItem('ebbing_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
     setIsAuthenticated(true);
     setUserRole(role as Role);
     navigate('/dashboard');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('ebbin_session');
+    localStorage.removeItem('ebbing_session');
     setIsAuthenticated(false);
     setUserRole(undefined);
     navigate('/');
   };
 
   const handleResetSuccess = () => {
-    localStorage.removeItem('ebbin_session');
+    localStorage.removeItem('ebbing_session');
     setIsAuthenticated(false);
     setUserRole(undefined);
     setResetToken(null);
@@ -117,7 +117,7 @@ export function AppContent() {
                 >
                   <div className="absolute inset-0 flex items-end px-6 pb-5">
                     <div>
-                      <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbin</h1>
+                      <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbing</h1>
                       <p className="text-white/70 text-sm mt-1">Plataforma de Revisão Espaçada</p>
                     </div>
                   </div>

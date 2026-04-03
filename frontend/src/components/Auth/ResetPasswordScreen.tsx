@@ -62,7 +62,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ token,
           >
             <KeyRound className="w-8 h-8 text-yellow" />
           </div>
-          <h1 className="text-3xl font-extrabold text-navy tracking-tight">Ebbin</h1>
+          <h1 className="text-3xl font-extrabold text-navy tracking-tight">Ebbing</h1>
           <p className="text-muted mt-2">Plataforma de Revisão Espaçada</p>
         </div>
 

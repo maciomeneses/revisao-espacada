@@ -35,19 +35,18 @@ export function LandingPage() {
         scrolled ? 'bg-[#0A0F1E]/90 backdrop-blur-xl border-b border-white/10 py-3' : 'bg-transparent py-6'
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="w-10 h-10 bg-[#FFC72C] rounded-xl flex items-center justify-center shadow-lg shadow-[#FFC72C]/20 transition-transform group-hover:rotate-12">
               <Brain className="text-[#1F3A5F] w-6 h-6" />
             </div>
             <span className="text-2xl font-black tracking-tighter uppercase italic">
-              Ebbin
+              Ebbing
             </span>
           </div>
 
           <div className="hidden md:flex items-center gap-10">
             <a href="#como-funciona" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Como funciona</a>
             <a href="#algoritmo" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Algoritmo</a>
-            <a href="#beneficios" className="text-xs font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">Benefícios</a>
           </div>
 
           <button 
@@ -186,7 +185,7 @@ export function LandingPage() {
                            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
                              <ShieldCheck className="w-6 h-6 text-green-400" />
                            </div>
-                           <h4 className="font-black text-lg text-white mb-1">Taxa de Acerto: 86%</h4>
+                           <h4 className="font-black text-lg text-white mb-1">Taxa de Acertos: 86%</h4>
                            <p className="text-[10px] text-white/50 uppercase font-bold mb-6">Eficiência Alta</p>
 
                            <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full">
@@ -242,7 +241,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-24">
             <h2 className="text-3xl md:text-5xl font-black mb-6">Projetado para quem busca a <br/><span className="text-cyan-400">máxima performance.</span></h2>
-            <p className="text-white/50 max-w-2xl mx-auto">Esqueça cronogramas manuais. O Ebbin automatiza seu planejamento com base no seu desempenho real.</p>
+            <p className="text-white/50 max-w-2xl mx-auto">Esqueça cronogramas manuais. O Ebbing automatiza seu planejamento com base no seu desempenho real.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -287,7 +286,7 @@ export function LandingPage() {
               <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
                 <Brain className="text-white w-5 h-5" />
               </div>
-              <span className="text-xl font-black tracking-tight">Ebbin</span>
+              <span className="text-xl font-black tracking-tight">Ebbing</span>
             </div>
             <p className="text-white/30 text-xs uppercase tracking-widest font-black">Engineering the future of memory</p>
           </div>

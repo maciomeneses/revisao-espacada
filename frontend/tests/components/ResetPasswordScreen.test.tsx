@@ -25,9 +25,9 @@ describe('ResetPasswordScreen', () => {
 
   // ---- Renderização ----
 
-  it('renderiza o título Ebbin', () => {
+  it('renderiza o título Ebbing', () => {
     render(<ResetPasswordScreen token={VALID_TOKEN} onSuccess={mockOnSuccess} />);
-    expect(screen.getByText('Ebbin')).toBeInTheDocument();
+    expect(screen.getByText('Ebbing')).toBeInTheDocument();
   });
 
   it('renderiza o subtítulo da plataforma', () => {

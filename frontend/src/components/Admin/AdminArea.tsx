@@ -272,7 +272,7 @@ export function AdminArea() {
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
                       className="w-full bg-surface border border-border rounded-xl px-12 py-3 text-sm focus:border-navy/20 focus:outline-none transition-all"
-                      placeholder="usuario@ebbin.com"
+                      placeholder="usuario@ebbing.com"
                     />
                   </div>
                 </div>

@@ -31,7 +31,7 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
       {/* ── Top header ─────────────────────────────────────────────── */}
       <header className="bg-white border-b border-border px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-12">
-          <span className="text-xl font-black text-navy tracking-tighter italic">EBBIN</span>
+          <span className="text-xl font-black text-navy tracking-tighter italic">EBBING</span>
 
           {/* Desktop nav — hidden on mobile */}
           <nav className="hidden md:flex items-center gap-8">

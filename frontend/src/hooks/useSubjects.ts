@@ -23,7 +23,7 @@ export function useSubjects() {
 
   // Sync subjects with API if possible, merging with local state
   useEffect(() => {
-    if (!localStorage.getItem('ebbin_session')) return;
+    if (!localStorage.getItem('ebbing_session')) return;
     api.subjects.list().then((data) => {
       if (Array.isArray(data)) {
         setSubjects((prev) => {
@@ -54,7 +54,7 @@ export function useSubjects() {
 
   // Load review event history on mount
   useEffect(() => {
-    if (!localStorage.getItem('ebbin_session')) return;
+    if (!localStorage.getItem('ebbing_session')) return;
     api.reviewEvents.list().then(setReviewEvents).catch(console.error);
   }, []);
 

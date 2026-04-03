@@ -25,9 +25,9 @@ describe('AuthScreen', () => {
     return render(<MemoryRouter>{ui}</MemoryRouter>);
   };
 
-  it('renderiza o título Ebbin', () => {
+  it('renderiza o título Ebbing', () => {
     renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
-    expect(screen.getByText('Ebbin')).toBeInTheDocument();
+    expect(screen.getByText('Ebbing')).toBeInTheDocument();
   });
 
   it('renderiza o subtítulo da plataforma', () => {

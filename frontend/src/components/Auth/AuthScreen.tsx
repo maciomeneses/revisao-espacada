@@ -23,7 +23,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     setError(null);
     setIsLoading(true);
     // Limpar sessão anterior para evitar headers de autorização antigos
-    localStorage.removeItem('ebbin_session');
+    localStorage.removeItem('ebbing_session');
     try {
       const res = await api.auth.login(email, password);
       onLogin(res.email, res.token, res.role);
@@ -71,7 +71,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-md" style={{ backgroundColor: '#1F3A5F' }}>
             <KeyRound className="w-8 h-8 text-yellow" />
           </div>
-          <h1 className="text-3xl font-extrabold text-navy tracking-tight">Ebbin</h1>
+          <h1 className="text-3xl font-extrabold text-navy tracking-tight">Ebbing</h1>
           <p className="text-muted mt-2">Plataforma de Revisão Espaçada</p>
         </div>
 

@@ -1,0 +1,43 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/Users/maciomeneses/Documents/github/revisao-espacada/frontend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m tests/algorithm.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m tests/storage.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/algorithmHelpers.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/components/Dashboard.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 170[2mms[22m[39m
+ [32m✓[39m tests/components/Cronograma.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[32m 269[2mms[22m[39m
+ [32m✓[39m tests/components/AuthScreen.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 212[2mms[22m[39m
+ [32m✓[39m tests/components/ResetPasswordScreen.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 300[2mms[22m[39m
+ [32m✓[39m tests/App.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 146[2mms[22m[39m
+ [32m✓[39m tests/components/AdminArea.test.tsx [2m([22m[2m18 tests[22m[2m)[22m[33m 577[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m100 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (101)[39m
+[2m   Start at [22m 21:24:50
+[2m   Duration [22m 1.68s[2m (transform 460ms, setup 572ms, import 1.23s, tests 1.69s, environment 5.60s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   57.55 |    57.99 |   43.64 |   59.57 |                   
+ src               |   54.16 |    86.95 |   30.76 |   53.19 |                   
+  App.tsx          |   54.16 |    86.95 |   30.76 |   53.19 | ...3-78,82,98-183 
+ src/components    |   40.38 |    42.95 |   33.53 |   42.89 |                   
+  Agenda.tsx       |   71.42 |    37.93 |   52.38 |      70 | 19,92-118,187-276 
+  Cronograma.tsx   |    68.6 |     66.3 |   61.29 |      72 | ...39,155,251-314 
+  Dashboard.tsx    |   73.91 |    76.92 |   71.42 |   73.17 | ...10-119,155,203 
+  ...trategico.tsx |    0.82 |        0 |       0 |       1 | 22-44,78-478      
+  ...rConteudo.tsx |    1.66 |        0 |       0 |    2.17 | 14-185            
+  Header.tsx       |   81.81 |      100 |   66.66 |      80 | 41,79             
+  LandingPage.tsx  |   70.83 |       50 |   53.84 |      75 | 28-29,60-100      
+ ...mponents/Admin |   87.14 |    90.74 |   78.26 |   89.23 |                   
+  AdminArea.tsx    |   87.14 |    90.74 |   78.26 |   89.23 | ...05,258,315-326 
+ ...omponents/Auth |   80.55 |    76.47 |   57.89 |   79.41 |                   
+  AuthScreen.tsx   |   77.27 |       70 |   63.63 |      75 | ...62,148-149,187 
+  ...ordScreen.tsx |   85.71 |    85.71 |      50 |   85.71 | 88-89,148-149     
+ src/services      |    97.7 |    86.79 |     100 |   98.64 |                   
+  algorithm.ts     |    97.1 |    86.27 |     100 |   98.36 | 22                
+  storage.ts       |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
