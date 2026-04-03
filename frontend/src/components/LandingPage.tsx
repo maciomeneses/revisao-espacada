@@ -6,7 +6,9 @@ import {
   ShieldCheck, 
   ArrowRight, 
   ChevronRight,
-  Database
+  Database,
+  History,
+  Sparkles
 } from 'lucide-react';
 
 export function LandingPage() {
@@ -213,25 +215,116 @@ export function LandingPage() {
         </div>
       </section>
 
-
       {/* Stats Quick Look */}
       <section className="py-20 bg-white/[0.02] border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
           <div className="text-center">
             <div className="text-4xl font-black mb-2 tracking-tighter">95%</div>
-            <div className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Retenção de longo prazo</div>
+            <div className="text-white/40 text-[10px] uppercase font-black tracking-widest">Retenção de longo prazo</div>
           </div>
           <div className="text-center">
             <div className="text-4xl font-black mb-2 tracking-tighter">4.0x</div>
-            <div className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Velocidade de aprendizado</div>
+            <div className="text-white/40 text-[10px] uppercase font-black tracking-widest">Velocidade de aprendizado</div>
           </div>
           <div className="text-center">
             <div className="text-4xl font-black mb-2 tracking-tighter">100k+</div>
-            <div className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Flashcards Revisados</div>
+            <div className="text-white/40 text-[10px] uppercase font-black tracking-widest">Flashcards Revisados</div>
           </div>
           <div className="text-center">
             <div className="text-4xl font-black mb-2 tracking-tighter">0.1ms</div>
-            <div className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Tempo de latência FSRS</div>
+            <div className="text-white/40 text-[10px] uppercase font-black tracking-widest">Tempo de latência FSRS</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Legacy/Ebbinghaus Section */}
+      <section className="relative py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-[#0A0F1E] -z-20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F1E] via-blue-900/10 to-[#0A0F1E] -z-10" />
+        
+        {/* Abstract Background Element (The Curve) */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-10 pointer-events-none">
+          <svg viewBox="0 0 1000 400" className="w-full h-full">
+            <path 
+              d="M0,50 Q250,50 400,200 T1000,350" 
+              fill="none" 
+              stroke="white" 
+              strokeWidth="2" 
+              className="opacity-20"
+            />
+            <path 
+              d="M0,50 Q250,50 400,200 T1000,350" 
+              fill="none" 
+              stroke="#FFC72C" 
+              strokeWidth="4" 
+              strokeDasharray="10,10"
+              className="animate-[dash_60s_linear_infinite]"
+            />
+          </svg>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
+          <div className="order-2 md:order-1">
+            <div className="relative rounded-[3rem] overflow-hidden border border-white/10 group aspect-square shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F1E] via-transparent to-transparent z-10" />
+              <img 
+                src="https://images.unsplash.com/photo-1544652252-870098df2462?auto=format&fit=crop&q=80&w=1000" 
+                alt="Vision of Knowledge"
+                className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-1000 opacity-60"
+              />
+              <div className="absolute bottom-8 left-8 right-8 z-20">
+                <blockquote className="text-xl font-bold italic text-white/90 leading-relaxed mb-4">
+                  "As representações mentais duram menos do que se imagina, mas a ciência pode torná-las imortais."
+                </blockquote>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md">
+                    <History className="w-5 h-5 text-[#FFC72C]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-widest text-[#FFC72C]">Hermann Ebbinghaus</p>
+                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.2em] italic">O Pai da Ciência da Memória</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="order-1 md:order-2 space-y-8">
+            <div className="inline-flex items-center gap-2 bg-[#FFC72C]/10 border border-[#FFC72C]/20 px-4 py-1.5 rounded-full text-[10px] uppercase font-black tracking-[0.2em] text-[#FFC72C]">
+              <Sparkles className="w-3.5 h-3.5" />
+              Nosso Tributo à Ciência
+            </div>
+            
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1]">
+              O Legado de um <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">Visionário.</span>
+            </h2>
+
+            <div className="space-y-6 text-lg text-white/60 leading-relaxed font-medium">
+              <p>
+                Em 1885, Hermann Ebbinghaus descobriu um segredo fundamental da consciência humana: <span className="text-white font-bold">A Curva do Esquecimento.</span>
+              </p>
+              <p>
+                Pela primeira vez, a ciência provou matematicamente que o cérebro descarta informações em uma velocidade alarmante a menos que sejam revisitadas estrategicamente.
+              </p>
+              <p>
+                Nossa plataforma não é apenas uma ferramenta de estudos. É uma homenagem ao homem que começou a decifrar a memória. O <span className="text-[#FFC72C] font-black uppercase italic tracking-tighter">Ebbing</span> utiliza o poder da IA moderna (FSRS) para finalmente domar a curva que Ebbinghaus descreveu há mais de um século.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-6 pt-6 border-t border-white/5">
+              <div className="flex -space-x-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0F1E] bg-white/5 flex items-center justify-center backdrop-blur-sm overflow-hidden">
+                    <img src={`https://i.pravatar.cc/100?img=${i + 15}`} alt="User" />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <p className="text-sm font-black text-white">+100k estudantes</p>
+                <p className="text-xs text-white/30 font-bold uppercase tracking-widest">Domando o esquecimento</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
