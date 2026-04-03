@@ -23,7 +23,7 @@ export function LandingPage() {
   // Timer para a animação da demo
   useEffect(() => {
     const timer = setInterval(() => {
-      setDemoStep((prev) => (prev + 1) % 7);
+      setDemoStep((prev) => (prev + 1) % 8);
     }, 2000);
     return () => clearInterval(timer);
   }, []);
@@ -160,45 +160,52 @@ export function LandingPage() {
                    ))}
 
                    {/* Simulated Modal Overlay */}
-                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-                      <Brain className="w-8 h-8 text-cyan-400 mb-2" />
-                      <h4 className="font-bold mb-4 text-sm text-[#FFC72C]">Citologia</h4>
-                      
-                      <div className="bg-white/5 p-4 rounded-xl w-full mb-4">
-                        <p className="text-xs font-medium mb-3">Qual a principal função da mitocôndria?</p>
-
-                        <div className={`transition-all duration-500 overflow-hidden ${demoStep >= 4 ? 'max-h-20 opacity-100 border-t border-white/10 pt-3' : 'max-h-0 opacity-0'}`}>
-                          <p className="text-cyan-400 text-xs font-bold">Respiração celular e produção de ATP.</p>
-                        </div>
-                      </div>
-
-                      {demoStep < 4 ? (
-                        <button className={`w-full py-2.5 rounded-xl text-xs font-black uppercase transition-all ${demoStep === 3 ? 'bg-white text-[#0A0F1E] scale-105' : 'bg-white/10 text-white'}`}>
-                          Mostrar Resposta
-                        </button>
-                      ) : (
-                        <div className="grid grid-cols-4 gap-2 w-full mt-2">
-                          {['Errei', 'Difícil', 'Bom', 'Fácil'].map((btn) => (
-                            <div key={btn} className={`text-[9px] font-black uppercase py-2 rounded-lg flex items-center justify-center transition-all ${demoStep === 6 && btn === 'Bom' ? 'bg-[#FFC72C] text-[#0A0F1E] scale-110 shadow-lg' : demoStep === 5 && btn === 'Bom' ? 'bg-white/20 scale-105' : 'bg-white/5 text-white/50'}`}>
-                              {btn}
+                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 1 && demoStep <= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                      {demoStep < 6 ? (
+                        <>
+                          <Brain className="w-8 h-8 text-cyan-400 mb-2" />
+                          <h4 className="font-bold mb-4 text-sm text-[#FFC72C]">Revisão: Citologia</h4>
+                          
+                          <div className="bg-white/5 p-4 rounded-xl w-full mb-4 flex flex-col gap-3">
+                            <div className="flex justify-between items-center bg-[#0A0F1E] px-3 py-2 rounded-lg border border-white/5">
+                              <span className="text-[10px] text-white/50 uppercase font-bold">Total de Questões</span>
+                              <span className={`text-sm font-black transition-all ${demoStep >= 2 ? 'text-white' : 'text-transparent'}`}>15</span>
                             </div>
-                          ))}
+                            <div className="flex justify-between items-center bg-[#0A0F1E] px-3 py-2 rounded-lg border border-white/5">
+                              <span className="text-[10px] text-white/50 uppercase font-bold">Acertos</span>
+                              <span className={`text-sm font-black transition-all ${demoStep >= 3 ? 'text-green-400' : 'text-transparent'}`}>13</span>
+                            </div>
+                          </div>
+
+                          <button className={`w-full py-2.5 rounded-xl text-xs font-black uppercase transition-all ${demoStep === 4 ? 'bg-cyan-500/80 text-[#0A0F1E] scale-105 shadow-lg shadow-cyan-500/20' : demoStep === 5 ? 'bg-cyan-400 text-[#0A0F1E] scale-95' : 'bg-cyan-500/10 text-cyan-400'}`}>
+                            {demoStep === 5 ? 'Calculando...' : 'Analisar Desempenho'}
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center w-full h-full animate-fade-in fade-in-up">
+                           <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                             <ShieldCheck className="w-6 h-6 text-green-400" />
+                           </div>
+                           <h4 className="font-black text-lg text-white mb-1">Taxa de Acerto: 86%</h4>
+                           <p className="text-[10px] text-white/50 uppercase font-bold mb-6">Eficiência Alta</p>
+
+                           <div className="bg-white/5 border border-white/10 p-4 rounded-2xl w-full">
+                              <p className="text-[10px] text-white/40 uppercase font-bold mb-2">Próxima Revisão Agendada</p>
+                              <div className="text-xl font-black text-[#FFC72C] mb-1">Daqui a 12 dias</div>
+                              <p className="text-xs text-white/60">14 de Abril no Calendário</p>
+                           </div>
                         </div>
                       )}
-                      
-                      <div className={`absolute bottom-6 w-[80%] left-[10%] py-2 rounded-xl bg-cyan-400 text-[#0A0F1E] text-[10px] font-black uppercase transition-all duration-300 ${demoStep === 6 ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}>
-                        Salvando Revisão...
-                      </div>
                    </div>
 
                    {/* Virtual Cursor */}
                    <div className={`absolute w-5 h-5 bg-white/20 border-2 border-white/40 rounded-full z-[100] pointer-events-none transition-all duration-1000 mix-blend-difference hidden md:block
                      ${demoStep === 0 ? 'top-5 left-10' : ''}
-                     ${demoStep === 1 ? 'top-12 left-1/2' : ''}
-                     ${demoStep === 2 ? 'top-1/3 left-1/2' : ''}
-                     ${demoStep === 3 ? 'top-[75%] left-1/2' : ''}
-                     ${demoStep === 4 ? 'top-1/2 left-20' : ''}
-                     ${demoStep === 5 || demoStep === 6 ? 'top-[75%] left-[62%]' : ''}
+                     ${demoStep === 1 ? 'top-12 left-1/2' : ''}          {/* Hover over item */}
+                     ${demoStep === 2 ? 'top-[35%] left-[80%]' : ''}     {/* Filling Total Questions */}
+                     ${demoStep === 3 ? 'top-[50%] left-[80%]' : ''}     {/* Filling Correct Questions */}
+                     ${demoStep === 4 || demoStep === 5 ? 'top-[80%] left-1/2' : ''} {/* Clicking button */}
+                     ${demoStep >= 6 ? 'top-[90%] left-[90%] opacity-0' : 'opacity-100'} {/* Hide after click */}
                    `} />
                 </div>
               </div>
