@@ -12,7 +12,6 @@ import {
 export function LandingPage() {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
-  const [isDemoActive, setIsDemoActive] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
   useEffect(() => {
@@ -23,16 +22,11 @@ export function LandingPage() {
 
   // Timer para a animação da demo
   useEffect(() => {
-    let timer: any;
-    if (isDemoActive) {
-      timer = setInterval(() => {
-        setDemoStep((prev) => (prev + 1) % 5);
-      }, 2500);
-    } else {
-      setDemoStep(0);
-    }
+    const timer = setInterval(() => {
+      setDemoStep((prev) => (prev + 1) % 7);
+    }, 2000);
     return () => clearInterval(timer);
-  }, [isDemoActive]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0F1E] text-white selection:bg-cyan-500/30 font-sans">
@@ -95,13 +89,6 @@ export function LandingPage() {
               >
                 Começar agora
                 <ChevronRight className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => setIsDemoActive(!isDemoActive)}
-                className={`group border ${isDemoActive ? 'border-[#FFC72C] text-[#FFC72C]' : 'border-white/10 text-white'} px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-white/5 transition-all text-center flex items-center justify-center gap-3`}
-              >
-                {isDemoActive ? 'Parar Demonstração' : 'Ver demonstração'}
-                <div className={`w-2 h-2 rounded-full ${isDemoActive ? 'bg-[#FFC72C] animate-ping' : 'bg-white/20'}`} />
               </button>
             </div>
           </div>
@@ -172,30 +159,46 @@ export function LandingPage() {
                      </div>
                    ))}
 
-                   {/* Simulated Modal Overlay (Demo Step 3 & 4) */}
-                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-                      <Brain className="w-10 h-10 text-cyan-400 mb-4 animate-bounce" />
-                      <h4 className="font-bold mb-1">Revisão: Citologia</h4>
-                      <p className="text-[10px] text-white/40 mb-6">Como foi seu desempenho?</p>
-
-                      <div className="flex gap-2 mb-6">
-                        {[1,2,3,4].map(btn => (
-                          <div key={btn} className={`w-8 h-8 rounded-lg ${demoStep === 4 && btn === 3 ? 'bg-[#FFC72C] scale-110 shadow-lg' : 'bg-white/10'}`} />
-                        ))}
-                      </div>
+                   {/* Simulated Modal Overlay */}
+                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                      <Brain className="w-8 h-8 text-cyan-400 mb-2" />
+                      <h4 className="font-bold mb-4 text-sm text-[#FFC72C]">Citologia</h4>
                       
-                      <div className={`w-full py-2 rounded-xl bg-cyan-400 text-[#0A0F1E] text-[10px] font-black uppercase translate-y-${demoStep === 4 ? '0 opacity-100' : '4 opacity-0'} transition-all`}>
-                        Salvando Progresso...
+                      <div className="bg-white/5 p-4 rounded-xl w-full mb-4">
+                        <p className="text-xs font-medium mb-3">Qual a principal função da mitocôndria?</p>
+
+                        <div className={`transition-all duration-500 overflow-hidden ${demoStep >= 4 ? 'max-h-20 opacity-100 border-t border-white/10 pt-3' : 'max-h-0 opacity-0'}`}>
+                          <p className="text-cyan-400 text-xs font-bold">Respiração celular e produção de ATP.</p>
+                        </div>
+                      </div>
+
+                      {demoStep < 4 ? (
+                        <button className={`w-full py-2.5 rounded-xl text-xs font-black uppercase transition-all ${demoStep === 3 ? 'bg-white text-[#0A0F1E] scale-105' : 'bg-white/10 text-white'}`}>
+                          Mostrar Resposta
+                        </button>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2 w-full mt-2">
+                          {['Errei', 'Difícil', 'Bom', 'Fácil'].map((btn) => (
+                            <div key={btn} className={`text-[9px] font-black uppercase py-2 rounded-lg flex items-center justify-center transition-all ${demoStep === 6 && btn === 'Bom' ? 'bg-[#FFC72C] text-[#0A0F1E] scale-110 shadow-lg' : demoStep === 5 && btn === 'Bom' ? 'bg-white/20 scale-105' : 'bg-white/5 text-white/50'}`}>
+                              {btn}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className={`absolute bottom-6 w-[80%] left-[10%] py-2 rounded-xl bg-cyan-400 text-[#0A0F1E] text-[10px] font-black uppercase transition-all duration-300 ${demoStep === 6 ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}>
+                        Salvando Revisão...
                       </div>
                    </div>
 
                    {/* Virtual Cursor */}
-                   <div className={`absolute w-6 h-6 bg-white/20 border-2 border-white/40 rounded-full z-[100] pointer-events-none transition-all duration-1000 mix-blend-difference hidden md:block
-                     ${demoStep === 0 ? 'top-10 left-10' : ''}
-                     ${demoStep === 1 ? 'top-20 left-40' : ''}
-                     ${demoStep === 2 ? 'top-1/2 left-20' : ''}
-                     ${demoStep === 3 ? 'top-2/3 left-1/2' : ''}
-                     ${demoStep === 4 ? 'top-3/4 left-1/2' : ''}
+                   <div className={`absolute w-5 h-5 bg-white/20 border-2 border-white/40 rounded-full z-[100] pointer-events-none transition-all duration-1000 mix-blend-difference hidden md:block
+                     ${demoStep === 0 ? 'top-5 left-10' : ''}
+                     ${demoStep === 1 ? 'top-12 left-1/2' : ''}
+                     ${demoStep === 2 ? 'top-1/3 left-1/2' : ''}
+                     ${demoStep === 3 ? 'top-[75%] left-1/2' : ''}
+                     ${demoStep === 4 ? 'top-1/2 left-20' : ''}
+                     ${demoStep === 5 || demoStep === 6 ? 'top-[75%] left-[62%]' : ''}
                    `} />
                 </div>
               </div>
