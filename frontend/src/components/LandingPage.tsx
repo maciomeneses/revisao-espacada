@@ -110,7 +110,7 @@ export function LandingPage() {
               </div>
 
               {/* Real-ish Dashboard Mockup */}
-              <div className="p-6 bg-[#0A0F1E] aspect-[4/3] rounded-[2rem] flex flex-col gap-6 overflow-hidden">
+              <div className="p-4 md:p-6 bg-[#0A0F1E] aspect-square md:aspect-[4/3] rounded-[2rem] flex flex-col gap-4 md:gap-6 overflow-hidden relative">
                 {/* Header Mockup */}
                 <div className="flex justify-between items-center animate-pulse">
                   <div className="w-24 h-4 bg-white/10 rounded-full" />
@@ -159,7 +159,7 @@ export function LandingPage() {
                    ))}
 
                    {/* Simulated Modal Overlay */}
-                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 1 && demoStep <= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+                   <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-4 md:p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 1 && demoStep <= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
                       {demoStep < 6 ? (
                         <>
                           <Brain className="w-8 h-8 text-cyan-400 mb-2" />
