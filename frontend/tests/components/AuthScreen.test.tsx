@@ -83,8 +83,12 @@ describe('AuthScreen', () => {
     renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
 
     fireEvent.click(screen.getByText(/Esqueceu a senha\?/i));
-    await waitFor(() => {
-      expect(screen.getByText((content) => content.includes('Por favor, insira seu e-mail'))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Enviar instruções/i }));
+
+    // O erro é renderizado via state, usamos findByText para lidar com o ciclo de vida do React
+    const errorMsg = await screen.findByText((content, element) => {
+      return content.toLowerCase().includes('por favor') && content.toLowerCase().includes('insira seu e-mail');
     });
+    expect(errorMsg).toBeInTheDocument();
   });
 });

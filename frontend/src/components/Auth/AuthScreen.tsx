@@ -183,7 +183,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     <input
                       id="recover-email"
                       type="email"
-                      required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
