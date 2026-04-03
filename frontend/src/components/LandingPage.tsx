@@ -317,7 +317,7 @@ export function LandingPage() {
               <div className="flex -space-x-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0F1E] bg-white/10 flex items-center justify-center backdrop-blur-sm overflow-hidden">
-                    <img src={`/revisao-espacada/avatars/teen${i}.png`} alt="Estudante" className="w-full h-full object-cover" />
+                    <img src={`/avatars/teen${i}.png`} alt="Estudante" className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
