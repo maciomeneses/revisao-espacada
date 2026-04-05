@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LandingPage } from '../../src/components/LandingPage';
 
@@ -23,16 +23,14 @@ describe('LandingPage', () => {
       </MemoryRouter>
     );
 
-    const btnDemo = screen.getByRole('button', { name: /Ver demonstração/i });
-    expect(btnDemo).toBeInTheDocument();
-    
-    // Simulate clicking demo button which drives the state forward
-    fireEvent.click(btnDemo);
+    // A demo avança automaticamente via setInterval (2000ms por step)
+    // Verifica que a seção de demo está renderizada
+    expect(screen.getByText('Próximas Revisões')).toBeInTheDocument();
 
-    // Fast-forward fake timers dynamically until state changes up to 10 seconds
-    vi.advanceTimersByTime(2000); // changes to 'reviewing'
-    vi.advanceTimersByTime(2000); // changes to 'success'
-    vi.advanceTimersByTime(3000); // changes back to 'idle'
+    // Avança o timer para simular o ciclo completo da animação (8 steps × 2000ms)
+    act(() => {
+      vi.advanceTimersByTime(16000);
+    });
 
     vi.useRealTimers();
   });

@@ -93,7 +93,7 @@ describe('AdminArea', () => {
 
     // Modal heading should appear
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('usuario@ebbin.com')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('usuario@ebbing.com')).toBeInTheDocument();
     });
   });
 
@@ -102,9 +102,9 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
-    fireEvent.change(screen.getByPlaceholderText('usuario@ebbin.com'), {
+    fireEvent.change(screen.getByPlaceholderText('usuario@ebbing.com'), {
       target: { value: 'novo@test.com' },
     });
     // Intentionally do NOT fill the password field
@@ -131,9 +131,9 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
-    fireEvent.change(screen.getByPlaceholderText('usuario@ebbin.com'), {
+    fireEvent.change(screen.getByPlaceholderText('usuario@ebbing.com'), {
       target: { value: 'novo@test.com' },
     });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), {
@@ -174,7 +174,7 @@ describe('AdminArea', () => {
     fireEvent.click(editBtn);
 
     await waitFor(() => {
-      const emailInput = screen.getByPlaceholderText('usuario@ebbin.com') as HTMLInputElement;
+      const emailInput = screen.getByPlaceholderText('usuario@ebbing.com') as HTMLInputElement;
       expect(emailInput.value).toBe('admin@test.com');
     });
   });
@@ -223,7 +223,7 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
     // Dica estática deve aparecer quando campo está vazio e é criação
     expect(screen.getByText(/mínimo de 6 caracteres/i)).toBeInTheDocument();
@@ -234,7 +234,7 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
     fireEvent.change(screen.getByPlaceholderText('••••••••'), {
       target: { value: 'abc' },
@@ -249,7 +249,7 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
     fireEvent.change(screen.getByPlaceholderText('••••••••'), {
       target: { value: 'senha123' },
@@ -264,7 +264,7 @@ describe('AdminArea', () => {
     await waitFor(() => screen.getByText('admin@test.com'));
 
     fireEvent.click(screen.getByRole('button', { name: /novo usuário/i }));
-    await waitFor(() => screen.getByPlaceholderText('usuario@ebbin.com'));
+    await waitFor(() => screen.getByPlaceholderText('usuario@ebbing.com'));
 
     const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
     expect(passwordInput.minLength).toBe(6);

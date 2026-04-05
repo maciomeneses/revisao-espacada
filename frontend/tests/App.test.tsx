@@ -179,7 +179,7 @@ describe('App — roteamento e edge cases de autenticação', () => {
 
   it('exibe app autenticado quando há sessão válida e acessa rotas como /agenda, /dashboard e /admin', () => {
     localStorageMock.setItem(
-      'ebbin_session',
+      'ebbing_session',
       JSON.stringify({
         token: 'fake-token',
         email: 'user@test.com',
@@ -327,7 +327,7 @@ describe('App — roteamento e edge cases de autenticação', () => {
     fireEvent.click(btnEntrar);
 
     await waitFor(() => {
-      expect(localStorage.getItem('ebbin_session')).toContain('test-token');
+      expect(localStorage.getItem('ebbing_session')).toContain('test-token');
     });
   });
 });
