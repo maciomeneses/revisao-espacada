@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Brain, 
   TrendingUp, 
   ShieldCheck, 
   ArrowRight, 
@@ -38,9 +37,11 @@ export function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-3 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="w-10 h-10 bg-[#FFC72C] rounded-xl flex items-center justify-center shadow-lg shadow-[#FFC72C]/20 transition-transform group-hover:rotate-12">
-              <Brain className="text-[#1F3A5F] w-6 h-6" />
-            </div>
+            <img 
+              src="/ebbing-icon.png?v=1" 
+              alt="Logo Ebbing" 
+              className="w-10 h-10 rounded-xl shadow-lg shadow-[#FFC72C]/20 transition-transform group-hover:rotate-12 object-cover" 
+            />
             <span className="text-2xl font-black tracking-tighter uppercase italic">
               Ebbing
             </span>
@@ -164,7 +165,7 @@ export function LandingPage() {
                    <div className={`absolute inset-0 bg-[#0A0F1E]/95 backdrop-blur-sm z-10 p-4 md:p-6 flex flex-col items-center justify-center text-center transition-all duration-500 rounded-[1.5rem] ${demoStep >= 1 && demoStep <= 7 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
                       {demoStep < 6 ? (
                         <>
-                          <Brain className="w-8 h-8 text-cyan-400 mb-2" />
+                          <img src="/ebbing-icon.png?v=1" className="w-8 h-8 rounded-lg mb-2 object-cover" alt="" />
                           <h4 className="font-bold mb-4 text-sm text-[#FFC72C]">Revisão: Citologia</h4>
                           
                           <div className="bg-white/5 p-4 rounded-xl w-full mb-4 flex flex-col gap-3">
@@ -376,11 +377,12 @@ export function LandingPage() {
       <footer className="py-20 border-t border-white/5 bg-[#0A0F1E]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
           <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
-                <Brain className="text-white w-5 h-5" />
-              </div>
-              <span className="text-xl font-black tracking-tight">Ebbing</span>
+            <div className="flex items-center gap-3 mb-4">
+              <img 
+                src="/ebbing-logo.png?v=1" 
+                alt="Logo Ebbing" 
+                className="h-10 rounded-lg object-contain" 
+              />
             </div>
             <p className="text-white/30 text-xs uppercase tracking-widest font-black">Engineering the future of memory</p>
           </div>

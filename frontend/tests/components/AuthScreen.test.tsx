@@ -27,7 +27,7 @@ describe('AuthScreen', () => {
 
   it('renderiza o título Ebbing', () => {
     renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
-    expect(screen.getByText('Ebbing')).toBeInTheDocument();
+    expect(screen.getByAltText('Logo Ebbing')).toBeInTheDocument();
   });
 
   it('renderiza o subtítulo da plataforma', () => {

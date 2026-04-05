@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Mail, Lock, ArrowLeft, KeyRound, AlertCircle, Home } from 'lucide-react';
+import { LogIn, Mail, Lock, ArrowLeft, AlertCircle, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 
@@ -67,12 +67,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
         </button>
 
         {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-md" style={{ backgroundColor: '#1F3A5F' }}>
-            <KeyRound className="w-8 h-8 text-yellow" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-navy tracking-tight">Ebbing</h1>
-          <p className="text-muted mt-2">Plataforma de Revisão Espaçada</p>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img src="/ebbing-logo.png?v=1" alt="Logo Ebbing" className="h-16 mb-2 object-contain" />
+          <p className="text-muted">Plataforma de Revisão Espaçada</p>
         </div>
 
         <div className="bg-white border border-[#e2e8f0] rounded-2xl p-8 shadow-md">
