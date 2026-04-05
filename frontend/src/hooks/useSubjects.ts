@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
+import { INITIAL_SUBJECTS } from '../data/initialSubjects';
 import { calculateNextReview, resetCiclo, localDateStr } from '../services/algorithm';
 import { api } from '../services/api';
 import type { ReviewEventPayload } from '../services/api';
@@ -8,7 +9,14 @@ import type { ReviewEventPayload } from '../services/api';
 export type { ReviewEventPayload };
 
 export function useSubjects() {
-  const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects());
+  const [userEmail] = useState<string | undefined>(() => {
+    try {
+      const session = localStorage.getItem('ebbing_session');
+      return session ? (JSON.parse(session).email ?? undefined) : undefined;
+    } catch { return undefined; }
+  });
+
+  const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
 
   /**
@@ -21,28 +29,25 @@ export function useSubjects() {
     subjectsRef.current = subjects;
   }, [subjects]);
 
-  // Sync subjects with API if possible, merging with local state
+  // Sync subjects with API — API is the source of truth for logged-in users
   useEffect(() => {
     if (!localStorage.getItem('ebbing_session')) return;
     api.subjects.list().then((data) => {
       if (Array.isArray(data)) {
         setSubjects((prev) => {
-          // apiMap contains subjects already in the DB (with progress)
-          const apiMap = new Map((data as Subject[]).map(s => [s.id, s]));
+          const apiSubjects = data as Subject[];
+          const apiIds = new Set(apiSubjects.map(s => s.id));
+          const initialIds = new Set(INITIAL_SUBJECTS.map(s => s.id));
 
-          // Merge: For each subject in current state (which has all INITIAL_SUBJECTS),
-          // use the API version if it exists, otherwise keep current.
-          const merged = prev.map(s => apiMap.get(s.id) || s);
+          // Assuntos criados localmente que ainda não estão no backend:
+          // IDs que não são de INITIAL_SUBJECTS e não foram retornados pela API
+          const pendingLocal = prev.filter(s => !initialIds.has(s.id) && !apiIds.has(s.id));
 
-          // Also include any subjects from API that weren't in our initial list (user created)
-          const currentIds = new Set(prev.map(s => s.id));
-          const userCreated = (data as Subject[]).filter(s => !currentIds.has(s.id));
+          const final = [...apiSubjects, ...pendingLocal];
+          saveSubjects(final, userEmail);
 
-          const final = [...merged, ...userCreated];
-          saveSubjects(final);
-
-          // If the database is missing subjects, push them up
-          if (data.length < final.length) {
+          // Só sincroniza se houver assuntos pendentes que o backend não conhece
+          if (pendingLocal.length > 0) {
             api.subjects.sync(final).catch(console.error);
           }
 
@@ -50,7 +55,7 @@ export function useSubjects() {
         });
       }
     }).catch(console.error);
-  }, []);
+  }, [userEmail]);
 
   // Load review event history on mount
   useEffect(() => {
@@ -61,7 +66,7 @@ export function useSubjects() {
   const updateSubject = useCallback(async (updated: Subject) => {
     setSubjects((prev) => {
       const next = prev.map((s) => (s.id === updated.id ? updated : s));
-      saveSubjects(next);
+      saveSubjects(next, userEmail);
       return next;
     });
     try {
@@ -196,7 +201,7 @@ export function useSubjects() {
       let nextSubjects: Subject[] = [];
       setSubjects((prev) => {
         nextSubjects = [...prev, newSubject];
-        saveSubjects(nextSubjects);
+        saveSubjects(nextSubjects, userEmail);
         return nextSubjects;
       });
       // nextSubjects is set synchronously inside setSubjects callback
@@ -208,7 +213,7 @@ export function useSubjects() {
   const removeSubject = useCallback((id: string) => {
     setSubjects((prev) => {
       const next = prev.filter((s) => s.id !== id);
-      saveSubjects(next);
+      saveSubjects(next, userEmail);
       return next;
     });
     api.subjects.delete(id).catch(console.error);

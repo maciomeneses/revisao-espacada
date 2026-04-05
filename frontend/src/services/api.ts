@@ -1,4 +1,5 @@
 import { User, Role } from '../types';
+import { clearSubjects } from './storage';
 
 export interface ReviewEventPayload {
   id?: number;
@@ -44,7 +45,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     // Token expirado ou inválido: só recarrega se havia sessão ativa (evita loop em endpoints
     // chamados antes do login, como api.subjects.list no useSubjects)
     if (res.status === 401 && !path.startsWith('/api/auth/') && localStorage.getItem('ebbing_session')) {
+      const session = localStorage.getItem('ebbing_session');
+      const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
       localStorage.removeItem('ebbing_session');
+      clearSubjects(email);
       window.location.reload();
       return undefined as T;
     }

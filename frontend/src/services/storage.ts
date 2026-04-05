@@ -1,17 +1,37 @@
 import type { Subject } from '../types';
 import { INITIAL_SUBJECTS } from '../data/initialSubjects';
 
-const STORAGE_KEY = 'revisaENEM_subjects_v1';
+// Legacy guest key (kept for backwards-compat clearing if needed)
+const GUEST_STORAGE_KEY = 'revisaENEM_subjects_v1';
+// Per-user key prefix
+const USER_STORAGE_KEY_PREFIX = 'revisaENEM_subjects_v2';
 
-export function loadSubjects(): Subject[] {
+function getUserKey(email: string): string {
+  return `${USER_STORAGE_KEY_PREFIX}_${email}`;
+}
+
+/**
+ * Carrega subjects do localStorage.
+ * - Com email: retorna o cache do usuário (ou [] se não houver cache).
+ * - Sem email (guest): retorna INITIAL_SUBJECTS com filtragem para mudanças de versão.
+ */
+export function loadSubjects(userEmail?: string): Subject[] {
+  if (userEmail) {
+    try {
+      const raw = localStorage.getItem(getUserKey(userEmail));
+      if (!raw) return [];
+      return JSON.parse(raw) as Subject[];
+    } catch {
+      return [];
+    }
+  }
+  // Guest path
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(GUEST_STORAGE_KEY);
     if (!raw) return INITIAL_SUBJECTS;
     const parsed = JSON.parse(raw) as Subject[];
     const validIds = new Set(INITIAL_SUBJECTS.map((s) => s.id));
-    // Remove subjects that no longer exist in INITIAL_SUBJECTS (e.g. old generic history)
     const filtered = parsed.filter((s) => validIds.has(s.id));
-    // Add any new subjects from INITIAL_SUBJECTS not yet in storage
     const existingIds = new Set(filtered.map((s) => s.id));
     const newSubjects = INITIAL_SUBJECTS.filter((s) => !existingIds.has(s.id));
     return [...filtered, ...newSubjects];
@@ -20,10 +40,18 @@ export function loadSubjects(): Subject[] {
   }
 }
 
-export function saveSubjects(subjects: Subject[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
+export function saveSubjects(subjects: Subject[], userEmail?: string): void {
+  if (userEmail) {
+    localStorage.setItem(getUserKey(userEmail), JSON.stringify(subjects));
+  } else {
+    localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(subjects));
+  }
 }
 
-export function clearSubjects(): void {
-  localStorage.removeItem(STORAGE_KEY);
+export function clearSubjects(userEmail?: string): void {
+  if (userEmail) {
+    localStorage.removeItem(getUserKey(userEmail));
+  } else {
+    localStorage.removeItem(GUEST_STORAGE_KEY);
+  }
 }

@@ -10,6 +10,7 @@ import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
 import { LandingPage } from './components/LandingPage';
 import { AdminArea } from './components/Admin/AdminArea';
 import { useSubjects } from './hooks/useSubjects';
+import { clearSubjects } from './services/storage';
 import type { Role } from './types';
 
 /** Extrai o valor do query param ?token= da URL atual. */
@@ -63,14 +64,20 @@ export function AppContent() {
   };
 
   const handleLogout = () => {
+    const session = localStorage.getItem('ebbing_session');
+    const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
     localStorage.removeItem('ebbing_session');
+    clearSubjects(email);
     setIsAuthenticated(false);
     setUserRole(undefined);
     navigate('/');
   };
 
   const handleResetSuccess = () => {
+    const session = localStorage.getItem('ebbing_session');
+    const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
     localStorage.removeItem('ebbing_session');
+    clearSubjects(email);
     setIsAuthenticated(false);
     setUserRole(undefined);
     setResetToken(null);
@@ -91,7 +98,7 @@ export function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-surface">
-      {isAuthenticated && !isLogin && (
+      {isAuthenticated && !isLogin && location.pathname !== '/' && (
         <Header
           activeView={location.pathname.substring(1) as any}
           userRole={userRole}
@@ -117,8 +124,8 @@ export function AppContent() {
                 >
                   <div className="absolute inset-0 flex items-end px-6 pb-5">
                     <div>
-                      <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ebbing</h1>
-                      <p className="text-white/70 text-sm mt-1">Plataforma de Revisão Espaçada</p>
+                      <img src="/ebbing-logo.png?v=1" alt="Logo Ebbing" className="h-10 bg-white/10 backdrop-blur-md p-2 rounded-xl mb-3 object-contain" />
+                      <p className="text-white/70 text-xs font-bold uppercase tracking-widest">Plataforma de Revisão Espaçada</p>
                     </div>
                   </div>
                 </div>
