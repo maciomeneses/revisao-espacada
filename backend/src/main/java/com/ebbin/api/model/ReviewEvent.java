@@ -54,7 +54,7 @@ public class ReviewEvent {
     private int questions = 10;
 
     /** Percentual real de acertos (0–100). */
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "SMALLINT NOT NULL DEFAULT 0")
     private int accuracy = 0;
 
     @CreationTimestamp
