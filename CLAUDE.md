@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Revisão Espaçada** is a spaced repetition review platform focused on ENEM (Brazilian national exam). It's a monorepo with a React/TypeScript frontend (deployed to GitHub Pages) and a Spring Boot backend (deployed to Railway).
+**Revisão Espaçada** — plataforma de revisão espaçada para o ENEM. Monorepo: React/TypeScript frontend (GitHub Pages) + Spring Boot backend (Railway).
 
 ## Commands
 
@@ -29,58 +29,62 @@ npm run test:watch       # Vitest watch mode
 
 ### Backend (`cd backend`)
 ```bash
-./gradlew build          # Build + run all tests
+./gradlew build          # Build + run all tests + JaCoCo coverage check
 ./gradlew bootRun        # Run Spring Boot app
-./gradlew test           # Run JUnit tests
 ./gradlew test --tests "com.ebbin.api.SomeTest"  # Run single test
 ./gradlew dependencyCheckAnalyze  # OWASP CVE scan
 ```
 
 ## Architecture
 
-### Frontend
-- **Framework**: React 19 + TypeScript, built with Vite 7
-- **Styling**: Tailwind CSS 4
-- **Testing**: Vitest + Testing Library
-- **State**: React hooks + localStorage (JWT token, subject data)
-- **Key hook**: `src/hooks/useSubjects.ts` — manages all FSRS state and sync logic
-- **API client**: `src/services/api.ts` — REST client with `Bearer {token}` auth
-- **FSRS algorithm**: `src/services/algorithm.ts` — FSRS v6 spaced repetition implementation
-- **Routing**: View-based (no React Router) — `App.tsx` renders views based on state
-- **Deploy base path**: `/revisao-espacada/` (configured in `vite.config.ts`)
+**Frontend**: React 19 + TypeScript + Vite 7, Tailwind CSS 4, React Router v7, Recharts 3, Vitest
+- Key files: `src/hooks/useSubjects.ts` (state + FSRS sync), `src/services/api.ts` (REST client), `src/services/algorithm.ts` (FSRS v6), `src/App.tsx` (routes)
+- Tests: `frontend/tests/` (not co-located) | Session: `localStorage['ebbing_session'] = { email, token, role, timestamp }`
 
-### Backend
-- **Framework**: Spring Boot 4.0.3, Java 25
-- **Auth**: Stateless JWT (`JwtAuthenticationFilter`), JJWT 0.12.6
-- **Database**: PostgreSQL + Spring Data JPA (open-in-view=false) + Flyway migrations (prod only)
-- **Caching**: Caffeine via Spring Cache (subjects list, rate-limit buckets)
-- **Rate limiting**: Bucket4j via `EndpointRateLimitFilter`
-- **3 REST controllers**: `AuthController`, `SubjectController`, `AdminUserController`
-- **Coverage enforced**: JaCoCo 0.8.14 — 90% instruction, 85% branch, 90% line
+**Backend**: Spring Boot 4.0.3, Java 25, PostgreSQL + Flyway (prod only), JWT stateless, Bucket4j rate limiting, Caffeine cache
+- Packages: `controller/`, `service/`, `model/`, `security/`, `config/`, `repository/`, `dto/`
+- JaCoCo: 90% instruction / 85% branch / 90% line (enforced on `./gradlew build`)
 
-### Data Model
-- **Subject**: modulo, area, aulaPrincipal, relevancia + FSRS fields (stability, difficulty, elapsedDays, scheduledDays, reps, lapses, reviewStage)
-- **ReviewStage**: `aula`, `Learning`, `Review`, `Relearning`, `New`
-- **Performance ratings**: `ruim`, `medio`, `bom`, `excelente`
+**Data model**: `Subject` (clientId, modulo, area, aulaPrincipal, relevancia + FSRS fields), `ReviewStage` (aula/Learning/Review/Relearning/New), `PerformanceLevel` (nao_classificada/ruim/medio/bom/excelente)
 
 ## Environment Variables
 
-### Frontend (`.env` file in `frontend/`)
-```
-VITE_API_URL=http://localhost:8080
-```
+**Frontend** (`frontend/.env`): `VITE_API_URL=http://localhost:8080`
 
-### Backend
-```
-PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD
-JWT_SECRET, JWT_EXPIRATION_MS
-ADMIN_EMAIL, ADMIN_PASSWORD
-CORS_ALLOWED_ORIGINS, FRONTEND_URL
-PORT
-RATE_LIMIT_* (various rate limiting params)
-```
+**Backend**: `PGHOST/PORT/DATABASE/USER/PASSWORD`, `JWT_SECRET`, `JWT_EXPIRATION_MS`, `ADMIN_EMAIL/PASSWORD`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`, `PORT`, `RATE_LIMIT_*`
 
 ## CI/CD
 
-- **Backend CI** (`.github/workflows/ci-backend.yml`): runs on push/PR to `backend/**` using Java 21
-- **Frontend Deploy** (`.github/workflows/deploy-frontend.yml`): runs on push to `main` touching `frontend/**`; injects `VITE_API_URL` from GitHub secret at build time, then deploys via `gh-pages`
+- **Backend CI** (`.github/workflows/ci-backend.yml`): push/PR to `backend/**`, Java 21 (Java 25 só local)
+- **Frontend Deploy** (`.github/workflows/deploy-frontend.yml`): push to `main` touching `frontend/**`, injeta `VITE_API_URL` do GitHub secret, deploys via `gh-pages`
+
+## Rules
+
+### Flyway Migrations
+- **Nunca modificar** migrations V1–V6 — já rodaram em produção
+- Próxima migration: `V7__descricao_em_snake_case.sql`
+- Mudança em `backend/src/main/java/com/ebbin/api/model/` → migration obrigatória
+
+### Cobertura JaCoCo (Backend)
+- Toda nova classe backend precisa de testes antes de commitar
+- Thresholds: **90% instruction, 85% branch, 90% line** — `./gradlew build` falha se não atingir
+- Classes excluídas do JaCoCo: `EbbinApplication`, `AdminInitializer`, `CacheConfig`
+
+### Algoritmo FSRS (`frontend/src/services/algorithm.ts`)
+- Mudanças em `DEFAULT_W` afetam todos os usuários — documentar impacto antes de alterar
+- `w[17] = 0.0` é **intencional** (dificuldade congelada) — não "corrigir"
+- Datas: fuso **local** (`YYYY-MM-DD`), nunca UTC — comparações são string-based
+
+### Contratos de API
+- Erros: RFC 9457 ProblemDetail com campo `detail` (não `message`)
+- Frontend usa `clientId` para subjects; `id` (PK do banco) não é exposto ao frontend
+
+### Frontend
+- Tailwind CSS 4 via plugin Vite — **não criar `tailwind.config.js`**
+- `vite.config.ts` sem `base` — não adicionar sem ajustar o workflow de deploy
+- Não alterar o formato do `ebbing_session` sem atualizar `api.ts`
+
+### Fluxo de trabalho
+- Após cada alteração feita pelo Claude, **sempre** fazer commit e push
+- Nunca mencionar Claude, Claude Code ou Anthropic na mensagem de commit
+- Usar Conventional Commits: `feat:`, `fix:`, `test:`, `chore:`, `refactor:`
