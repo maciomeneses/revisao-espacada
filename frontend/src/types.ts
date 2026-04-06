@@ -2,6 +2,16 @@ export type ActiveView = 'dashboard' | 'cronograma' | 'espiao' | 'provas' | 'adm
 
 export type Role = 'USER' | 'ADMIN';
 
+export interface ExamEntry {
+  id: number;
+  examDate: string;       // YYYY-MM-DD
+  examName: string;
+  examType?: string;
+  scorePercent: number;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface User {
   id: string;
   email: string;

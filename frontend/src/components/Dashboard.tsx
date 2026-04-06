@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpe
 interface DashboardProps {
   subjects: Subject[];
   onNavigateCronograma: (subjectId?: string) => void;
+  onRegisterReview: (id: string, numCorrect: number, total: number, accuracy: number, date: string, durationSeconds: number) => void;
 }
 
 function shiftDate(dateStr: string, n: number): string {
@@ -40,9 +41,21 @@ function calcDaysAgo(dateStr: string, todayStr: string): number {
   return Math.round((a.getTime() - b.getTime()) / 86_400_000);
 }
 
-export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
+function parseDuration(s: string): number {
+  if (!s.trim()) return 0;
+  const parts = s.split(':').map(Number);
+  if (parts.some(isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
+
+export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
+  const [reviewingSubject, setReviewingSubject] = useState<Subject | null>(null);
+  const [reviewForm, setReviewForm] = useState({ totalQuestions: '10', numCorrect: 7, duration: '' });
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   const dashStats = useMemo(() => ({
     totalMaterias: subjects.length,
@@ -71,6 +84,29 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [subjects],
   );
+
+  const openReviewModal = (s: Subject) => {
+    setReviewingSubject(s);
+    setReviewForm({ totalQuestions: '10', numCorrect: 7, duration: '' });
+    setReviewError(null);
+  };
+
+  const handleReviewConfirm = () => {
+    if (!reviewingSubject) return;
+    const total = parseInt(reviewForm.totalQuestions);
+    if (!total || total <= 0) {
+      setReviewError('O número de questões deve ser maior que zero.');
+      return;
+    }
+    if (reviewForm.numCorrect > total) {
+      setReviewError('Os acertos não podem ser maiores que o número de questões.');
+      return;
+    }
+    const normalized = Math.round((reviewForm.numCorrect / total) * 10);
+    const accuracy = Math.round((reviewForm.numCorrect / total) * 100);
+    onRegisterReview(reviewingSubject.id, normalized, total, accuracy, localDateStr(new Date()), parseDuration(reviewForm.duration));
+    setReviewingSubject(null);
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
@@ -150,11 +186,10 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
                     </div>
                   </div>
                   <button
-                    onClick={() => onNavigateCronograma()}
-                    className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shrink-0"
-                    title="Ir para o Cronograma"
+                    onClick={() => openReviewModal(s)}
+                    className="py-1.5 px-4 rounded-full bg-navy hover:bg-navy-light text-white text-[10px] font-black uppercase transition-colors shrink-0"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
+                    Revisar
                   </button>
                 </div>
               ))
@@ -198,9 +233,9 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
                       </p>
                     </div>
                     <button
-                      onClick={() => onNavigateCronograma(s.id)}
-                      className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shrink-0 mt-0.5"
-                      title="Ir para o Cronograma"
+                      onClick={() => openReviewModal(s)}
+                      className="w-8 h-8 rounded-full bg-navy hover:bg-navy-light text-white flex items-center justify-center transition-colors shrink-0 mt-0.5"
+                      title="Revisar"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
@@ -235,6 +270,106 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
           </button>
         </div>
       </div>
+
+      {/* ── Modal de revisão ─────────────────────────────────────────── */}
+      {reviewingSubject && (
+        <div className="fixed inset-0 bg-navy/20 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white border border-border rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+            <h4 className="text-xl font-black text-navy mb-1 uppercase tracking-tight">Registro de Revisão</h4>
+            <p className="text-muted text-[10px] font-bold uppercase mb-6 tracking-widest">
+              {reviewingSubject.area} — {reviewingSubject.aulaPrincipal}
+            </p>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                    Nº de questões
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={reviewForm.totalQuestions}
+                    onChange={(e) => setReviewForm({ ...reviewForm, totalQuestions: e.target.value })}
+                    className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="dash-review-acertos" className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                    Acertos
+                  </label>
+                  <input
+                    id="dash-review-acertos"
+                    type="number"
+                    min={0}
+                    max={parseInt(reviewForm.totalQuestions) || undefined}
+                    value={reviewForm.numCorrect}
+                    onChange={(e) => setReviewForm({ ...reviewForm, numCorrect: Math.max(0, parseInt(e.target.value) || 0) })}
+                    className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                  Tempo (hh:mm:ss)
+                </label>
+                <input
+                  type="text"
+                  value={reviewForm.duration}
+                  onChange={(e) => setReviewForm({ ...reviewForm, duration: e.target.value })}
+                  placeholder="00:30:00"
+                  className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+                />
+              </div>
+
+              {/* Barra de aproveitamento */}
+              {(() => {
+                const total = parseInt(reviewForm.totalQuestions) || 0;
+                const pct = total > 0 ? (reviewForm.numCorrect / total) * 100 : 0;
+                return (
+                  <div className="bg-surface rounded-2xl border border-border p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[9px] font-black text-muted-light uppercase tracking-widest">Aproveitamento</span>
+                      <span className="text-2xl font-black text-navy">{total > 0 ? Math.round(pct) : '—'}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {reviewError && (
+                <p className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                  {reviewError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => setReviewingSubject(null)}
+                className="flex-1 py-4 text-muted text-[10px] font-black uppercase hover:text-navy transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleReviewConfirm}
+                className="flex-1 bg-navy text-white py-4 rounded-full text-[10px] font-black uppercase hover:bg-navy-light transition-all shadow-md active:scale-95"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Subject } from '../types';
+import { api } from '../services/api';
+import type { SubjectTemplatePayload } from '../services/api';
 
 interface GerenciarConteudoProps {
   subjects: Subject[];
@@ -8,59 +10,105 @@ interface GerenciarConteudoProps {
   onClose: () => void;
 }
 
+const AREAS = [
+  'Ciências da Natureza',
+  'Matemática e suas Tecnologias',
+  'Ciências Humanas',
+  'Linguagens e Códigos',
+] as const;
+
+const DISCIPLINAS_BY_AREA: Record<string, string[]> = {
+  'Ciências da Natureza':          ['Biologia', 'Física', 'Química'],
+  'Matemática e suas Tecnologias': ['Matemática'],
+  'Ciências Humanas':              ['Filosofia', 'Geografia', 'História', 'Sociologia'],
+  'Linguagens e Códigos':          ['Linguagens'],
+};
+
+// Disciplinas com apenas 1 opção são auto-selecionadas
+const AUTO_DISCIPLINA: Record<string, string> = {
+  'Matemática e suas Tecnologias': 'Matemática',
+  'Linguagens e Códigos':          'Linguagens',
+};
+
 const NEW_VALUE = '__new__';
 
 export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: GerenciarConteudoProps) {
-  const [formData, setFormData] = useState({
-    modulo: '',
-    area: '',
-    aulaPrincipal: '',
-    relevancia: 'Alta'
-  });
-  const [moduloMode, setModuloMode] = useState<'select' | 'new'>('select');
-  const [areaMode, setAreaMode] = useState<'select' | 'new'>('select');
+  const [area, setArea] = useState('');
+  const [disciplina, setDisciplina] = useState('');
+  const [templates, setTemplates] = useState<SubjectTemplatePayload[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [assuntoMode, setAssuntoMode] = useState<'select' | 'new'>('select');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [assuntoNovo, setAssuntoNovo] = useState('');
+  const [relevancia, setRelevancia] = useState('Alta');
 
-  const existingModulos = useMemo(() => {
-    const set = new Set(subjects.map(s => s.modulo).filter(Boolean));
-    return Array.from(set).sort();
-  }, [subjects]);
+  const disciplinas = area ? (DISCIPLINAS_BY_AREA[area] ?? []) : [];
 
-  const existingAreas = useMemo(() => {
-    if (!formData.modulo || moduloMode === 'new') return [];
-    const set = new Set(
-      subjects.filter(s => s.modulo === formData.modulo).map(s => s.area).filter(Boolean)
-    );
-    return Array.from(set).sort();
-  }, [subjects, formData.modulo, moduloMode]);
-
-  const handleModuloSelect = (value: string) => {
-    if (value === NEW_VALUE) {
-      setModuloMode('new');
-      setFormData(f => ({ ...f, modulo: '', area: '' }));
-      setAreaMode('select');
+  // Auto-seleciona disciplina quando a área tem apenas 1 opção
+  useEffect(() => {
+    if (area && AUTO_DISCIPLINA[area]) {
+      setDisciplina(AUTO_DISCIPLINA[area]);
     } else {
-      setModuloMode('select');
-      setFormData(f => ({ ...f, modulo: value, area: '' }));
-      setAreaMode('select');
+      setDisciplina('');
     }
-  };
+    setTemplates([]);
+    setSelectedTemplateId(null);
+    setAssuntoMode('select');
+    setAssuntoNovo('');
+  }, [area]);
 
-  const handleAreaSelect = (value: string) => {
+  // Busca templates quando a disciplina é selecionada
+  useEffect(() => {
+    if (!disciplina) return;
+    setLoadingTemplates(true);
+    setTemplates([]);
+    setSelectedTemplateId(null);
+    setAssuntoMode('select');
+    api.subjectTemplates.list(disciplina)
+      .then(setTemplates)
+      .catch(console.error)
+      .finally(() => setLoadingTemplates(false));
+  }, [disciplina]);
+
+  const selectedTemplate = useMemo(
+    () => templates.find(t => t.id === selectedTemplateId) ?? null,
+    [templates, selectedTemplateId],
+  );
+
+  const handleAssuntoSelect = (value: string) => {
     if (value === NEW_VALUE) {
-      setAreaMode('new');
-      setFormData(f => ({ ...f, area: '' }));
+      setAssuntoMode('new');
+      setSelectedTemplateId(null);
     } else {
-      setAreaMode('select');
-      setFormData(f => ({ ...f, area: value }));
+      setAssuntoMode('select');
+      setSelectedTemplateId(Number(value));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd(formData);
-    setFormData({ modulo: '', area: '', aulaPrincipal: '', relevancia: 'Alta' });
-    setModuloMode('select');
-    setAreaMode('select');
+    if (!area || !disciplina) return;
+
+    const assunto = assuntoMode === 'new' ? assuntoNovo : (selectedTemplate?.assunto ?? '');
+    if (!assunto.trim()) return;
+
+    const rel = assuntoMode === 'new' ? relevancia : (selectedTemplate?.relevancia ?? 'Alta');
+
+    onAdd({
+      area,
+      modulo: disciplina,
+      aulaPrincipal: assunto,
+      relevancia: rel,
+    });
+
+    // Reset form
+    setArea('');
+    setDisciplina('');
+    setTemplates([]);
+    setSelectedTemplateId(null);
+    setAssuntoMode('select');
+    setAssuntoNovo('');
+    setRelevancia('Alta');
   };
 
   const inputClass = "w-full bg-surface border border-border rounded-2xl px-6 py-4 text-navy text-sm focus:border-navy/20 focus:outline-none transition-colors";
@@ -77,105 +125,118 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
 
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-border mb-12 shadow-2xl space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            {/* Módulo */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Módulo</label>
-              {existingModulos.length > 0 && moduloMode === 'select' ? (
-                <select
-                  required
-                  value={formData.modulo}
-                  onChange={e => handleModuloSelect(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Selecionar...</option>
-                  {existingModulos.map(m => <option key={m} value={m}>{m}</option>)}
-                  <option value={NEW_VALUE}>+ Novo módulo</option>
-                </select>
-              ) : (
-                <div className="space-y-1">
-                  <input
-                    required
-                    autoFocus={moduloMode === 'new'}
-                    value={formData.modulo}
-                    onChange={e => setFormData(f => ({ ...f, modulo: e.target.value }))}
-                    className={inputClass}
-                    placeholder="Ex: Matemática"
-                  />
-                  {existingModulos.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => { setModuloMode('select'); setFormData(f => ({ ...f, modulo: '', area: '' })); setAreaMode('select'); }}
-                      className="text-[10px] text-navy/50 hover:text-navy ml-2 transition-colors"
-                    >
-                      ← Selecionar existente
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Área */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Área</label>
-              {existingAreas.length > 0 && areaMode === 'select' ? (
+              <label htmlFor="rg-area" className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Área</label>
+              <select
+                id="rg-area"
+                required
+                value={area}
+                onChange={e => setArea(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">Selecionar...</option>
+                {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+
+            {/* Disciplina */}
+            <div className="space-y-2">
+              <label htmlFor="rg-disciplina" className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Disciplina</label>
+              {AUTO_DISCIPLINA[area] ? (
+                <input
+                  id="rg-disciplina"
+                  value={disciplina}
+                  readOnly
+                  className={`${inputClass} opacity-60 cursor-default`}
+                />
+              ) : (
                 <select
+                  id="rg-disciplina"
                   required
-                  value={formData.area}
-                  onChange={e => handleAreaSelect(e.target.value)}
-                  className={inputClass}
+                  value={disciplina}
+                  onChange={e => setDisciplina(e.target.value)}
+                  disabled={!area}
+                  className={`${inputClass} disabled:opacity-40`}
                 >
                   <option value="">Selecionar...</option>
-                  {existingAreas.map(a => <option key={a} value={a}>{a}</option>)}
-                  <option value={NEW_VALUE}>+ Nova área</option>
+                  {disciplinas.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
-              ) : (
-                <div className="space-y-1">
-                  <input
-                    required
-                    value={formData.area}
-                    onChange={e => setFormData(f => ({ ...f, area: e.target.value }))}
-                    className={inputClass}
-                    placeholder="Ex: Álgebra"
-                  />
-                  {existingAreas.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => { setAreaMode('select'); setFormData(f => ({ ...f, area: '' })); }}
-                      className="text-[10px] text-navy/50 hover:text-navy ml-2 transition-colors"
-                    >
-                      ← Selecionar existente
-                    </button>
-                  )}
-                </div>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2 col-span-1">
-              <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Aula Principal</label>
-              <input required value={formData.aulaPrincipal} onChange={e => setFormData({...formData, aulaPrincipal: e.target.value})} className={inputClass} placeholder="Ex: Funções de Primeiro Grau" />
+            {/* Assunto */}
+            <div className="space-y-2">
+              <label htmlFor="rg-assunto" className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Assunto</label>
+              {assuntoMode === 'select' ? (
+                <select
+                  id="rg-assunto"
+                  required
+                  value={selectedTemplateId ?? ''}
+                  onChange={e => handleAssuntoSelect(e.target.value)}
+                  disabled={!disciplina}
+                  className={`${inputClass} disabled:opacity-40`}
+                >
+                  <option value="">{loadingTemplates ? 'Carregando...' : 'Selecionar...'}</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.assunto}</option>
+                  ))}
+                  <option value={NEW_VALUE}>+ Novo assunto</option>
+                </select>
+              ) : (
+                <div className="space-y-1">
+                  <input
+                    required
+                    autoFocus
+                    value={assuntoNovo}
+                    onChange={e => setAssuntoNovo(e.target.value)}
+                    className={inputClass}
+                    placeholder="Ex: Funções Trigonométricas"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setAssuntoMode('select'); setAssuntoNovo(''); }}
+                    className="text-[10px] text-navy/50 hover:text-navy ml-2 transition-colors"
+                  >
+                    ← Selecionar existente
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="space-y-2 col-span-1">
+
+            {/* Relevância */}
+            <div className="space-y-2">
               <label className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Relevância</label>
-              <select
-                value={formData.relevancia}
-                onChange={e => setFormData({...formData, relevancia: e.target.value})}
-                className={inputClass}
-              >
-                <option value="Alta">Alta</option>
-                <option value="Média">Média</option>
-                <option value="Baixa">Baixa</option>
-              </select>
+              {assuntoMode === 'select' && selectedTemplate ? (
+                <input
+                  value={selectedTemplate.relevancia}
+                  readOnly
+                  className={`${inputClass} opacity-60 cursor-default`}
+                />
+              ) : (
+                <select
+                  value={relevancia}
+                  onChange={e => setRelevancia(e.target.value)}
+                  disabled={assuntoMode === 'select' && !selectedTemplate}
+                  className={`${inputClass} disabled:opacity-40`}
+                >
+                  <option value="Alta">Alta</option>
+                  <option value="Média">Média</option>
+                  <option value="Baixa">Baixa</option>
+                </select>
+              )}
             </div>
           </div>
+
           <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-navy-light transition-all active:scale-95 shadow-lg">
             REGISTRAR ESTUDO
           </button>
         </form>
 
         <div className="space-y-3">
-          <p className="text-muted-light text-[10px] font-black uppercase tracking-widest mb-6 ml-2">Lista de Temas Atuais ({subjects.length})</p>
+          <p className="text-muted-light text-[10px] font-black uppercase tracking-widest mb-6 ml-2">Estudos Registrados ({subjects.length})</p>
           {subjects.map(s => (
             <div key={s.id} className="bg-white border border-border p-5 rounded-2xl flex items-center justify-between group hover:border-navy/20 transition-colors shadow-sm">
               <div>

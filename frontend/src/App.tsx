@@ -9,6 +9,7 @@ import { AuthScreen } from './components/Auth/AuthScreen';
 import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
 import { LandingPage } from './components/LandingPage';
 import { AdminArea } from './components/Admin/AdminArea';
+import { Provas } from './components/Provas';
 import { useSubjects } from './hooks/useSubjects';
 import { clearSubjects } from './services/storage';
 import type { Role } from './types';
@@ -136,6 +137,7 @@ export function AppContent() {
                       setHighlightedSubjectId(subjectId);
                       navigate('/cronograma');
                     }}
+                    onRegisterReview={registerReview}
                   />
                 </div>
               </div>
@@ -161,6 +163,14 @@ export function AppContent() {
             isAuthenticated ? (
               <div className="flex-1 overflow-hidden">
                 <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
+              </div>
+            ) : <Navigate to="/login" replace />
+          } />
+
+          <Route path="/provas" element={
+            isAuthenticated ? (
+              <div className="flex-1 overflow-hidden flex flex-col">
+                <Provas />
               </div>
             ) : <Navigate to="/login" replace />
           } />

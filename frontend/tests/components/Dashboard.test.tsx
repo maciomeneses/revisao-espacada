@@ -41,9 +41,14 @@ function getStatValue(label: string): string {
   return valueEl?.textContent ?? '';
 }
 
+const defaultProps = {
+  onNavigateCronograma: vi.fn(),
+  onRegisterReview: vi.fn(),
+};
+
 describe('Dashboard', () => {
   it('renderiza cards de estatísticas com rótulos corretos', () => {
-    render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
+    render(<Dashboard subjects={[]} {...defaultProps} />);
     expect(screen.getByText('Total de Matérias')).toBeInTheDocument();
     // getAllByText para o label que pode aparecer no card e no header da seção
     expect(screen.getAllByText('Revisões para Hoje').length).toBeGreaterThan(0);
@@ -51,7 +56,7 @@ describe('Dashboard', () => {
 
   it('exibe total de matérias correto', () => {
     const subjects = [makeSubject({ id: '1' }), makeSubject({ id: '2' })];
-    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} />);
+    render(<Dashboard subjects={subjects} {...defaultProps} />);
     expect(getStatValue('Total de Matérias')).toBe('2');
   });
 
@@ -61,20 +66,20 @@ describe('Dashboard', () => {
       makeSubject({ id: '2', nextReviewDate: today }),
       makeSubject({ id: '3', nextReviewDate: yesterday }),
     ];
-    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} />);
+    render(<Dashboard subjects={subjects} {...defaultProps} />);
     // today + yesterday = 2; tomorrow should NOT be counted
     expect(getStatValue('Revisões para Hoje')).toBe('2');
   });
 
   it('todos os contadores são 0 com lista vazia', () => {
-    render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
+    render(<Dashboard subjects={[]} {...defaultProps} />);
     expect(getStatValue('Total de Matérias')).toBe('0');
     expect(getStatValue('Revisões para Hoje')).toBe('0');
   });
 
   it('chama onNavigateCronograma ao clicar no botão', () => {
     const mockNavigate = vi.fn();
-    render(<Dashboard subjects={[]} onNavigateCronograma={mockNavigate} />);
+    render(<Dashboard subjects={[]} onNavigateCronograma={mockNavigate} onRegisterReview={vi.fn()} />);
 
     const btn = screen.getByRole('button', { name: /cronograma/i });
     fireEvent.click(btn);
@@ -83,18 +88,35 @@ describe('Dashboard', () => {
   });
 
   it('renderiza seção de descrição FSRS', () => {
-    render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
+    render(<Dashboard subjects={[]} {...defaultProps} />);
     expect(screen.getByText(/algoritmo FSRS v6/i)).toBeInTheDocument();
+  });
+
+  it('botão Revisar no card abre modal de revisão', () => {
+    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
+    render(<Dashboard subjects={subjects} {...defaultProps} />);
+
+    const revisarBtn = screen.getByRole('button', { name: /^Revisar$/i });
+    fireEvent.click(revisarBtn);
+
+    expect(screen.getByText(/Registro de Revisão/i)).toBeInTheDocument();
+  });
+
+  it('confirma revisão chamando onRegisterReview com os dados corretos', () => {
+    const onRegisterReview = vi.fn();
+    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
+    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} onRegisterReview={onRegisterReview} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
+    // numCorrect default é 7, totalQuestions default é 10 → normalized=7, accuracy=70
+    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+
+    expect(onRegisterReview).toHaveBeenCalledWith('sub-rev', 7, 10, 70, today, 0);
   });
 
   it('navega no minicalendário de revisões agendadas', () => {
     const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
-    const onNavigateCronograma = vi.fn();
-    render(<Dashboard subjects={subjects} onNavigateCronograma={onNavigateCronograma} />);
-
-    const btnNavigate = screen.getAllByTitle('Ir para o Cronograma')[0];
-    if(btnNavigate) fireEvent.click(btnNavigate);
-    expect(onNavigateCronograma).toHaveBeenCalled();
+    render(<Dashboard subjects={subjects} {...defaultProps} />);
 
     // Navegar nos dias
     const btnLeft = document.querySelector('button > svg.lucide-chevron-left');

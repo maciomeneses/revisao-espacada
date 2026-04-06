@@ -5,8 +5,8 @@ import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/al
 interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
-  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string) => void;
-  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string) => void;
+  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string, durationSeconds: number) => void;
+  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string, durationSeconds: number) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
   /** ID do assunto a destacar e rolar até ele (vindo do Dashboard). */
@@ -19,13 +19,24 @@ interface ReviewForm {
   date: string;
   totalQuestions: string;
   numCorrect: number;
+  duration: string;
 }
 
 const defaultForm = (): ReviewForm => ({
   date: localDateStr(new Date()),
   totalQuestions: '10',
   numCorrect: 7,
+  duration: '',
 });
+
+function parseDuration(s: string): number {
+  if (!s.trim()) return 0;
+  const parts = s.split(':').map(Number);
+  if (parts.some(isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
 
 export function Cronograma({
   subjects,
@@ -105,10 +116,11 @@ export function Cronograma({
     }
     const normalized = Math.round((form.numCorrect / total) * 10);
     const accuracy = Math.round((form.numCorrect / total) * 100);
+    const durationSeconds = parseDuration(form.duration);
     if (modalMode === 'fixacao') {
-      onRegisterFixacao(selectedSubject.id, normalized, total, accuracy, form.date);
+      onRegisterFixacao(selectedSubject.id, normalized, total, accuracy, form.date, durationSeconds);
     } else {
-      onRegisterReview(selectedSubject.id, normalized, total, accuracy, form.date);
+      onRegisterReview(selectedSubject.id, normalized, total, accuracy, form.date, durationSeconds);
     }
     closeModal();
   };
@@ -329,6 +341,20 @@ export function Cronograma({
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />
                 </div>
+              </div>
+
+              {/* Tempo (opcional) */}
+              <div>
+                <label className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                  Tempo (hh:mm:ss)
+                </label>
+                <input
+                  type="text"
+                  value={form.duration}
+                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                  placeholder="00:30:00"
+                  className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+                />
               </div>
 
               {/* Barra de desempenho */}

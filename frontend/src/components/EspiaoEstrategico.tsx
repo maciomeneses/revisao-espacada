@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   TrendingUp, BookOpen, BarChart3, CheckCircle2, Calendar,
-  Target, Trophy, AlertCircle,
+  Target, Trophy, AlertCircle, ChevronLeft, ChevronRight, X,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -14,6 +14,11 @@ import { localDateStr } from '../services/algorithm';
 interface EspiaoEstrategicoProps {
   subjects: Subject[];
   reviewEvents: ReviewEventPayload[];
+}
+
+function fmtDate(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 // Returns the real accuracy % from the event, falling back to a proxy for
@@ -231,6 +236,9 @@ function MiniChart({ data, dataKey, label, color, gradientId, icon: Icon, unit =
 
 export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoProps) {
   const [chartFilter, setChartFilter] = useState<ChartFilter>('semanas');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyArea, setHistoryArea] = useState<string | null>(null);
+  const [historySubjectId, setHistorySubjectId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const today = localDateStr(new Date());
@@ -314,6 +322,25 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
     [reviewEvents, chartFilter],
   );
 
+  const historyData = useMemo(() => {
+    const areaMap = new Map<string, Map<string, { name: string; events: ReviewEventPayload[] }>>();
+    for (const e of reviewEvents) {
+      const subj = subjects.find(s => s.id === e.subjectId);
+      const area = subj?.area ?? 'Sem área';
+      if (!areaMap.has(area)) areaMap.set(area, new Map());
+      const subjMap = areaMap.get(area)!;
+      if (!subjMap.has(e.subjectId)) subjMap.set(e.subjectId, { name: e.subjectName, events: [] });
+      subjMap.get(e.subjectId)!.events.push(e);
+    }
+    return areaMap;
+  }, [subjects, reviewEvents]);
+
+  const closeHistory = () => {
+    setHistoryOpen(false);
+    setHistoryArea(null);
+    setHistorySubjectId(null);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto w-full space-y-8">
       {/* Header */}
@@ -340,13 +367,19 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
             color="text-indigo-600"
             icon={BarChart3}
           />
-          <StatCard
-            label="Revisões Concluídas"
-            value={stats.revisoesConcluidas}
-            deltaStr={stats.revisoesConcluidasRecent > 0 ? `+${stats.revisoesConcluidasRecent}` : null}
-            color="text-green-600"
-            icon={CheckCircle2}
-          />
+          <div
+            onClick={() => setHistoryOpen(true)}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            title="Ver histórico de revisões"
+          >
+            <StatCard
+              label="Revisões Concluídas"
+              value={stats.revisoesConcluidas}
+              deltaStr={stats.revisoesConcluidasRecent > 0 ? `+${stats.revisoesConcluidasRecent}` : null}
+              color="text-green-600"
+              icon={CheckCircle2}
+            />
+          </div>
           <StatCard
             label="Revisões para Hoje"
             value={stats.revisoesHoje}
@@ -484,6 +517,138 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
           </div>
         </div>
       </div>
+
+      {/* ── History panel ───────────────────────────────────────────── */}
+      {historyOpen && (
+        <div
+          className="fixed inset-0 bg-navy/20 backdrop-blur-sm z-[200] flex justify-end"
+          onClick={closeHistory}
+        >
+          <div
+            className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-1 min-w-0">
+                {(historyArea) && (
+                  <button
+                    onClick={() => historySubjectId ? setHistorySubjectId(null) : setHistoryArea(null)}
+                    className="p-1 text-muted-light hover:text-navy transition-colors shrink-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                )}
+                <p className="font-black text-navy text-sm uppercase tracking-tight truncate">
+                  {historySubjectId
+                    ? (historyData.get(historyArea!)?.get(historySubjectId)?.name ?? 'Revisões')
+                    : historyArea ?? 'Histórico de Revisões'}
+                </p>
+              </div>
+              <button onClick={closeHistory} className="p-1 text-muted-light hover:text-navy transition-colors shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Panel content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {/* Level 1 — areas */}
+              {!historyArea && (
+                historyData.size === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhuma revisão registrada</p>
+                  </div>
+                ) : (
+                  Array.from(historyData.entries()).map(([area, subjMap]) => {
+                    const total = Array.from(subjMap.values()).reduce((s, v) => s + v.events.length, 0);
+                    return (
+                      <button
+                        key={area}
+                        onClick={() => setHistoryArea(area)}
+                        className="w-full flex items-center justify-between bg-surface hover:bg-navy/5 border border-border rounded-2xl px-4 py-3 transition-colors text-left"
+                      >
+                        <p className="font-bold text-navy text-sm truncate">{area}</p>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className="text-[10px] font-black text-muted-light">{total} revisões</span>
+                          <ChevronRight className="w-4 h-4 text-muted-light" />
+                        </div>
+                      </button>
+                    );
+                  })
+                )
+              )}
+
+              {/* Level 2 — subjects in area */}
+              {historyArea && !historySubjectId && (
+                Array.from(historyData.get(historyArea)?.entries() ?? []).map(([subjId, { name, events }]) => {
+                  const accValues = events.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
+                  const avgAcc = accValues.length > 0
+                    ? Math.round(accValues.reduce((a, v) => a + v, 0) / accValues.length)
+                    : null;
+                  const totalSec = events.reduce((s, e) => s + (e.durationSeconds ?? 0), 0);
+                  const durLabel = totalSec > 0
+                    ? `${Math.floor(totalSec / 3600)}h ${Math.floor((totalSec % 3600) / 60)}m`
+                    : null;
+                  return (
+                    <button
+                      key={subjId}
+                      onClick={() => setHistorySubjectId(subjId)}
+                      className="w-full flex items-center justify-between bg-surface hover:bg-navy/5 border border-border rounded-2xl px-4 py-3 transition-colors text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-navy text-sm truncate">{name}</p>
+                        <p className="text-[10px] text-muted font-bold">
+                          {events.length} revisões
+                          {avgAcc !== null ? ` • ${avgAcc}%` : ''}
+                          {durLabel ? ` • ${durLabel}` : ''}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-light shrink-0 ml-2" />
+                    </button>
+                  );
+                })
+              )}
+
+              {/* Level 3 — individual events */}
+              {historyArea && historySubjectId && (
+                (historyData.get(historyArea)?.get(historySubjectId)?.events ?? [])
+                  .slice()
+                  .sort((a, b) => b.reviewDate.localeCompare(a.reviewDate))
+                  .map((e, i) => {
+                    const acc = getAccuracy(e);
+                    const dur = e.durationSeconds ?? 0;
+                    const h = Math.floor(dur / 3600);
+                    const min = Math.floor((dur % 3600) / 60);
+                    const sec = dur % 60;
+                    const durStr = dur > 0
+                      ? `${h > 0 ? `${h}h ` : ''}${min}m ${sec}s`
+                      : null;
+                    const perfCls =
+                      e.performance === 'excelente' ? 'bg-green-50 text-green-700 border-green-200' :
+                      e.performance === 'bom'       ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      e.performance === 'medio'     ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                                      'bg-red-50 text-red-600 border-red-200';
+                    return (
+                      <div key={i} className="bg-surface border border-border rounded-2xl px-4 py-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-navy">{fmtDate(e.reviewDate)}</span>
+                          {acc !== null && <span className="text-sm font-black text-navy">{acc}%</span>}
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-[10px] text-muted font-bold">{e.questions} questões</span>
+                          {durStr && <span className="text-[10px] text-muted font-bold">{durStr}</span>}
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${perfCls}`}>
+                            {e.performance}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

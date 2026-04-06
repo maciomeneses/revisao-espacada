@@ -62,6 +62,24 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+export interface SubjectTemplatePayload {
+  id: number;
+  area: string;
+  disciplina: string;
+  assunto: string;
+  relevancia: string;
+}
+
+export interface ExamEntryPayload {
+  id?: number;
+  examDate: string;       // ISO date: YYYY-MM-DD
+  examName: string;
+  examType?: string;
+  scorePercent: number;   // 0–100
+  notes?: string;
+  createdAt?: string;
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) =>
@@ -128,5 +146,31 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+  },
+
+  subjectTemplates: {
+    list: (disciplina?: string) =>
+      request<SubjectTemplatePayload[]>(
+        `/api/subject-templates${disciplina ? `?disciplina=${encodeURIComponent(disciplina)}` : ''}`
+      ),
+  },
+
+  examEntries: {
+    list: () => request<ExamEntryPayload[]>('/api/exam-entries'),
+
+    create: (payload: Omit<ExamEntryPayload, 'id' | 'createdAt'>) =>
+      request<ExamEntryPayload>('/api/exam-entries', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    update: (id: number, payload: Partial<ExamEntryPayload>) =>
+      request<ExamEntryPayload>(`/api/exam-entries/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+
+    delete: (id: number) =>
+      request<void>(`/api/exam-entries/${id}`, { method: 'DELETE' }),
   },
 };
