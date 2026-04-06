@@ -42,7 +42,7 @@ export function Cronograma({
   const [form, setForm] = useState<ReviewForm>(defaultForm());
   const [formError, setFormError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [selectedArea, setSelectedArea] = useState<string | null>('__all__');
   const [flashId, setFlashId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 

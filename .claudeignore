@@ -1,0 +1,21 @@
+# Build artifacts (redundância com .gitignore — garante que Claude não indexa mesmo se presentes)
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+coverage/
+frontend/coverage/
+*.tsbuildinfo
+
+# Backend build
+backend/build/
+backend/.gradle/
+backend/out/
+
+# Test reports (grandes, inúteis para o Claude)
+backend/build/reports/
+frontend/coverage/
+
+# Lock files (sem valor para leitura de código)
+package-lock.json
+frontend/package-lock.json

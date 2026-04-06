@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   TrendingUp, BookOpen, BarChart3, CheckCircle2, Calendar,
-  Zap, Target, Trophy, AlertCircle,
+  Target, Trophy, AlertCircle,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -354,14 +354,7 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
             icon={Calendar}
           />
           <StatCard
-            label="Conhecimento Estável"
-            value={stats.conhecimentoEstavel}
-            deltaStr={stats.conhecimentoEstavelRecent > 0 ? `+${stats.conhecimentoEstavelRecent}` : null}
-            color="text-green-600"
-            icon={Zap}
-          />
-          <StatCard
-            label="Acurácia Média"
+            label="Desempenho"
             value={`${stats.avgAcc.toFixed(1)}%`}
             deltaStr={stats.avgAccRecent != null ? `${stats.avgAccRecent.toFixed(1)}%` : null}
             color="text-amber-500"
@@ -438,7 +431,7 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
           <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
               <Trophy className="w-4 h-4 text-green-500 shrink-0" />
-              <span className="font-black text-navy text-sm uppercase tracking-tight">Maiores Desempenhos</span>
+              <span className="font-black text-navy text-sm uppercase tracking-tight">Pontos Fortes</span>
             </div>
             <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
               {performerData.top.length === 0 ? (
@@ -466,7 +459,7 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
           <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="font-black text-navy text-sm uppercase tracking-tight">Menores Desempenhos</span>
+              <span className="font-black text-navy text-sm uppercase tracking-tight">Pontos a Melhorar</span>
             </div>
             <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
               {performerData.bottom.length === 0 ? (

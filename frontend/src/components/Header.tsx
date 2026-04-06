@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar, TrendingUp, Shield } from 'lucide-react';
+import { LayoutDashboard, Calendar, TrendingUp, Shield, ClipboardList } from 'lucide-react';
 import type { ActiveView, Role } from '../types';
 
 interface HeaderProps {
@@ -13,14 +13,16 @@ const NAV_ICONS: Record<string, React.ElementType> = {
   dashboard:  LayoutDashboard,
   cronograma: Calendar,
   espiao:     TrendingUp,
+  provas:     ClipboardList,
   admin:      Shield,
 };
 
 export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, onLogout }: HeaderProps) {
   const navItems: { id: ActiveView; label: string; adminOnly?: boolean }[] = [
-    { id: 'dashboard',  label: 'Dashboard' },
-    { id: 'cronograma', label: 'Cronograma' },
+    { id: 'dashboard',  label: 'Início' },
+    { id: 'cronograma', label: 'Estudos' },
     { id: 'espiao',     label: 'Estatísticas' },
+    { id: 'provas',     label: 'Provas' },
     { id: 'admin',      label: 'Admin', adminOnly: true },
   ];
 
@@ -56,7 +58,7 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
             onClick={onOpenGerenciar}
             className="bg-navy/5 hover:bg-navy/10 text-navy text-[10px] font-black py-2 md:py-2.5 px-4 md:px-6 rounded-full transition-all border border-navy/10 uppercase tracking-widest"
           >
-            Gerenciar
+            Registrar estudo
           </button>
           <button
             onClick={onLogout}

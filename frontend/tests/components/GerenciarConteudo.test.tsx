@@ -29,7 +29,7 @@ describe('GerenciarConteudo', () => {
     expect(screen.getByText('Álgebra 101')).toBeInTheDocument();
     
     // Testa botão de adicionar ao cronograma
-    expect(screen.getByRole('button', { name: /ADICIONAR AO CRONOGRAMA/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /REGISTRAR ESTUDO/i })).toBeInTheDocument();
   });
 
   it('permite preencher o form e adiciona novo assunto', async () => {
@@ -52,7 +52,7 @@ describe('GerenciarConteudo', () => {
     fireEvent.change(inputAula, { target: { value: 'Termologia' } });
 
     // Clica em Salvar
-    const saveBtn = screen.getByRole('button', { name: /ADICIONAR AO CRONOGRAMA/i });
+    const saveBtn = screen.getByRole('button', { name: /REGISTRAR ESTUDO/i });
     fireEvent.click(saveBtn);
 
     await waitFor(() => {

@@ -69,7 +69,7 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
     <div className="fixed inset-0 bg-navy/10 backdrop-blur-md z-[200] flex flex-col items-center justify-start p-6 overflow-y-auto">
       <div className="max-w-2xl w-full py-12">
         <div className="flex items-center justify-between mb-12">
-          <h2 className="text-3xl font-black text-navy uppercase tracking-tight">Gerenciar Temas</h2>
+          <h2 className="text-3xl font-black text-navy uppercase tracking-tight">Registrar Estudo</h2>
           <button onClick={onClose} className="p-2 text-muted-light hover:text-navy transition-colors">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -170,7 +170,7 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
             </div>
           </div>
           <button type="submit" className="w-full bg-navy text-white py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-navy-light transition-all active:scale-95 shadow-lg">
-            ADICIONAR AO CRONOGRAMA
+            REGISTRAR ESTUDO
           </button>
         </form>
 

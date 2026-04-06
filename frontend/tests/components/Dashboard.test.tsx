@@ -28,10 +28,15 @@ function makeSubject(overrides: Partial<Subject> = {}): Subject {
   };
 }
 
-/** Gets the stat value by finding the sibling <p> of the label <p> */
+/**
+ * Retorna o valor do stat card cujo label é `label`.
+ * Usa getAllByText para lidar com casos em que o mesmo texto aparece em múltiplos
+ * lugares (ex: label do card + cabeçalho de seção).
+ * O label do stat card é sempre um <p> cujo próximo irmão também é um <p> com o valor.
+ */
 function getStatValue(label: string): string {
-  const labelEl = screen.getByText(label);
-  // The value <p> is a sibling in the same parent div
+  const elements = screen.getAllByText(label);
+  const labelEl = elements.find(el => el.tagName === 'P' && el.nextElementSibling?.tagName === 'P') ?? elements[0];
   const valueEl = labelEl.nextElementSibling;
   return valueEl?.textContent ?? '';
 }
@@ -40,8 +45,8 @@ describe('Dashboard', () => {
   it('renderiza cards de estatísticas com rótulos corretos', () => {
     render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
     expect(screen.getByText('Total de Matérias')).toBeInTheDocument();
-    expect(screen.getByText('Revisões para Hoje')).toBeInTheDocument();
-    expect(screen.getByText('Conhecimento Estável')).toBeInTheDocument();
+    // getAllByText para o label que pode aparecer no card e no header da seção
+    expect(screen.getAllByText('Revisões para Hoje').length).toBeGreaterThan(0);
   });
 
   it('exibe total de matérias correto', () => {
@@ -61,23 +66,10 @@ describe('Dashboard', () => {
     expect(getStatValue('Revisões para Hoje')).toBe('2');
   });
 
-  it('conta Conhecimento Estável corretamente (stability > 30)', () => {
-    const subjects = [
-      makeSubject({ id: '1', stability: 31 }),
-      makeSubject({ id: '2', stability: 30 }),
-      makeSubject({ id: '3', stability: 29 }),
-      makeSubject({ id: '4', stability: undefined }),
-    ];
-    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} />);
-    // Only id='1' has stability > 30
-    expect(getStatValue('Conhecimento Estável')).toBe('1');
-  });
-
   it('todos os contadores são 0 com lista vazia', () => {
     render(<Dashboard subjects={[]} onNavigateCronograma={vi.fn()} />);
     expect(getStatValue('Total de Matérias')).toBe('0');
     expect(getStatValue('Revisões para Hoje')).toBe('0');
-    expect(getStatValue('Conhecimento Estável')).toBe('0');
   });
 
   it('chama onNavigateCronograma ao clicar no botão', () => {

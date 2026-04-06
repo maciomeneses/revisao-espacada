@@ -67,7 +67,7 @@ describe('EspiaoEstrategico', () => {
     // "ruim" without accuracy -> fallback is 20, but we also have others (0.8 and 0.95 which are 80 and 95)
     render(<EspiaoEstrategico subjects={mockSubjects} reviewEvents={mockEvents} />);
     // O Espiao calcula medias globais de accuracy.
-    expect(screen.getByText('Acurácia Média')).toBeInTheDocument();
+    expect(screen.getByText('Desempenho')).toBeInTheDocument();
   });
 
   it('renderiza os botões de filtro e muda os dados do gráfico ao clicar', () => {

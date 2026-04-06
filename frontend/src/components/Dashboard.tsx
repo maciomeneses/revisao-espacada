@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { Subject } from '../types';
 import { localDateStr } from '../services/algorithm';
 import { Agenda } from './Agenda';
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpen, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpen } from 'lucide-react';
 
 interface DashboardProps {
   subjects: Subject[];
@@ -47,7 +47,6 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
   const dashStats = useMemo(() => ({
     totalMaterias: subjects.length,
     revisoesHoje: subjects.filter(s => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
-    conhecimentoEstavel: subjects.filter(s => (s.stability || 0) > 30).length,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [subjects]);
 
@@ -76,11 +75,10 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* ── Stat cards ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
-          { label: 'Total de Matérias',    value: dashStats.totalMaterias,        icon: BookOpen },
-          { label: 'Revisões para Hoje',   value: dashStats.revisoesHoje,         icon: Calendar },
-          { label: 'Conhecimento Estável', value: dashStats.conhecimentoEstavel,  icon: Zap },
+          { label: 'Total de Matérias',  value: dashStats.totalMaterias, icon: BookOpen },
+          { label: 'Revisões para Hoje', value: dashStats.revisoesHoje,  icon: Calendar },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="bg-white p-5 rounded-2xl border border-border shadow-sm">
             <div className="flex items-center justify-between">
@@ -103,7 +101,7 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
           <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-navy shrink-0" />
-              <span className="font-black text-navy text-sm uppercase tracking-tight">Revisões de Hoje</span>
+              <span className="font-black text-navy text-sm uppercase tracking-tight">Revisões para Hoje</span>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -164,11 +162,11 @@ export function Dashboard({ subjects, onNavigateCronograma }: DashboardProps) {
           </div>
         </div>
 
-        {/* Atrasadas */}
+        {/* Revisões Pendentes */}
         <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
             <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-            <span className="font-black text-navy text-sm uppercase tracking-tight">Atrasadas</span>
+            <span className="font-black text-navy text-sm uppercase tracking-tight">Revisões Pendentes</span>
           </div>
 
           <div className="p-4 space-y-2.5 min-h-[100px] max-h-[360px] overflow-y-auto">
