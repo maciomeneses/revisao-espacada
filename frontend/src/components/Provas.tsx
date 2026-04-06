@@ -36,6 +36,7 @@ export function Provas() {
   const [selectedEntry, setSelectedEntry] = useState<ExamEntryPayload | null>(null);
   const [notesValue, setNotesValue] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaveError, setNotesSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     api.examEntries.list()
@@ -105,17 +106,25 @@ export function Provas() {
   const openDetail = (entry: ExamEntryPayload) => {
     setSelectedEntry(entry);
     setNotesValue(entry.notes ?? '');
+    setNotesSaveError(null);
   };
 
   const saveNotes = async () => {
     if (!selectedEntry) return;
     setNotesSaving(true);
+    setNotesSaveError(null);
     try {
-      const updated = await api.examEntries.update(selectedEntry.id!, { notes: notesValue });
+      const updated = await api.examEntries.update(selectedEntry.id!, {
+        examDate: selectedEntry.examDate,
+        examName: selectedEntry.examName,
+        examType: selectedEntry.examType,
+        scorePercent: selectedEntry.scorePercent,
+        notes: notesValue,
+      });
       setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
       setSelectedEntry(updated);
     } catch (err) {
-      console.error(err);
+      setNotesSaveError(err instanceof Error ? err.message : 'Erro ao salvar notas.');
     } finally {
       setNotesSaving(false);
     }
@@ -236,6 +245,11 @@ export function Provas() {
                 placeholder="Anote aqui os tópicos errados, dúvidas e pontos a revisar..."
                 className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20 resize-none"
               />
+              {notesSaveError && (
+                <p className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                  {notesSaveError}
+                </p>
+              )}
               <button
                 onClick={saveNotes}
                 disabled={notesSaving || notesValue === (selectedEntry.notes ?? '')}
