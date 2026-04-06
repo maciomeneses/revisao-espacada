@@ -21,7 +21,8 @@ public record ReviewEventDto(
     @NotBlank String performance,
     int reps,
     int questions,
-    int accuracy
+    int accuracy,
+    Integer durationSeconds   // Integer (nullable) para compatibilidade com clientes que omitem o campo
 ) {
     public static ReviewEventDto from(ReviewEvent e) {
         return new ReviewEventDto(
@@ -32,7 +33,8 @@ public record ReviewEventDto(
             e.getPerformance().getValue(),
             e.getReps(),
             e.getQuestions(),
-            e.getAccuracy()
+            e.getAccuracy(),
+            e.getDurationSeconds()
         );
     }
 
@@ -44,5 +46,6 @@ public record ReviewEventDto(
         e.setReps(this.reps());
         e.setQuestions(this.questions());
         e.setAccuracy(this.accuracy());
+        e.setDurationSeconds(this.durationSeconds() != null ? this.durationSeconds() : 0);
     }
 }

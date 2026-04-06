@@ -10,6 +10,7 @@ export interface ReviewEventPayload {
   reps: number;
   questions: number;
   accuracy: number;          // 0–100 real accuracy %
+  durationSeconds: number;   // duração da sessão em segundos (0 = não informado)
 }
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';

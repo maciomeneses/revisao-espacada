@@ -57,6 +57,10 @@ public class ReviewEvent {
     @Column(nullable = false, columnDefinition = "SMALLINT NOT NULL DEFAULT 0")
     private int accuracy = 0;
 
+    /** Duração da sessão em segundos (0 = não informado). */
+    @Column(nullable = false, columnDefinition = "INT NOT NULL DEFAULT 0")
+    private int durationSeconds = 0;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -88,6 +92,9 @@ public class ReviewEvent {
 
     public int getAccuracy() { return accuracy; }
     public void setAccuracy(int accuracy) { this.accuracy = accuracy; }
+
+    public int getDurationSeconds() { return durationSeconds; }
+    public void setDurationSeconds(int durationSeconds) { this.durationSeconds = durationSeconds; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
