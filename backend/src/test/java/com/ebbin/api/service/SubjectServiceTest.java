@@ -95,14 +95,14 @@ class SubjectServiceTest {
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(subjectRepository.findAllByUser(user)).thenReturn(List.of(existingSubject));
 
-        subjectService.syncSubjects("user@test.com", List.of(subjectDto));
+        subjectService.syncSubjects("user@test.com", List.of(subjectDto), false);
 
         verify(subjectRepository, atLeastOnce()).save(any(Subject.class));
     }
 
     @Test
-    @DisplayName("syncSubjects deve remover subjects ausentes na lista enviada")
-    void syncSubjects_deletesRemovedSubjects() {
+    @DisplayName("syncSubjects com destructive=true deve remover subjects ausentes na lista enviada")
+    void syncSubjects_destructive_deletesRemovedSubjects() {
         Subject toDelete = new Subject();
         toDelete.setClientId("client-to-delete");
         toDelete.setUser(user);
@@ -116,14 +116,36 @@ class SubjectServiceTest {
                 .thenReturn(List.of(existingSubject));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        // Só envia "client-1", portanto "client-to-delete" deve ser removido
-        subjectService.syncSubjects("user@test.com", List.of(subjectDto));
+        // Só envia "client-1"; com destructive=true, "client-to-delete" deve ser removido
+        subjectService.syncSubjects("user@test.com", List.of(subjectDto), true);
 
         verify(subjectRepository).deleteAll(argThat(list -> {
             List<Subject> deleted = new ArrayList<>();
             list.forEach(deleted::add);
             return deleted.stream().anyMatch(s -> "client-to-delete".equals(s.getClientId()));
         }));
+    }
+
+    @Test
+    @DisplayName("syncSubjects com destructive=false (padrão) deve preservar subjects ausentes na lista")
+    void syncSubjects_nonDestructive_keepsAbsentSubjects() {
+        Subject other = new Subject();
+        other.setClientId("client-other");
+        other.setUser(user);
+        other.setModulo("M2"); other.setArea("A2");
+        other.setAulaPrincipal("AP2"); other.setRelevancia("Média");
+        other.setCurrentStage(ReviewStage.AULA); other.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
+
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findAllByUser(user))
+                .thenReturn(new ArrayList<>(List.of(existingSubject, other)))
+                .thenReturn(List.of(existingSubject, other));
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Só envia "client-1"; com destructive=false, "client-other" deve ser preservado
+        subjectService.syncSubjects("user@test.com", List.of(subjectDto), false);
+
+        verify(subjectRepository, never()).deleteAll(any());
     }
 
     // --- upsertSubject ---

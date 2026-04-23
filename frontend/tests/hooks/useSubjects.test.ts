@@ -87,11 +87,11 @@ describe('useSubjects hook', () => {
   it('deleta subjects', async () => {
     const existing = makeSubject({ id: 'sub-to-delete', aulaPrincipal: 'Del' });
     storage.saveSubjects([existing]);
-    
+
     mockApi.subjects.upsert.mockResolvedValueOnce({ ...existing, aulaAssistida: true });
-    
+
     const { result } = renderHook(() => useSubjects());
-    
+
     await waitFor(() => {
       expect(result.current.subjects.length).toBeGreaterThan(0);
     });
@@ -102,6 +102,78 @@ describe('useSubjects hook', () => {
       await result.current.removeSubject(existing.id);
     });
     expect(mockApi.subjects.delete).toHaveBeenCalledWith(existing.id);
+  });
+
+  it('addSubject chama upsert (não sync destrutivo)', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    mockApi.subjects.list.mockResolvedValue([]);
+    mockApi.subjects.upsert.mockResolvedValue({});
+
+    const { result } = renderHook(() => useSubjects());
+    await waitFor(() => expect(mockApi.subjects.list).toHaveBeenCalled());
+
+    await act(async () => {
+      await result.current.addSubject({ aulaPrincipal: 'Novo', area: 'Física', modulo: 'M' });
+    });
+
+    expect(mockApi.subjects.upsert).toHaveBeenCalled();
+    expect(mockApi.subjects.sync).not.toHaveBeenCalled();
+  });
+
+  it('não reenvia subjects apenas locais ao backend ao montar (não ressuscita deletados)', async () => {
+    // Cenário: localStorage tem um subject antigo que já foi deletado no backend
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    const ghost = makeSubject({ id: 'ghost', aulaPrincipal: 'Fantasma' });
+    storage.saveSubjects([ghost], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([]); // backend não o conhece
+
+    const { result } = renderHook(() => useSubjects());
+
+    await waitFor(() => {
+      // Após o fetch, o estado reflete o backend — sem o subject fantasma
+      expect(result.current.subjects.find(s => s.id === 'ghost')).toBeUndefined();
+    });
+
+    // Crucial: NÃO deve chamar sync para tentar "reenviar" o subject local
+    expect(mockApi.subjects.sync).not.toHaveBeenCalled();
+  });
+
+  it('addSubject reverte estado local se o backend falhar', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    mockApi.subjects.list.mockResolvedValue([]);
+    mockApi.subjects.upsert.mockRejectedValueOnce(new Error('network'));
+
+    const { result } = renderHook(() => useSubjects());
+    await waitFor(() => expect(mockApi.subjects.list).toHaveBeenCalled());
+
+    await act(async () => {
+      await result.current.addSubject({ aulaPrincipal: 'Falha', area: 'X', modulo: 'Y' });
+    });
+
+    // Subject otimista deve ter sido removido após falha
+    expect(result.current.subjects.find(s => s.aulaPrincipal === 'Falha')).toBeUndefined();
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it('removeSubject reverte estado local se DELETE falhar', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    const victim = makeSubject({ id: 'victim', aulaPrincipal: 'Sobrevive' });
+    storage.saveSubjects([victim], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([victim]);
+    mockApi.subjects.delete.mockRejectedValueOnce(new Error('network'));
+
+    const { result } = renderHook(() => useSubjects());
+    await waitFor(() =>
+      expect(result.current.subjects.find(s => s.id === 'victim')).toBeDefined()
+    );
+
+    await act(async () => {
+      await result.current.removeSubject('victim');
+    });
+
+    // Após falha, o subject deve ter voltado ao estado local
+    expect(result.current.subjects.find(s => s.id === 'victim')).toBeDefined();
+    expect(result.current.error).toBeTruthy();
   });
   
   it('registra review alterando a data pro futuro e criando evento', async () => {

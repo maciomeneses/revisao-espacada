@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
-import { INITIAL_SUBJECTS } from '../data/initialSubjects';
 import { calculateNextReview, resetCiclo, localDateStr } from '../services/algorithm';
 import { api } from '../services/api';
 import type { ReviewEventPayload } from '../services/api';
@@ -18,6 +17,7 @@ export function useSubjects() {
 
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   /**
    * Ref que espelha o estado atual de subjects para que callbacks estáveis
@@ -29,30 +29,17 @@ export function useSubjects() {
     subjectsRef.current = subjects;
   }, [subjects]);
 
-  // Sync subjects with API — API is the source of truth for logged-in users
+  // API é a fonte de verdade para usuário logado.
+  // Sobrescrevemos o estado local com o que o backend retorna — nunca reenviamos
+  // itens apenas presentes no localStorage ao backend, pois isso "ressuscitaria"
+  // subjects deletados em outra sessão/dispositivo.
   useEffect(() => {
     if (!localStorage.getItem('ebbing_session')) return;
     api.subjects.list().then((data) => {
       if (Array.isArray(data)) {
-        setSubjects((prev) => {
-          const apiSubjects = data as Subject[];
-          const apiIds = new Set(apiSubjects.map(s => s.id));
-          const initialIds = new Set(INITIAL_SUBJECTS.map(s => s.id));
-
-          // Assuntos criados localmente que ainda não estão no backend:
-          // IDs que não são de INITIAL_SUBJECTS e não foram retornados pela API
-          const pendingLocal = prev.filter(s => !initialIds.has(s.id) && !apiIds.has(s.id));
-
-          const final = [...apiSubjects, ...pendingLocal];
-          saveSubjects(final, userEmail);
-
-          // Só sincroniza se houver assuntos pendentes que o backend não conhece
-          if (pendingLocal.length > 0) {
-            api.subjects.sync(final).catch(console.error);
-          }
-
-          return final;
-        });
+        const apiSubjects = data as Subject[];
+        setSubjects(apiSubjects);
+        saveSubjects(apiSubjects, userEmail);
       }
     }).catch(console.error);
   }, [userEmail]);
@@ -63,7 +50,10 @@ export function useSubjects() {
     api.reviewEvents.list().then(setReviewEvents).catch(console.error);
   }, []);
 
+  const clearError = useCallback(() => setError(null), []);
+
   const updateSubject = useCallback(async (updated: Subject) => {
+    const previous = subjectsRef.current.find((s) => s.id === updated.id);
     setSubjects((prev) => {
       const next = prev.map((s) => (s.id === updated.id ? updated : s));
       saveSubjects(next, userEmail);
@@ -73,8 +63,16 @@ export function useSubjects() {
       await api.subjects.upsert(updated.id, updated);
     } catch (err) {
       console.error('API update failed:', err);
+      if (previous) {
+        setSubjects((prev) => {
+          const rolledBack = prev.map((s) => (s.id === updated.id ? previous : s));
+          saveSubjects(rolledBack, userEmail);
+          return rolledBack;
+        });
+      }
+      setError('Não foi possível salvar a alteração. Verifique sua conexão.');
     }
-  }, []);
+  }, [userEmail]);
 
   /**
    * Usa subjectsRef para ler o estado atual sem declarar subjects como
@@ -198,28 +196,50 @@ export function useSubjects() {
         ...data,
       } as Subject;
 
-      // Use functional updater to avoid stale closure — capture the resulting list
-      // for the sync call via a ref to avoid re-adding subjects as a dependency.
-      let nextSubjects: Subject[] = [];
       setSubjects((prev) => {
-        nextSubjects = [...prev, newSubject];
-        saveSubjects(nextSubjects, userEmail);
-        return nextSubjects;
+        const next = [...prev, newSubject];
+        saveSubjects(next, userEmail);
+        return next;
       });
-      // nextSubjects is set synchronously inside setSubjects callback
-      await api.subjects.sync(nextSubjects).catch(console.error);
+
+      try {
+        await api.subjects.upsert(newSubject.id, newSubject);
+      } catch (err) {
+        console.error('API add failed:', err);
+        // Rollback: remove o item otimista que não foi persistido
+        setSubjects((prev) => {
+          const next = prev.filter((s) => s.id !== newSubject.id);
+          saveSubjects(next, userEmail);
+          return next;
+        });
+        setError('Não foi possível criar o assunto. Verifique sua conexão.');
+      }
     },
-    [],
+    [userEmail],
   );
 
-  const removeSubject = useCallback((id: string) => {
+  const removeSubject = useCallback(async (id: string) => {
+    const previous = subjectsRef.current.find((s) => s.id === id);
     setSubjects((prev) => {
       const next = prev.filter((s) => s.id !== id);
       saveSubjects(next, userEmail);
       return next;
     });
-    api.subjects.delete(id).catch(console.error);
-  }, []);
+    try {
+      await api.subjects.delete(id);
+    } catch (err) {
+      console.error('API delete failed:', err);
+      if (previous) {
+        // Rollback: repõe o item na posição original preservando a ordem anterior.
+        setSubjects((prev) => {
+          const next = [...prev, previous];
+          saveSubjects(next, userEmail);
+          return next;
+        });
+      }
+      setError('Não foi possível excluir o assunto. Verifique sua conexão.');
+    }
+  }, [userEmail]);
 
   const revertStage = useCallback(
     (id: string) => {
@@ -236,6 +256,8 @@ export function useSubjects() {
   return {
     subjects,
     reviewEvents,
+    error,
+    clearError,
     toggleAula,
     togglePreAula,
     toggleFlashcards,

@@ -147,7 +147,7 @@ class SubjectServiceCacheTest {
                 "aula", null, null, null, "nao_classificada"
         );
 
-        subjectService.syncSubjects(EMAIL, List.of(dto));
+        subjectService.syncSubjects(EMAIL, List.of(dto), false);
 
         // Cache deve ter sido evictado
         assertThat(cacheManager.getCache(CacheConfig.SUBJECTS_CACHE).get(EMAIL)).isNull();

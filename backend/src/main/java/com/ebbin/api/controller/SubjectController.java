@@ -38,17 +38,24 @@ public class SubjectController {
     }
 
     /**
-     * Sincronização completa: o frontend envia o estado atual de todos os subjects.
-     * O backend faz upsert de cada um e remove os que não estão mais presentes.
+     * Sincronização de subjects: o frontend envia uma lista e o backend faz upsert de cada item.
+     * <p>
+     * Por padrão é <b>não-destrutivo</b> — subjects existentes ausentes da lista são preservados.
+     * Para o comportamento antigo (remover ausentes), passar {@code ?destructive=true}.
+     * O padrão seguro evita "ressurreição" e perdas acidentais quando clientes
+     * desatualizados reenviam uma lista incompleta.
+     * <p>
      * Limite de {@value #MAX_SYNC_SIZE} itens para evitar abuso (DoS).
      */
     @PostMapping("/sync")
     public ResponseEntity<List<SubjectDto>> sync(
             @AuthenticationPrincipal UserDetails user,
+            @RequestParam(name = "destructive", defaultValue = "false") boolean destructive,
             @Valid @Size(max = MAX_SYNC_SIZE, message = "Número máximo de subjects excedido")
             @RequestBody List<SubjectDto> subjects) {
-        log.info("POST /api/subjects/sync — user={}, count={}", user.getUsername(), subjects.size());
-        return ResponseEntity.ok(subjectService.syncSubjects(user.getUsername(), subjects));
+        log.info("POST /api/subjects/sync — user={}, count={}, destructive={}",
+                user.getUsername(), subjects.size(), destructive);
+        return ResponseEntity.ok(subjectService.syncSubjects(user.getUsername(), subjects, destructive));
     }
 
     /** Upsert de um subject individual (usado para atualizações incrementais) */

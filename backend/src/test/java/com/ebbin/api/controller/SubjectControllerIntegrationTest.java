@@ -138,8 +138,8 @@ class SubjectControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/subjects/sync deve remover subjects ausentes na lista enviada")
-    void sync_removesAbsentSubjects() throws Exception {
+    @DisplayName("POST /api/subjects/sync?destructive=true deve remover subjects ausentes na lista enviada")
+    void sync_destructive_removesAbsentSubjects() throws Exception {
         // Persiste subject que não estará na lista de sync
         Subject toDelete = new Subject();
         toDelete.setUser(regularUser);
@@ -150,10 +150,10 @@ class SubjectControllerIntegrationTest {
         toDelete.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
         subjectRepository.save(toDelete);
 
-        // Sync envia apenas "subj-1", portanto "will-be-deleted" deve ser removido
+        // Sync envia apenas "subj-1" com destructive=true, portanto "will-be-deleted" deve ser removido
         String body = "[" + SUBJECT_JSON + "]";
 
-        mockMvc.perform(post("/api/subjects/sync")
+        mockMvc.perform(post("/api/subjects/sync?destructive=true")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -167,8 +167,34 @@ class SubjectControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/subjects/sync com lista vazia deve remover todos os subjects")
-    void sync_emptyList_removesAllSubjects() throws Exception {
+    @DisplayName("POST /api/subjects/sync (padrão, não-destrutivo) deve preservar subjects ausentes")
+    void sync_nonDestructive_keepsAbsentSubjects() throws Exception {
+        // Persiste subject que NÃO está na lista — com padrão não-destrutivo, deve sobreviver
+        Subject survivor = new Subject();
+        survivor.setUser(regularUser);
+        survivor.setClientId("should-survive");
+        survivor.setModulo("M"); survivor.setArea("A");
+        survivor.setAulaPrincipal("AP"); survivor.setRelevancia("Baixa");
+        survivor.setCurrentStage(ReviewStage.AULA);
+        survivor.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
+        subjectRepository.save(survivor);
+
+        // Sync sem ?destructive — "should-survive" NÃO deve ser removido
+        String body = "[" + SUBJECT_JSON + "]";
+
+        mockMvc.perform(post("/api/subjects/sync")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        assertThat(subjectRepository.findAll()).anyMatch(
+                sub -> "should-survive".equals(sub.getClientId()));
+    }
+
+    @Test
+    @DisplayName("POST /api/subjects/sync?destructive=true com lista vazia deve remover todos os subjects")
+    void sync_destructive_emptyList_removesAllSubjects() throws Exception {
         // Persiste subject existente
         Subject s = new Subject();
         s.setUser(regularUser);
@@ -177,7 +203,7 @@ class SubjectControllerIntegrationTest {
         s.setCurrentStage(ReviewStage.AULA); s.setPerformanceLevel(PerformanceLevel.NAO_CLASSIFICADA);
         subjectRepository.save(s);
 
-        mockMvc.perform(post("/api/subjects/sync")
+        mockMvc.perform(post("/api/subjects/sync?destructive=true")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[]"))

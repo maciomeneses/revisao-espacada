@@ -50,13 +50,19 @@ public class SubjectService {
     }
 
     /**
-     * Sincronização completa — upsert dos subjects recebidos e remoção dos ausentes.
-     * Usa um Map para evitar N+1 queries na busca por clientId (O(n) em vez de O(n²)).
-     * Invalida o cache de leitura para que a próxima chamada a getSubjects reflita o estado atual.
+     * Sincronização de subjects — upsert dos recebidos. Quando {@code destructive} é
+     * {@code true}, também remove os subjects ausentes da lista enviada; caso
+     * contrário (padrão), mantém os existentes intactos.
+     *
+     * O modo não-destrutivo é o padrão por segurança: evita que um cliente com
+     * estado desatualizado (ex.: outra aba, outro dispositivo, cache antigo)
+     * apague subjects que não aparecem na sua lista local — causa conhecida do
+     * bug de "ressurreição" em que itens excluídos voltavam a aparecer após
+     * outra aba reenviar a lista local.
      */
     @CacheEvict(cacheNames = CacheConfig.SUBJECTS_CACHE, key = "#email")
     @Transactional
-    public List<SubjectDto> syncSubjects(String email, List<SubjectDto> dtos) {
+    public List<SubjectDto> syncSubjects(String email, List<SubjectDto> dtos, boolean destructive) {
         User user = findUser(email);
         List<Subject> existing = subjectRepository.findAllByUser(user);
 
@@ -70,14 +76,18 @@ public class SubjectService {
             subjectRepository.save(subject);
         }
 
-        // Remove subjects não presentes na lista do cliente
-        Set<String> incomingIds = dtos.stream().map(SubjectDto::id).collect(Collectors.toSet());
-        List<Subject> toDelete = existing.stream()
-                .filter(s -> !incomingIds.contains(s.getClientId()))
-                .toList();
-        subjectRepository.deleteAll(toDelete);
+        int deletedCount = 0;
+        if (destructive) {
+            Set<String> incomingIds = dtos.stream().map(SubjectDto::id).collect(Collectors.toSet());
+            List<Subject> toDelete = existing.stream()
+                    .filter(s -> !incomingIds.contains(s.getClientId()))
+                    .toList();
+            subjectRepository.deleteAll(toDelete);
+            deletedCount = toDelete.size();
+        }
 
-        log.info("syncSubjects: email={}, upserted={}, deleted={}", email, dtos.size(), toDelete.size());
+        log.info("syncSubjects: email={}, upserted={}, deleted={}, destructive={}",
+                email, dtos.size(), deletedCount, destructive);
         return getSubjects(email);
     }
 
