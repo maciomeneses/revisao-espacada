@@ -48,6 +48,7 @@ class AuthServiceTest {
     @Mock JwtService jwtService;
     @Mock AuthenticationManager authenticationManager;
     @Mock EmailService emailService;
+    @Mock SubjectCatalogService subjectCatalogService;
 
     // Relógio fixo para testes determinísticos de TTL
     private static final Instant FIXED_INSTANT = Instant.parse("2026-01-01T10:00:00Z");
@@ -67,7 +68,8 @@ class AuthServiceTest {
                 authenticationManager,
                 fixedClock,
                 "http://localhost:5173",
-                emailService
+                emailService,
+                subjectCatalogService
         );
 
         user = new User();

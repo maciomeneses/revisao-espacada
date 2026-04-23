@@ -1,10 +1,14 @@
 package com.ebbin.api.service;
 
 import com.ebbin.api.dto.SubjectDto;
+import com.ebbin.api.model.Area;
+import com.ebbin.api.model.Discipline;
 import com.ebbin.api.model.PerformanceLevel;
 import com.ebbin.api.model.ReviewStage;
 import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.AreaRepository;
+import com.ebbin.api.repository.DisciplineRepository;
 import com.ebbin.api.repository.SubjectRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +28,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +38,8 @@ class SubjectServiceTest {
 
     @Mock SubjectRepository subjectRepository;
     @Mock UserRepository userRepository;
+    @Mock AreaRepository areaRepository;
+    @Mock DisciplineRepository disciplineRepository;
 
     @InjectMocks SubjectService subjectService;
 
@@ -60,6 +68,29 @@ class SubjectServiceTest {
                 false, false, false, false, false, false, false, false, false,
                 "aula", null, null, null, "nao_classificada"
         );
+    }
+
+    /**
+     * Stub do {@link com.ebbin.api.service.SubjectService.CatalogCache} para tests de mutação:
+     * os repositórios de Area/Discipline são acessados lazy dentro de upsert/sync. Os stubs são
+     * lenient porque testes de leitura (getSubjects, delete) não os exercitam.
+     */
+    private void stubCatalogResolution() {
+        lenient().when(areaRepository.findByUserAndName(eq(user), anyString()))
+                .thenAnswer(inv -> {
+                    Area a = new Area();
+                    a.setUser(user);
+                    a.setName(inv.getArgument(1));
+                    return Optional.of(a);
+                });
+        lenient().when(disciplineRepository.findByUserAndAreaAndName(eq(user), any(Area.class), anyString()))
+                .thenAnswer(inv -> {
+                    Discipline d = new Discipline();
+                    d.setUser(user);
+                    d.setArea(inv.getArgument(1));
+                    d.setName(inv.getArgument(2));
+                    return Optional.of(d);
+                });
     }
 
     // --- getSubjects ---
@@ -94,6 +125,7 @@ class SubjectServiceTest {
         when(subjectRepository.findAllByUser(user)).thenReturn(new ArrayList<>(List.of(existingSubject)));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(subjectRepository.findAllByUser(user)).thenReturn(List.of(existingSubject));
+        stubCatalogResolution();
 
         subjectService.syncSubjects("user@test.com", List.of(subjectDto), false);
 
@@ -115,6 +147,7 @@ class SubjectServiceTest {
                 .thenReturn(new ArrayList<>(List.of(existingSubject, toDelete)))
                 .thenReturn(List.of(existingSubject));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
 
         // Só envia "client-1"; com destructive=true, "client-to-delete" deve ser removido
         subjectService.syncSubjects("user@test.com", List.of(subjectDto), true);
@@ -141,6 +174,7 @@ class SubjectServiceTest {
                 .thenReturn(new ArrayList<>(List.of(existingSubject, other)))
                 .thenReturn(List.of(existingSubject, other));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
 
         // Só envia "client-1"; com destructive=false, "client-other" deve ser preservado
         subjectService.syncSubjects("user@test.com", List.of(subjectDto), false);
@@ -160,6 +194,7 @@ class SubjectServiceTest {
             s.setClientId("client-new");
             return s;
         });
+        stubCatalogResolution();
 
         SubjectDto newDto = new SubjectDto(
                 "client-new", "M", "A", "AP", "Alta",
@@ -178,6 +213,7 @@ class SubjectServiceTest {
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(subjectRepository.findByUserAndClientId(user, "client-1")).thenReturn(Optional.of(existingSubject));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
 
         SubjectDto updated = new SubjectDto(
                 "client-1", "Módulo Atualizado", "Área 1", "Aula Principal 1", "Alta",
@@ -210,6 +246,7 @@ class SubjectServiceTest {
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(subjectRepository.findByUserAndClientId(user, "client-1")).thenReturn(Optional.of(existingSubject));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
 
         SubjectDto withPerformance = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
@@ -228,6 +265,7 @@ class SubjectServiceTest {
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(subjectRepository.findByUserAndClientId(user, "client-1")).thenReturn(Optional.of(existingSubject));
         when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
 
         SubjectDto withNullPerformance = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",

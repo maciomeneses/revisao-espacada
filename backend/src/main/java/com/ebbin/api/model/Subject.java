@@ -28,6 +28,17 @@ public class Subject {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
+    /**
+     * Discipline associada — fonte canônica da categorização (V10). Nullable durante
+     * transição (subjects antigos podem ficar sem FK até o backfill completar); em
+     * upsert, o SubjectService resolve/criar a Discipline a partir de (area, modulo).
+     * ON DELETE CASCADE no FK garante que excluir a Discipline remove seus subjects.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "discipline_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Discipline discipline;
+
     @Column(nullable = false)
     private String modulo;
 
@@ -84,6 +95,8 @@ public class Subject {
     public void setClientId(String clientId) { this.clientId = clientId; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public Discipline getDiscipline() { return discipline; }
+    public void setDiscipline(Discipline discipline) { this.discipline = discipline; }
     public String getModulo() { return modulo; }
     public void setModulo(String modulo) { this.modulo = modulo; }
     public String getArea() { return area; }

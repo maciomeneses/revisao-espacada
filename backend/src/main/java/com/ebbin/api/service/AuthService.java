@@ -38,6 +38,7 @@ public class AuthService {
     private final Clock clock;
     private final String frontendUrl;
     private final EmailService emailService;
+    private final SubjectCatalogService subjectCatalogService;
 
     public AuthService(UserRepository userRepository,
                        PasswordResetTokenRepository resetTokenRepository,
@@ -46,7 +47,8 @@ public class AuthService {
                        AuthenticationManager authenticationManager,
                        Clock clock,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       SubjectCatalogService subjectCatalogService) {
         this.userRepository = userRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -55,6 +57,7 @@ public class AuthService {
         this.clock = clock;
         this.frontendUrl = frontendUrl;
         this.emailService = emailService;
+        this.subjectCatalogService = subjectCatalogService;
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -165,6 +168,7 @@ public class AuthService {
         return token.substring(0, 8) + "***";
     }
 
+    @Transactional
     public LoginResponse register(RegisterRequest req) {
         log.info("Cadastro de usuário: email={}, role={}", req.email(), req.role());
         if (userRepository.existsByEmail(req.email())) {
@@ -176,7 +180,11 @@ public class AuthService {
         user.setEmail(req.email());
         user.setPassword(passwordEncoder.encode(req.password()));
         user.setRole(req.role());
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        // Semeia o catálogo ENEM (4 áreas + 9 disciplinas) para o novo usuário,
+        // espelhando o seed idempotente do V10 aplicado aos usuários pré-existentes.
+        subjectCatalogService.seedDefaults(user);
 
         log.info("Usuário criado com sucesso: email={}, role={}", user.getEmail(), user.getRole());
         String token = jwtService.generateToken(user.getEmail());

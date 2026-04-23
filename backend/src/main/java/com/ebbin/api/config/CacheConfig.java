@@ -14,15 +14,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Configuração de cache em memória usando Caffeine via Spring Cache.
  *
- * <p>O cache {@code subjects} armazena a lista de subjects por usuário para evitar
- * consultas repetidas ao banco a cada requisição de leitura. TTL de 10 minutos e
- * tamanho máximo de 1000 entradas previnem crescimento ilimitado.
+ * <p>Cada cache é particionado por e-mail do usuário; TTL de 10 minutos e tamanho máximo
+ * de 1000 entradas previnem crescimento ilimitado.
  *
  * <p>Estratégia de invalidação:
  * <ul>
- *   <li>{@code getSubjects} — preenchimento (@Cacheable, chave = email do usuário)</li>
- *   <li>{@code syncSubjects}, {@code upsertSubject}, {@code deleteSubject} — eviction (@CacheEvict)</li>
+ *   <li>{@code subjects} — {@code getSubjects} preenche (@Cacheable); sync/upsert/delete evict</li>
+ *   <li>{@code areas} — {@code getAreas} preenche; create/rename/delete evict</li>
+ *   <li>{@code disciplines} — {@code getDisciplines} preenche; create/rename/delete evict</li>
  * </ul>
+ * Como o rename de uma área atualiza disciplines/subjects associados, o service faz
+ * eviction dos três caches em operações de rename/delete de área.
  */
 @Configuration
 @EnableCaching
@@ -31,19 +33,31 @@ public class CacheConfig {
     /** Nome do cache de subjects por usuário. */
     public static final String SUBJECTS_CACHE = "subjects";
 
+    /** Nome do cache de areas por usuário. */
+    public static final String AREAS_CACHE = "areas";
+
+    /** Nome do cache de disciplines por usuário. */
+    public static final String DISCIPLINES_CACHE = "disciplines";
+
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCache subjectsCache = new CaffeineCache(
-                SUBJECTS_CACHE,
+        SimpleCacheManager manager = new SimpleCacheManager();
+        manager.setCaches(List.of(
+                buildCache(SUBJECTS_CACHE),
+                buildCache(AREAS_CACHE),
+                buildCache(DISCIPLINES_CACHE)
+        ));
+        return manager;
+    }
+
+    private static CaffeineCache buildCache(String name) {
+        return new CaffeineCache(
+                name,
                 Caffeine.newBuilder()
                         .maximumSize(1_000)
                         .expireAfterWrite(10, TimeUnit.MINUTES)
                         .recordStats()
                         .build()
         );
-
-        SimpleCacheManager manager = new SimpleCacheManager();
-        manager.setCaches(List.of(subjectsCache));
-        return manager;
     }
 }

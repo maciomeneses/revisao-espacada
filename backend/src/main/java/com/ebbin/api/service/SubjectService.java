@@ -2,8 +2,12 @@ package com.ebbin.api.service;
 
 import com.ebbin.api.config.CacheConfig;
 import com.ebbin.api.dto.SubjectDto;
+import com.ebbin.api.model.Area;
+import com.ebbin.api.model.Discipline;
 import com.ebbin.api.model.Subject;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.AreaRepository;
+import com.ebbin.api.repository.DisciplineRepository;
 import com.ebbin.api.repository.SubjectRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.slf4j.Logger;
@@ -14,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,10 +32,17 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
+    private final AreaRepository areaRepository;
+    private final DisciplineRepository disciplineRepository;
 
-    public SubjectService(SubjectRepository subjectRepository, UserRepository userRepository) {
+    public SubjectService(SubjectRepository subjectRepository,
+                          UserRepository userRepository,
+                          AreaRepository areaRepository,
+                          DisciplineRepository disciplineRepository) {
         this.subjectRepository = subjectRepository;
         this.userRepository = userRepository;
+        this.areaRepository = areaRepository;
+        this.disciplineRepository = disciplineRepository;
     }
 
     /**
@@ -70,9 +82,11 @@ public class SubjectService {
         Map<String, Subject> existingByClientId = existing.stream()
                 .collect(Collectors.toMap(Subject::getClientId, Function.identity()));
 
+        CatalogCache catalog = new CatalogCache(user);
         for (SubjectDto dto : dtos) {
             Subject subject = existingByClientId.getOrDefault(dto.id(), createSubjectForUser(user));
             dto.applyTo(subject);
+            subject.setDiscipline(catalog.resolve(dto.area(), dto.modulo()));
             subjectRepository.save(subject);
         }
 
@@ -98,6 +112,7 @@ public class SubjectService {
         Subject subject = subjectRepository.findByUserAndClientId(user, dto.id())
                 .orElseGet(() -> createSubjectForUser(user));
         dto.applyTo(subject);
+        subject.setDiscipline(new CatalogCache(user).resolve(dto.area(), dto.modulo()));
         SubjectDto result = SubjectDto.from(subjectRepository.save(subject));
         log.debug("upsertSubject: email={}, clientId={}", email, dto.id());
         return result;
@@ -120,5 +135,54 @@ public class SubjectService {
         Subject s = new Subject();
         s.setUser(user);
         return s;
+    }
+
+    /**
+     * Resolve/cria Area e Discipline lazy durante upsert de subjects, evitando
+     * consultas repetidas num sync em lote. Preserva ordem {@code (area, modulo)}
+     * do DTO — strings vazias resultam em Discipline null (subject "órfão", permitido
+     * durante transição pela V10). A chave do cache local combina area + modulo
+     * para que o mesmo par não seja buscado duas vezes.
+     */
+    private final class CatalogCache {
+        private final User user;
+        private final Map<String, Area> areas = new HashMap<>();
+        private final Map<String, Discipline> disciplines = new HashMap<>();
+
+        CatalogCache(User user) {
+            this.user = user;
+        }
+
+        Discipline resolve(String areaName, String disciplineName) {
+            if (isBlank(areaName) || isBlank(disciplineName)) return null;
+            String aKey = areaName.trim();
+            String dKey = aKey + "::" + disciplineName.trim();
+            Discipline cached = disciplines.get(dKey);
+            if (cached != null) return cached;
+
+            Area area = areas.computeIfAbsent(aKey, key ->
+                    areaRepository.findByUserAndName(user, key).orElseGet(() -> {
+                        Area newArea = new Area();
+                        newArea.setUser(user);
+                        newArea.setName(key);
+                        return areaRepository.save(newArea);
+                    }));
+
+            Discipline discipline = disciplineRepository
+                    .findByUserAndAreaAndName(user, area, disciplineName.trim())
+                    .orElseGet(() -> {
+                        Discipline d = new Discipline();
+                        d.setUser(user);
+                        d.setArea(area);
+                        d.setName(disciplineName.trim());
+                        return disciplineRepository.save(d);
+                    });
+            disciplines.put(dKey, discipline);
+            return discipline;
+        }
+
+        private static boolean isBlank(String s) {
+            return s == null || s.trim().isEmpty();
+        }
     }
 }
