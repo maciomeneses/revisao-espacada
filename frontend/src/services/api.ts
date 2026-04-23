@@ -1,4 +1,4 @@
-import { User, Role } from '../types';
+import { User, Role, Area, Discipline } from '../types';
 import { clearSubjects } from './storage';
 
 export interface ReviewEventPayload {
@@ -136,6 +136,47 @@ export const api = {
 
     delete: (id: string) =>
       request<void>(`/api/subjects/${id}`, { method: 'DELETE' }),
+  },
+
+  areas: {
+    list: () => request<Area[]>('/api/areas'),
+
+    create: (name: string) =>
+      request<Area>('/api/areas', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      }),
+
+    update: (id: number, name: string) =>
+      request<Area>(`/api/areas/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name }),
+      }),
+
+    delete: (id: number) =>
+      request<void>(`/api/areas/${id}`, { method: 'DELETE' }),
+  },
+
+  disciplines: {
+    list: (areaId?: number) =>
+      request<Discipline[]>(
+        `/api/disciplines${areaId != null ? `?areaId=${areaId}` : ''}`
+      ),
+
+    create: (areaId: number, name: string) =>
+      request<Discipline>('/api/disciplines', {
+        method: 'POST',
+        body: JSON.stringify({ areaId, name }),
+      }),
+
+    update: (id: number, name: string) =>
+      request<Discipline>(`/api/disciplines/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name }),
+      }),
+
+    delete: (id: number) =>
+      request<void>(`/api/disciplines/${id}`, { method: 'DELETE' }),
   },
 
   reviewEvents: {

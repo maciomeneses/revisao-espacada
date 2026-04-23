@@ -1,4 +1,4 @@
-export type ActiveView = 'dashboard' | 'cronograma' | 'espiao' | 'provas' | 'admin';
+export type ActiveView = 'dashboard' | 'cronograma' | 'espiao' | 'provas' | 'categorias' | 'admin';
 
 export type Role = 'USER' | 'ADMIN';
 
@@ -19,7 +19,22 @@ export interface User {
   password?: string;
 }
 
-export type Area = string;
+/** Entidade Area (catálogo por usuário, V10). */
+export interface Area {
+  id: number;
+  name: string;
+}
+
+/** Entidade Discipline dentro de uma Area. */
+export interface Discipline {
+  id: number;
+  areaId: number;
+  areaName?: string;
+  name: string;
+}
+
+/** Nome de área como string — usado em Subject.area (campo legado preservado por compat). */
+export type AreaName = string;
 export type Relevance = 'Alta' | 'Média' | 'Baixa' | string;
 export type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string;
 export type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente' | string;
@@ -35,7 +50,7 @@ export type ReviewStage =
 export interface Subject {
   id: string;
   modulo: string;
-  area: Area;
+  area: AreaName;
   aulaPrincipal: string;
   relevancia: Relevance;
 

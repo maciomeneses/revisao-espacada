@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { Subject } from '../types';
 import { api } from '../services/api';
 import type { SubjectTemplatePayload } from '../services/api';
+import { useCatalog } from '../hooks/useCatalog';
 
 interface GerenciarConteudoProps {
   subjects: Subject[];
@@ -10,31 +11,16 @@ interface GerenciarConteudoProps {
   onClose: () => void;
 }
 
-const AREAS = [
-  'Ciências da Natureza',
-  'Matemática e suas Tecnologias',
-  'Ciências Humanas',
-  'Linguagens e Códigos',
-] as const;
-
-const DISCIPLINAS_BY_AREA: Record<string, string[]> = {
-  'Ciências da Natureza':          ['Biologia', 'Física', 'Química'],
-  'Matemática e suas Tecnologias': ['Matemática'],
-  'Ciências Humanas':              ['Filosofia', 'Geografia', 'História', 'Sociologia'],
-  'Linguagens e Códigos':          ['Linguagens'],
-};
-
-// Disciplinas com apenas 1 opção são auto-selecionadas
-const AUTO_DISCIPLINA: Record<string, string> = {
-  'Matemática e suas Tecnologias': 'Matemática',
-  'Linguagens e Códigos':          'Linguagens',
-};
-
 const NEW_VALUE = '__new__';
 
 export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: GerenciarConteudoProps) {
-  const [area, setArea] = useState('');
-  const [disciplina, setDisciplina] = useState('');
+  const {
+    areas, disciplines, loading: catalogLoading,
+    createArea, createDiscipline,
+  } = useCatalog();
+
+  const [areaId, setAreaId] = useState<number | ''>('');
+  const [disciplineId, setDisciplineId] = useState<number | ''>('');
   const [templates, setTemplates] = useState<SubjectTemplatePayload[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [assuntoMode, setAssuntoMode] = useState<'select' | 'new'>('select');
@@ -42,33 +28,49 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
   const [assuntoNovo, setAssuntoNovo] = useState('');
   const [relevancia, setRelevancia] = useState('Alta');
 
-  const disciplinas = area ? (DISCIPLINAS_BY_AREA[area] ?? []) : [];
+  const [newAreaMode, setNewAreaMode] = useState(false);
+  const [newAreaName, setNewAreaName] = useState('');
+  const [newDisciplineMode, setNewDisciplineMode] = useState(false);
+  const [newDisciplineName, setNewDisciplineName] = useState('');
 
-  // Auto-seleciona disciplina quando a área tem apenas 1 opção
+  const selectedArea = useMemo(() => areas.find((a) => a.id === areaId) ?? null, [areas, areaId]);
+  const selectedDiscipline = useMemo(
+    () => disciplines.find((d) => d.id === disciplineId) ?? null,
+    [disciplines, disciplineId],
+  );
+  const filteredDisciplines = useMemo(
+    () => (areaId === '' ? [] : disciplines.filter((d) => d.areaId === areaId)),
+    [disciplines, areaId],
+  );
+
+  // Se a área mudar, reseta disciplina e dependentes.
   useEffect(() => {
-    if (area && AUTO_DISCIPLINA[area]) {
-      setDisciplina(AUTO_DISCIPLINA[area]);
-    } else {
-      setDisciplina('');
-    }
+    setDisciplineId('');
     setTemplates([]);
     setSelectedTemplateId(null);
     setAssuntoMode('select');
     setAssuntoNovo('');
-  }, [area]);
+  }, [areaId]);
 
-  // Busca templates quando a disciplina é selecionada
+  // Auto-seleciona quando a área tem exatamente uma disciplina.
   useEffect(() => {
-    if (!disciplina) return;
+    if (areaId !== '' && filteredDisciplines.length === 1) {
+      setDisciplineId(filteredDisciplines[0].id);
+    }
+  }, [areaId, filteredDisciplines]);
+
+  // Busca templates quando a disciplina é selecionada.
+  useEffect(() => {
+    if (!selectedDiscipline) return;
     setLoadingTemplates(true);
     setTemplates([]);
     setSelectedTemplateId(null);
     setAssuntoMode('select');
-    api.subjectTemplates.list(disciplina)
+    api.subjectTemplates.list(selectedDiscipline.name)
       .then(setTemplates)
       .catch(console.error)
       .finally(() => setLoadingTemplates(false));
-  }, [disciplina]);
+  }, [selectedDiscipline]);
 
   const selectedTemplate = useMemo(
     () => templates.find(t => t.id === selectedTemplateId) ?? null,
@@ -85,9 +87,49 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
     }
   };
 
+  const handleAreaSelect = (value: string) => {
+    if (value === NEW_VALUE) {
+      setNewAreaMode(true);
+      setAreaId('');
+    } else {
+      setAreaId(value === '' ? '' : Number(value));
+    }
+  };
+
+  const handleDisciplineSelect = (value: string) => {
+    if (value === NEW_VALUE) {
+      setNewDisciplineMode(true);
+      setDisciplineId('');
+    } else {
+      setDisciplineId(value === '' ? '' : Number(value));
+    }
+  };
+
+  const confirmNewArea = async () => {
+    const trimmed = newAreaName.trim();
+    if (!trimmed) return;
+    const created = await createArea(trimmed);
+    if (created) {
+      setAreaId(created.id);
+      setNewAreaMode(false);
+      setNewAreaName('');
+    }
+  };
+
+  const confirmNewDiscipline = async () => {
+    const trimmed = newDisciplineName.trim();
+    if (!trimmed || areaId === '') return;
+    const created = await createDiscipline(Number(areaId), trimmed);
+    if (created) {
+      setDisciplineId(created.id);
+      setNewDisciplineMode(false);
+      setNewDisciplineName('');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!area || !disciplina) return;
+    if (!selectedArea || !selectedDiscipline) return;
 
     const assunto = assuntoMode === 'new' ? assuntoNovo : (selectedTemplate?.assunto ?? '');
     if (!assunto.trim()) return;
@@ -95,15 +137,15 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
     const rel = assuntoMode === 'new' ? relevancia : (selectedTemplate?.relevancia ?? 'Alta');
 
     onAdd({
-      area,
-      modulo: disciplina,
+      area: selectedArea.name,
+      modulo: selectedDiscipline.name,
       aulaPrincipal: assunto,
       relevancia: rel,
     });
 
     // Reset form
-    setArea('');
-    setDisciplina('');
+    setAreaId('');
+    setDisciplineId('');
     setTemplates([]);
     setSelectedTemplateId(null);
     setAssuntoMode('select');
@@ -128,39 +170,77 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
             {/* Área */}
             <div className="space-y-2">
               <label htmlFor="rg-area" className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Área</label>
-              <select
-                id="rg-area"
-                required
-                value={area}
-                onChange={e => setArea(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Selecionar...</option>
-                {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
+              {newAreaMode ? (
+                <div className="space-y-1">
+                  <input
+                    autoFocus
+                    value={newAreaName}
+                    onChange={(e) => setNewAreaName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); confirmNewArea(); }
+                      else if (e.key === 'Escape') { setNewAreaMode(false); setNewAreaName(''); }
+                    }}
+                    placeholder="Nova área"
+                    maxLength={120}
+                    className={inputClass}
+                    aria-label="Nome da nova área"
+                  />
+                  <div className="flex gap-3 px-2">
+                    <button type="button" onClick={confirmNewArea} className="text-[10px] font-black text-navy hover:text-navy-light uppercase tracking-widest">Criar</button>
+                    <button type="button" onClick={() => { setNewAreaMode(false); setNewAreaName(''); }} className="text-[10px] text-navy/50 hover:text-navy">Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <select
+                  id="rg-area"
+                  required
+                  value={areaId === '' ? '' : String(areaId)}
+                  onChange={(e) => handleAreaSelect(e.target.value)}
+                  disabled={catalogLoading}
+                  className={`${inputClass} disabled:opacity-40`}
+                >
+                  <option value="">{catalogLoading ? 'Carregando...' : 'Selecionar...'}</option>
+                  {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  <option value={NEW_VALUE}>+ Nova área</option>
+                </select>
+              )}
             </div>
 
             {/* Disciplina */}
             <div className="space-y-2">
               <label htmlFor="rg-disciplina" className="text-[10px] font-black text-muted-light uppercase ml-2 tracking-widest">Disciplina</label>
-              {AUTO_DISCIPLINA[area] ? (
-                <input
-                  id="rg-disciplina"
-                  value={disciplina}
-                  readOnly
-                  className={`${inputClass} opacity-60 cursor-default`}
-                />
+              {newDisciplineMode ? (
+                <div className="space-y-1">
+                  <input
+                    autoFocus
+                    value={newDisciplineName}
+                    onChange={(e) => setNewDisciplineName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); confirmNewDiscipline(); }
+                      else if (e.key === 'Escape') { setNewDisciplineMode(false); setNewDisciplineName(''); }
+                    }}
+                    placeholder="Nova disciplina"
+                    maxLength={120}
+                    className={inputClass}
+                    aria-label="Nome da nova disciplina"
+                  />
+                  <div className="flex gap-3 px-2">
+                    <button type="button" onClick={confirmNewDiscipline} className="text-[10px] font-black text-navy hover:text-navy-light uppercase tracking-widest">Criar</button>
+                    <button type="button" onClick={() => { setNewDisciplineMode(false); setNewDisciplineName(''); }} className="text-[10px] text-navy/50 hover:text-navy">Cancelar</button>
+                  </div>
+                </div>
               ) : (
                 <select
                   id="rg-disciplina"
                   required
-                  value={disciplina}
-                  onChange={e => setDisciplina(e.target.value)}
-                  disabled={!area}
+                  value={disciplineId === '' ? '' : String(disciplineId)}
+                  onChange={(e) => handleDisciplineSelect(e.target.value)}
+                  disabled={areaId === ''}
                   className={`${inputClass} disabled:opacity-40`}
                 >
                   <option value="">Selecionar...</option>
-                  {disciplinas.map(d => <option key={d} value={d}>{d}</option>)}
+                  {filteredDisciplines.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {areaId !== '' && <option value={NEW_VALUE}>+ Nova disciplina</option>}
                 </select>
               )}
             </div>
@@ -176,7 +256,7 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
                   required
                   value={selectedTemplateId ?? ''}
                   onChange={e => handleAssuntoSelect(e.target.value)}
-                  disabled={!disciplina}
+                  disabled={!selectedDiscipline}
                   className={`${inputClass} disabled:opacity-40`}
                 >
                   <option value="">{loadingTemplates ? 'Carregando...' : 'Selecionar...'}</option>

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
 import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/algorithm';
+import { useCatalog } from '../hooks/useCatalog';
 
 interface CronogramaProps {
   subjects: Subject[];
@@ -57,10 +58,17 @@ export function Cronograma({
   const [flashId, setFlashId] = useState<string | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
+  const { areas: catalogAreas } = useCatalog();
+
+  // Áreas vindas do catálogo (user-scoped) + qualquer área presente nos subjects
+  // que ainda não foi migrada para o catálogo — garante que nenhum assunto
+  // fique invisível por falta de entrada correspondente.
   const areas = useMemo(() => {
-    const set = new Set(subjects.map((s) => s.area).filter(Boolean));
+    const set = new Set<string>();
+    catalogAreas.forEach((a) => set.add(a.name));
+    subjects.forEach((s) => { if (s.area) set.add(s.area); });
     return Array.from(set).sort();
-  }, [subjects]);
+  }, [catalogAreas, subjects]);
 
   // null = default to first area; '__all__' = show all
   const activeArea = selectedArea === '__all__' ? null : (selectedArea ?? areas[0] ?? null);

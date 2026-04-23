@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar, TrendingUp, Shield, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Calendar, TrendingUp, Shield, ClipboardList, FolderTree } from 'lucide-react';
 import type { ActiveView, Role } from '../types';
 
 interface HeaderProps {
@@ -14,6 +14,7 @@ const NAV_ICONS: Record<string, React.ElementType> = {
   cronograma: Calendar,
   espiao:     TrendingUp,
   provas:     ClipboardList,
+  categorias: FolderTree,
   admin:      Shield,
 };
 
@@ -23,6 +24,7 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
     { id: 'cronograma', label: 'Estudos' },
     { id: 'espiao',     label: 'Estatísticas' },
     { id: 'provas',     label: 'Provas' },
+    { id: 'categorias', label: 'Categorias' },
     { id: 'admin',      label: 'Admin', adminOnly: true },
   ];
 
