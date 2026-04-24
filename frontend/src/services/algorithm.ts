@@ -4,9 +4,9 @@ import { Subject } from '../types';
 export const DEFAULT_W = [
   0.4025, 0.8935, 2.1812, 4.1256, // S0 (G1-G4)
   4.8228, 0.7428, 0.9651, 0.0215, // D0, Difficulty/Stability update
-  1.4505, 0.1490, 1.0151,
+  1.65, 0.115, 1.0151,
   2.0, 0.06, 0.32, 1.3,
-  0.42, 2.26, 0.0, 0.5, 0.0, 0.2
+  0.42, 2.55, 0.0, 0.5, 0.0, 0.2
 ];
 
 export const REQUEST_RETENTION = 0.9;
@@ -60,7 +60,7 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
                         (Math.exp((1 - retrievability) * DEFAULT_W[10]) - 1) * hardPenalty * easyBonus);
 
       // Ensure stability actually increases for Good/Easy if retrievability is high or normal
-      nextStability = stability * Math.max(1.1, stabilityUpdate);
+      nextStability = stability * Math.max(1.25, stabilityUpdate);
       state = 'Review';
     }  }
 
