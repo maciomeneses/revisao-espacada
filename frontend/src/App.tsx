@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -12,6 +12,7 @@ import { AdminArea } from './components/Admin/AdminArea';
 import { Provas } from './components/Provas';
 import { GerenciarCategorias } from './pages/GerenciarCategorias';
 import { useSubjects } from './hooks/useSubjects';
+import { useRoutine } from './hooks/useRoutine';
 import { clearSubjects } from './services/storage';
 import type { Role } from './types';
 
@@ -24,6 +25,12 @@ function getResetTokenFromUrl(): string | null {
 export function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<Role | undefined>();
+  const [userEmail, setUserEmail] = useState<string | null>(() => {
+    try {
+      const s = localStorage.getItem('ebbing_session');
+      return s ? (JSON.parse(s).email as string | null) ?? null : null;
+    } catch { return null; }
+  });
   const [showGerenciar, setShowGerenciar] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
   const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | undefined>();
@@ -42,6 +49,13 @@ export function AppContent() {
     removeSubject,
     revertStage,
   } = useSubjects();
+
+  const { routine, addSlot, updateSlot, removeSlot } = useRoutine(userEmail);
+
+  const availableAreas = useMemo(
+    () => [...new Set(subjects.map((s) => s.area).filter(Boolean))].sort(),
+    [subjects],
+  );
 
   useEffect(() => {
     const session = localStorage.getItem('ebbing_session');
@@ -62,6 +76,7 @@ export function AppContent() {
     localStorage.setItem('ebbing_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
     setIsAuthenticated(true);
     setUserRole(role as Role);
+    setUserEmail(email);
     navigate('/dashboard');
   };
 
@@ -72,6 +87,7 @@ export function AppContent() {
     clearSubjects(email);
     setIsAuthenticated(false);
     setUserRole(undefined);
+    setUserEmail(null);
     navigate('/');
   };
 
@@ -139,6 +155,11 @@ export function AppContent() {
                       navigate('/cronograma');
                     }}
                     onRegisterReview={registerReview}
+                    routine={routine}
+                    availableAreas={availableAreas}
+                    onAddSlot={addSlot}
+                    onUpdateSlot={updateSlot}
+                    onRemoveSlot={removeSlot}
                   />
                 </div>
               </div>
