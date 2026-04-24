@@ -83,3 +83,15 @@ export interface Subject {
   rev60dFeita?: boolean;
   rev90dFeita?: boolean;
 }
+
+export interface RoutineSlot {
+  id: string;
+  dayOfWeek: number; // 0=Dom, 1=Seg, ..., 6=Sáb
+  title: string;
+  startTime?: string; // "HH:MM"
+  endTime?: string;   // "HH:MM"
+  type: 'study' | 'other';
+  area?: string;      // só quando type === 'study'; casa com Subject.area
+}
+
+export type StudentRoutine = RoutineSlot[];
