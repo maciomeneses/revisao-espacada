@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { Subject } from '../types';
+import type { Subject, StudentRoutine } from '../types';
 import { loadSubjects, saveSubjects } from '../services/storage';
 import { calculateNextReview, resetCiclo, localDateStr } from '../services/algorithm';
 import { api } from '../services/api';
@@ -7,7 +7,27 @@ import type { ReviewEventPayload } from '../services/api';
 
 export type { ReviewEventPayload };
 
-export function useSubjects() {
+/**
+ * Returns the first date within 21 days from `fsrsDate` where the student has
+ * a study slot for the given area. Falls back to `fsrsDate` if none found.
+ * `scheduledDays` is never modified — only the calendar date shifts.
+ */
+export function findNextRoutineDate(fsrsDate: string, area: string, routine: StudentRoutine): string {
+  if (!routine.length) return fsrsDate;
+  const studyDays = new Set(
+    routine.filter((s) => s.type === 'study' && (!s.area || s.area === area)).map((s) => s.dayOfWeek),
+  );
+  if (!studyDays.size) return fsrsDate;
+  const base = new Date(fsrsDate + 'T12:00:00');
+  for (let i = 0; i <= 21; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    if (studyDays.has(d.getDay())) return localDateStr(d);
+  }
+  return fsrsDate;
+}
+
+export function useSubjects(routine: StudentRoutine = []) {
   const [userEmail] = useState<string | undefined>(() => {
     try {
       const session = localStorage.getItem('ebbing_session');
@@ -118,7 +138,10 @@ export function useSubjects() {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
-      const updated = { ...subject, ...updates };
+      const snappedDate = updates.nextReviewDate
+        ? findNextRoutineDate(updates.nextReviewDate, subject.area, routine)
+        : updates.nextReviewDate;
+      const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null };
       updateSubject(updated);
 
       // Fire-and-forget: log review event to backend
@@ -146,7 +169,10 @@ export function useSubjects() {
       // Força cálculo de primeira revisão zerando o estado FSRS
       const fresh = { ...subject, reps: 0, stability: 0, difficulty: 0 };
       const updates = calculateNextReview(fresh, numCorrect);
-      const updated = { ...subject, ...updates, flashcardsFeitos: true };
+      const snappedDate = updates.nextReviewDate
+        ? findNextRoutineDate(updates.nextReviewDate, subject.area, routine)
+        : updates.nextReviewDate;
+      const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null, flashcardsFeitos: true };
       updateSubject(updated);
 
       // Fire-and-forget: log fixacao event as reps=1

@@ -38,6 +38,8 @@ export function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { routine, addSlot, updateSlot, removeSlot } = useRoutine(userEmail);
+
   const {
     subjects,
     reviewEvents,
@@ -48,9 +50,7 @@ export function AppContent() {
     addSubject,
     removeSubject,
     revertStage,
-  } = useSubjects();
-
-  const { routine, addSlot, updateSlot, removeSlot } = useRoutine(userEmail);
+  } = useSubjects(routine);
 
   const availableAreas = useMemo(
     () => [...new Set(subjects.map((s) => s.area).filter(Boolean))].sort(),
