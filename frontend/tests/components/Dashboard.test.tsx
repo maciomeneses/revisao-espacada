@@ -44,6 +44,11 @@ function getStatValue(label: string): string {
 const defaultProps = {
   onNavigateCronograma: vi.fn(),
   onRegisterReview: vi.fn(),
+  routine: [],
+  availableAreas: [],
+  onAddSlot: vi.fn(),
+  onUpdateSlot: vi.fn(),
+  onRemoveSlot: vi.fn(),
 };
 
 describe('Dashboard', () => {
@@ -79,7 +84,7 @@ describe('Dashboard', () => {
 
   it('chama onNavigateCronograma ao clicar no botão', () => {
     const mockNavigate = vi.fn();
-    render(<Dashboard subjects={[]} onNavigateCronograma={mockNavigate} onRegisterReview={vi.fn()} />);
+    render(<Dashboard subjects={[]} onNavigateCronograma={mockNavigate} onRegisterReview={vi.fn()} routine={[]} availableAreas={[]} onAddSlot={vi.fn()} onUpdateSlot={vi.fn()} onRemoveSlot={vi.fn()} />);
 
     const btn = screen.getByRole('button', { name: /cronograma/i });
     fireEvent.click(btn);
@@ -105,7 +110,7 @@ describe('Dashboard', () => {
   it('confirma revisão chamando onRegisterReview com os dados corretos', () => {
     const onRegisterReview = vi.fn();
     const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
-    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} onRegisterReview={onRegisterReview} />);
+    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} onRegisterReview={onRegisterReview} routine={[]} availableAreas={[]} onAddSlot={vi.fn()} onUpdateSlot={vi.fn()} onRemoveSlot={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
     // numCorrect default é 7, totalQuestions default é 10 → normalized=7, accuracy=70

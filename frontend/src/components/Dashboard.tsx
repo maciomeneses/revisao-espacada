@@ -1,13 +1,19 @@
 import { useState, useMemo } from 'react';
-import type { Subject } from '../types';
+import type { Subject, StudentRoutine, RoutineSlot } from '../types';
 import { localDateStr } from '../services/algorithm';
 import { Agenda } from './Agenda';
+import { RoutineBoard } from './RoutineBoard';
 import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, BookOpen } from 'lucide-react';
 
 interface DashboardProps {
   subjects: Subject[];
   onNavigateCronograma: (subjectId?: string) => void;
   onRegisterReview: (id: string, numCorrect: number, total: number, accuracy: number, date: string, durationSeconds: number) => void;
+  routine: StudentRoutine;
+  availableAreas: string[];
+  onAddSlot: (slot: Omit<RoutineSlot, 'id'>) => void;
+  onUpdateSlot: (id: string, patch: Partial<Omit<RoutineSlot, 'id'>>) => void;
+  onRemoveSlot: (id: string) => void;
 }
 
 function shiftDate(dateStr: string, n: number): string {
@@ -50,7 +56,7 @@ function parseDuration(s: string): number {
   return 0;
 }
 
-export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview }: DashboardProps) {
+export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview, routine, availableAreas, onAddSlot, onUpdateSlot, onRemoveSlot }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
   const [reviewingSubject, setReviewingSubject] = useState<Subject | null>(null);
@@ -249,6 +255,15 @@ export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview }: 
 
       {/* ── Agenda (semana / mês) ─────────────────────────────────── */}
       <Agenda subjects={subjects} />
+
+      {/* ── Rotina Semanal ───────────────────────────────────────── */}
+      <RoutineBoard
+        routine={routine}
+        availableAreas={availableAreas}
+        onAdd={onAddSlot}
+        onUpdate={onUpdateSlot}
+        onRemove={onRemoveSlot}
+      />
 
       {/* ── FSRS card (fim da página) ─────────────────────────────── */}
       <div className="bg-white rounded-3xl p-8 border border-border relative overflow-hidden group shadow-sm">
