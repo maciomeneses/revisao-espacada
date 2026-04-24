@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
@@ -50,7 +50,16 @@ export function AppContent() {
     addSubject,
     removeSubject,
     revertStage,
+    rescheduleByRoutine,
   } = useSubjects(routine);
+
+  const handleAddSlot = useCallback(
+    (slot: Parameters<typeof addSlot>[0]) => {
+      addSlot(slot);
+      rescheduleByRoutine([...routine, { ...slot, id: '__snap__' }]);
+    },
+    [addSlot, rescheduleByRoutine, routine],
+  );
 
   const availableAreas = useMemo(
     () => [...new Set(subjects.map((s) => s.area).filter(Boolean))].sort(),
@@ -157,7 +166,7 @@ export function AppContent() {
                     onRegisterReview={registerReview}
                     routine={routine}
                     availableAreas={availableAreas}
-                    onAddSlot={addSlot}
+                    onAddSlot={handleAddSlot}
                     onUpdateSlot={updateSlot}
                     onRemoveSlot={removeSlot}
                   />

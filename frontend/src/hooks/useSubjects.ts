@@ -279,6 +279,25 @@ export function useSubjects(routine: StudentRoutine = []) {
     [updateSubject],
   );
 
+  /**
+   * Re-snaps nextReviewDate of all future-scheduled subjects against an
+   * updated routine. Only subjects whose date would actually change are saved.
+   * Called after a new routine slot is added so existing schedules align.
+   */
+  const rescheduleByRoutine = useCallback(
+    (updatedRoutine: StudentRoutine) => {
+      const today = localDateStr(new Date());
+      for (const s of subjectsRef.current) {
+        if (!s.nextReviewDate || s.nextReviewDate < today) continue;
+        const snapped = findNextRoutineDate(s.nextReviewDate, s.area, updatedRoutine);
+        if (snapped !== s.nextReviewDate) {
+          updateSubject({ ...s, nextReviewDate: snapped });
+        }
+      }
+    },
+    [updateSubject],
+  );
+
   return {
     subjects,
     reviewEvents,
@@ -293,5 +312,6 @@ export function useSubjects(routine: StudentRoutine = []) {
     addSubject,
     removeSubject,
     revertStage,
+    rescheduleByRoutine,
   };
 }
