@@ -56,23 +56,18 @@ describe('useSubjects hook', () => {
       { id: 'ev-1', subjectId: 'sub-1', reps: 1, questions: 0, accuracy: 0 }
     ]);
 
-    localStorage.setItem('ebbin_session', JSON.stringify({ token: 'test-token' }));
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 'test-token', email: 'u@e.com' }));
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
 
-    // Initially will evaluate defaults/local storage
-    expect(result.current.subjects.length).toBeGreaterThan(0);
-    
-    // Wait for effect to load data
-    await new Promise(r => setTimeout(r, 50));
-
-    expect(result.current.subjects.length).toBeGreaterThan(0);
+    // Wait for API effect to populate the state (no longer seeded by INITIAL_SUBJECTS)
+    await waitFor(() => expect(result.current.subjects.length).toBeGreaterThan(0));
     expect(result.current.reviewEvents.length).toBeGreaterThanOrEqual(0);
   });
 
   it('salva o cronograma syncroniza com a api ao adicionar subject', async () => {
     mockApi.subjects.list.mockResolvedValue([]);
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
 
     await act(async () => {
       // Mock sync response
@@ -86,11 +81,11 @@ describe('useSubjects hook', () => {
 
   it('deleta subjects', async () => {
     const existing = makeSubject({ id: 'sub-to-delete', aulaPrincipal: 'Del' });
-    storage.saveSubjects([existing]);
+    storage.saveSubjects([existing], 'u@e.com');
 
     mockApi.subjects.upsert.mockResolvedValueOnce({ ...existing, aulaAssistida: true });
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
 
     await waitFor(() => {
       expect(result.current.subjects.length).toBeGreaterThan(0);
@@ -180,9 +175,9 @@ describe('useSubjects hook', () => {
     mockApi.subjects.list.mockResolvedValue([
       { id: '1', aulaPrincipal: 'Sub', nextReviewDate: '2020-01-01', reps: 0 }
     ]);
-    localStorage.setItem('ebbin_session', JSON.stringify({ token: 'test-token' }));
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 'test-token', email: 'u@e.com' }));
     
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     await new Promise(r => setTimeout(r, 50));
 
     await act(async () => {
@@ -195,10 +190,10 @@ describe('useSubjects hook', () => {
 
   it('testa registerFixacao e toggleAula modificando a materia', async () => {
     const existing = makeSubject({ id: 'tst', currentStage: 'New' });
-    storage.saveSubjects([existing]);
+    storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.upsert.mockResolvedValue(existing);
     
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     
     await waitFor(async () => {
       expect(result.current.subjects.length).toBeGreaterThan(0);
@@ -223,10 +218,10 @@ describe('useSubjects hook', () => {
   
   it('doResetCiclo e revertStage', async () => {
     const existing = makeSubject({ id: 'tst2', currentStage: 'Review', stability: 1.5 });
-    storage.saveSubjects([existing]);
+    storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.upsert.mockResolvedValue(existing);
     
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     
     await waitFor(async () => {
       expect(result.current.subjects.length).toBeGreaterThan(0);

@@ -1,28 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { loadSubjects, saveSubjects, clearSubjects } from '../src/services/storage';
 import type { Subject } from '../src/types';
 
-// Mock de INITIAL_SUBJECTS para isolar os testes do arquivo de dados real
-vi.mock('../src/data/initialSubjects', () => ({
-  INITIAL_SUBJECTS: [
-    {
-      id: 'initial-1',
-      modulo: 'M1', area: 'A1', aulaPrincipal: 'Aula 1', relevancia: 'Alta',
-      aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-      currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-      lastPerformance: null, performanceLevel: 'nao_classificada',
-    },
-    {
-      id: 'initial-2',
-      modulo: 'M2', area: 'A2', aulaPrincipal: 'Aula 2', relevancia: 'Média',
-      aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-      currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-      lastPerformance: null, performanceLevel: 'nao_classificada',
-    },
-  ] as Subject[],
-}));
-
-// Mock simples do localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -34,88 +13,91 @@ const localStorageMock = (() => {
 })();
 Object.defineProperty(global, 'localStorage', { value: localStorageMock });
 
+const EMAIL = 'user@example.com';
+const USER_KEY = `revisaENEM_subjects_v2_${EMAIL}`;
+
+function makeSubject(id: string, overrides: Partial<Subject> = {}): Subject {
+  return {
+    id,
+    modulo: 'M', area: 'A', aulaPrincipal: 'Aula', relevancia: 'Alta',
+    aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
+    currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
+    lastPerformance: null, performanceLevel: 'nao_classificada',
+    ...overrides,
+  } as Subject;
+}
+
 describe('storage service', () => {
   beforeEach(() => {
     localStorageMock.clear();
   });
 
   describe('loadSubjects', () => {
-    it('retorna INITIAL_SUBJECTS quando storage está vazio', () => {
-      const result = loadSubjects();
-      expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('initial-1');
+    it('retorna [] quando userEmail é undefined', () => {
+      expect(loadSubjects()).toEqual([]);
     });
 
-    it('mescla subjects do storage com INITIAL_SUBJECTS adicionando novos', () => {
-      // Salva apenas o initial-1 no storage
-      const stored: Subject[] = [{
-        id: 'initial-1',
-        modulo: 'M1-modificado', area: 'A1', aulaPrincipal: 'Aula 1', relevancia: 'Alta',
-        aulaAssistida: true, preAulaFeita: false, flashcardsFeitos: false,
-        currentStage: 'Learning', nextReviewDate: '2026-03-20', lastReviewDate: '2026-03-16',
-        lastPerformance: '3', performanceLevel: 'bom',
-      }];
-      localStorageMock.setItem('revisaENEM_subjects_v1', JSON.stringify(stored));
-
-      const result = loadSubjects();
-      // initial-2 deve ser adicionado
-      expect(result).toHaveLength(2);
-      // initial-1 mantém o progresso salvo
-      const s1 = result.find(s => s.id === 'initial-1')!;
-      expect(s1.aulaAssistida).toBe(true);
-      expect(s1.currentStage).toBe('Learning');
+    it('retorna [] quando não há cache do usuário', () => {
+      expect(loadSubjects(EMAIL)).toEqual([]);
     });
 
-    it('filtra subjects do storage que não existem mais em INITIAL_SUBJECTS', () => {
-      const stored: Subject[] = [
-        {
-          id: 'obsoleto-123',
-          modulo: 'M-old', area: 'A-old', aulaPrincipal: 'Aula old', relevancia: 'Baixa',
-          aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-          currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-          lastPerformance: null, performanceLevel: 'nao_classificada',
-        },
-      ];
-      localStorageMock.setItem('revisaENEM_subjects_v1', JSON.stringify(stored));
+    it('retorna o cache do usuário quando existe', () => {
+      const stored = [makeSubject('s1', { aulaAssistida: true })];
+      localStorageMock.setItem(USER_KEY, JSON.stringify(stored));
 
-      const result = loadSubjects();
-      // 'obsoleto-123' não existe em INITIAL_SUBJECTS — deve ser filtrado
-      // ambos do initial devem estar presentes
-      expect(result).toHaveLength(2);
-      expect(result.every(s => s.id !== 'obsoleto-123')).toBe(true);
+      const result = loadSubjects(EMAIL);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('s1');
+      expect(result[0].aulaAssistida).toBe(true);
     });
 
-    it('retorna INITIAL_SUBJECTS quando JSON no storage é inválido', () => {
-      localStorageMock.setItem('revisaENEM_subjects_v1', 'nao_e_json_valido{{{');
-      const result = loadSubjects();
-      expect(result).toHaveLength(2);
+    it('retorna [] quando JSON no storage é inválido', () => {
+      localStorageMock.setItem(USER_KEY, 'nao_e_json_valido{{{');
+      expect(loadSubjects(EMAIL)).toEqual([]);
+    });
+
+    it('isola caches entre usuários diferentes', () => {
+      localStorageMock.setItem(USER_KEY, JSON.stringify([makeSubject('a1')]));
+      localStorageMock.setItem(
+        'revisaENEM_subjects_v2_other@example.com',
+        JSON.stringify([makeSubject('b1'), makeSubject('b2')]),
+      );
+
+      expect(loadSubjects(EMAIL)).toHaveLength(1);
+      expect(loadSubjects('other@example.com')).toHaveLength(2);
     });
   });
 
   describe('saveSubjects', () => {
-    it('persiste subjects no localStorage em formato JSON', () => {
-      const subjects: Subject[] = [{
-        id: 'initial-1',
-        modulo: 'M1', area: 'A1', aulaPrincipal: 'Aula 1', relevancia: 'Alta',
-        aulaAssistida: true, preAulaFeita: false, flashcardsFeitos: false,
-        currentStage: 'Review', nextReviewDate: '2026-03-20', lastReviewDate: '2026-03-16',
-        lastPerformance: '3', performanceLevel: 'bom',
-      }];
-      saveSubjects(subjects);
+    it('persiste subjects no key do usuário', () => {
+      const subjects = [makeSubject('s1', { aulaAssistida: true })];
+      saveSubjects(subjects, EMAIL);
 
-      const raw = localStorageMock.getItem('revisaENEM_subjects_v1');
+      const raw = localStorageMock.getItem(USER_KEY);
       expect(raw).not.toBeNull();
       const parsed = JSON.parse(raw!);
-      expect(parsed[0].id).toBe('initial-1');
+      expect(parsed[0].id).toBe('s1');
       expect(parsed[0].aulaAssistida).toBe(true);
+    });
+
+    it('não escreve no localStorage quando userEmail é undefined', () => {
+      saveSubjects([makeSubject('ghost')]);
+      expect(localStorageMock.getItem('revisaENEM_subjects_v1')).toBeNull();
+      expect(localStorageMock.getItem(USER_KEY)).toBeNull();
     });
   });
 
   describe('clearSubjects', () => {
-    it('remove a chave do localStorage', () => {
-      localStorageMock.setItem('revisaENEM_subjects_v1', '[]');
+    it('remove a chave do usuário', () => {
+      localStorageMock.setItem(USER_KEY, '[]');
+      clearSubjects(EMAIL);
+      expect(localStorageMock.getItem(USER_KEY)).toBeNull();
+    });
+
+    it('não faz nada quando userEmail é undefined', () => {
+      localStorageMock.setItem(USER_KEY, '[]');
       clearSubjects();
-      expect(localStorageMock.getItem('revisaENEM_subjects_v1')).toBeNull();
+      expect(localStorageMock.getItem(USER_KEY)).toBe('[]');
     });
   });
 });
