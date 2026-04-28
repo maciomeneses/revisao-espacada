@@ -27,14 +27,33 @@ export function findNextRoutineDate(fsrsDate: string, area: string, routine: Stu
   return fsrsDate;
 }
 
+/**
+ * Hook central de subjects + sincronização FSRS.
+ *
+ * Contrato com o consumidor (App.tsx):
+ * - `userEmail` é a única fonte de verdade da identidade do usuário no hook.
+ *   Deve ser passado pelo caller a partir de um state reativo (atualizado em
+ *   handleLogin/handleLogout). Não lemos `ebbing_session` aqui pra capturar
+ *   identidade — fazer isso em closure causou o bug #9 (3 matérias após login).
+ * - O hook reage a mudanças de `userEmail` re-hidratando o cache local e
+ *   buscando a lista do backend.
+ * - Sem `userEmail`, o hook fica inativo (nem cache, nem rede, nem mutações).
+ *
+ * Fonte de verdade:
+ * - Backend (via `api.subjects.list/upsert/delete`) é autoritativo.
+ * - localStorage (per-user key `revisaENEM_subjects_v2_<email>`) é apenas cache
+ *   otimista para hidratação rápida e rollback de mutações falhas.
+ * - Mutações exigem `userEmail` válido — sem ele, `saveSubjects` é no-op e
+ *   nada é gravado no localStorage (ver storage.ts).
+ */
 export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Re-hidrata o estado quando o userEmail muda (login, logout, troca de usuário).
-  // Sem isso, o estado inicial calculado no mount permanece, fazendo com que
-  // após login o usuário continue vendo dados de guest (3 matérias hardcoded).
+  // Re-hidrata o cache local quando userEmail muda (login, logout, troca de
+  // usuário). O efeito de fetch da API (abaixo) sobrescreve isso assim que a
+  // resposta chega, mas o cache evita um "flash" de lista vazia no login.
   useEffect(() => {
     setSubjects(loadSubjects(userEmail));
   }, [userEmail]);
