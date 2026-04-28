@@ -109,7 +109,7 @@ describe('useSubjects hook', () => {
     mockApi.subjects.list.mockResolvedValue([]);
     mockApi.subjects.upsert.mockResolvedValue({});
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     await waitFor(() => expect(mockApi.subjects.list).toHaveBeenCalled());
 
     await act(async () => {
@@ -127,7 +127,7 @@ describe('useSubjects hook', () => {
     storage.saveSubjects([ghost], 'u@e.com');
     mockApi.subjects.list.mockResolvedValue([]); // backend não o conhece
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
 
     await waitFor(() => {
       // Após o fetch, o estado reflete o backend — sem o subject fantasma
@@ -143,7 +143,7 @@ describe('useSubjects hook', () => {
     mockApi.subjects.list.mockResolvedValue([]);
     mockApi.subjects.upsert.mockRejectedValueOnce(new Error('network'));
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     await waitFor(() => expect(mockApi.subjects.list).toHaveBeenCalled());
 
     await act(async () => {
@@ -162,7 +162,7 @@ describe('useSubjects hook', () => {
     mockApi.subjects.list.mockResolvedValue([victim]);
     mockApi.subjects.delete.mockRejectedValueOnce(new Error('network'));
 
-    const { result } = renderHook(() => useSubjects());
+    const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     await waitFor(() =>
       expect(result.current.subjects.find(s => s.id === 'victim')).toBeDefined()
     );

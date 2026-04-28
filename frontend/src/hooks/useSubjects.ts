@@ -27,17 +27,17 @@ export function findNextRoutineDate(fsrsDate: string, area: string, routine: Stu
   return fsrsDate;
 }
 
-export function useSubjects(routine: StudentRoutine = []) {
-  const [userEmail] = useState<string | undefined>(() => {
-    try {
-      const session = localStorage.getItem('ebbing_session');
-      return session ? (JSON.parse(session).email ?? undefined) : undefined;
-    } catch { return undefined; }
-  });
-
+export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Re-hidrata o estado quando o userEmail muda (login, logout, troca de usuário).
+  // Sem isso, o estado inicial calculado no mount permanece, fazendo com que
+  // após login o usuário continue vendo dados de guest (3 matérias hardcoded).
+  useEffect(() => {
+    setSubjects(loadSubjects(userEmail));
+  }, [userEmail]);
 
   /**
    * Ref que espelha o estado atual de subjects para que callbacks estáveis
@@ -54,6 +54,7 @@ export function useSubjects(routine: StudentRoutine = []) {
   // itens apenas presentes no localStorage ao backend, pois isso "ressuscitaria"
   // subjects deletados em outra sessão/dispositivo.
   useEffect(() => {
+    if (!userEmail) return;
     if (!localStorage.getItem('ebbing_session')) return;
     api.subjects.list().then((data) => {
       if (Array.isArray(data)) {

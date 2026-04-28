@@ -51,7 +51,7 @@ export function AppContent() {
     removeSubject,
     revertStage,
     rescheduleByRoutine,
-  } = useSubjects(routine);
+  } = useSubjects(routine, userEmail ?? undefined);
 
   const handleAddSlot = useCallback(
     (slot: Parameters<typeof addSlot>[0]) => {
