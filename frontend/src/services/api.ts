@@ -206,6 +206,16 @@ export const api = {
       }),
   },
 
+  preferences: {
+    get: () => request<{ allowedReviewDays: number[] }>('/api/preferences'),
+
+    save: (payload: { allowedReviewDays: number[] }) =>
+      request<{ allowedReviewDays: number[] }>('/api/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+  },
+
   examEntries: {
     list: () => request<ExamEntryPayload[]>('/api/exam-entries'),
 
