@@ -95,6 +95,8 @@ Gerencia todo o estado FSRS e sincronização com a API. Retorna:
 
 Padrão importante: usa `subjectsRef` para evitar re-criação de callbacks. Nunca adicione `subjects` na dep array dos `useCallback` — use `subjectsRef.current` para leitura dentro de callbacks.
 
+**Atenção (bug do ticket #21 não pode repetir)**: os `useCallback` em `useSubjects.ts` que dependem de `routine` e/ou `allowedDays` (ex.: `registerReview`, `registerFixacao`, `rescheduleByRoutine`) **precisam** incluir `routine` e `allowedDays` nas dep arrays. Caso contrário, o callback fica preso a uma rotina/preferência stale e o agendamento ignora alterações recentes do usuário. Hooks relacionados: `useRoutine` e `useReviewPreferences` — ambos têm backend autoritativo com cache otimista por `userEmail`.
+
 ## O que revisar
 
 1. **Tipagem**: sem `any` desnecessário; props de componentes sempre tipadas

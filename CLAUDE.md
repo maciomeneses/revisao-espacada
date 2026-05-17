@@ -38,14 +38,19 @@ npm run test:watch       # Vitest watch mode
 ## Architecture
 
 **Frontend**: React 19 + TypeScript + Vite 7, Tailwind CSS 4, React Router v7, Recharts 3, Vitest
-- Key files: `src/hooks/useSubjects.ts` (state + FSRS sync), `src/services/api.ts` (REST client), `src/services/algorithm.ts` (FSRS v6), `src/App.tsx` (routes)
+- Key files: `src/hooks/useSubjects.ts` (state + FSRS sync), `src/hooks/useRoutine.ts` (rotina por usuário, backend autoritativo com cache otimista), `src/hooks/useReviewPreferences.ts` (preferências por usuário, backend autoritativo com cache otimista), `src/services/api.ts` (REST client), `src/services/algorithm.ts` (FSRS v6), `src/App.tsx` (routes)
 - Tests: `frontend/tests/` (not co-located) | Session: `localStorage['ebbing_session'] = { email, token, role, timestamp }`
 
 **Backend**: Spring Boot 4.0.3, Java 25, PostgreSQL + Flyway (prod only), JWT stateless, Bucket4j rate limiting, Caffeine cache
 - Packages: `controller/`, `service/`, `model/`, `security/`, `config/`, `repository/`, `dto/`
 - JaCoCo: 90% instruction / 85% branch / 90% line (enforced on `./gradlew build`)
 
-**Data model**: `Subject` (clientId, modulo, area, aulaPrincipal, relevancia + FSRS fields), `ReviewStage` (aula/Learning/Review/Relearning/New), `PerformanceLevel` (nao_classificada/ruim/medio/bom/excelente)
+**Data model**:
+- `Subject` (clientId, modulo, area, aulaPrincipal, relevancia + FSRS fields)
+- `ReviewStage` (aula/Learning/Review/Relearning/New)
+- `PerformanceLevel` (nao_classificada/ruim/medio/bom/excelente)
+- `RoutineSlot` — rotina semanal por usuário, persistida no backend na tabela `routine_slot` (`user_id`, `day` 0..6, `slot_type` ∈ {study, other}, `area`/`label`). Frontend opera via cache otimista por `userEmail`, fonte autoritativa é o servidor.
+- `UserPreferences` — preferências por usuário, tabela `user_preferences` com `allowed_review_days SMALLINT[]` (dias 0..6 nos quais o usuário aceita revisões; não pode ser vazio).
 
 ## Environment Variables
 
@@ -61,8 +66,8 @@ npm run test:watch       # Vitest watch mode
 ## Rules
 
 ### Flyway Migrations
-- **Nunca modificar** migrations V1–V6 — já rodaram em produção
-- Próxima migration: `V7__descricao_em_snake_case.sql`
+- **Nunca modificar** migrations já mergeadas em `main` (V1–V12) — já rodaram (ou rodarão na próxima subida) em produção
+- Próxima migration: `V13__descricao_em_snake_case.sql` (V11 = `user_preferences`, V12 = `routine_slot` já estão em uso)
 - Mudança em `backend/src/main/java/com/ebbin/api/model/` → migration obrigatória
 
 ### Cobertura JaCoCo (Backend)
@@ -74,15 +79,24 @@ npm run test:watch       # Vitest watch mode
 - Mudanças em `DEFAULT_W` afetam todos os usuários — documentar impacto antes de alterar
 - `w[17] = 0.0` é **intencional** (dificuldade congelada) — não "corrigir"
 - Datas: fuso **local** (`YYYY-MM-DD`), nunca UTC — comparações são string-based
+- Agendamento pós-FSRS: usar **`snapReviewDate(fsrsDate, area, routine, allowedDays)`** (definido em `frontend/src/hooks/useSubjects.ts`). É a composição de duas restrições:
+  1. **`allowedDays`** (preferência do usuário, via `useReviewPreferences`) — **restrição forte**: só agenda em dias presentes em `allowedReviewDays`.
+  2. **`routine`** (rotina semanal, via `useRoutine`) — **preferência**: tenta cair em um dia em que o usuário estuda a `area`; se nenhum dia compatível existir dentro do horizonte, faz fallback para o próximo dia permitido.
+- `findNextRoutineDate` permanece como alias retrocompatível, mas qualquer código novo deve usar `snapReviewDate`.
 
 ### Contratos de API
 - Erros: RFC 9457 ProblemDetail com campo `detail` (não `message`)
 - Frontend usa `clientId` para subjects; `id` (PK do banco) não é exposto ao frontend
+- `GET /api/routine` → `RoutineSlot[]` do usuário autenticado.
+- `PUT /api/routine` → recebe `RoutineSlot[]` (array completo da semana, substitui o existente). Validação server-side: `day` ∈ 0..6, `slot_type` ∈ {`study`, `other`}.
+- `GET /api/preferences` → `{ allowedReviewDays: number[] }` do usuário autenticado.
+- `PUT /api/preferences` → recebe `{ allowedReviewDays: number[] }`. Validação server-side: todo dia ∈ 0..6 e o array **não pode ser vazio**.
 
 ### Frontend
 - Tailwind CSS 4 via plugin Vite — **não criar `tailwind.config.js`**
 - `vite.config.ts` sem `base` — não adicionar sem ajustar o workflow de deploy
 - Não alterar o formato do `ebbing_session` sem atualizar `api.ts`
+- Logout deve chamar `clearRoutine()` (de `useRoutine`) e `clearSubjects()` (de `useSubjects`) para invalidar o cache local do usuário anterior antes da próxima autenticação.
 
 ### Fluxo de trabalho
 - Após cada alteração feita pelo Claude, **sempre** fazer commit e push

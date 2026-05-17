@@ -74,8 +74,10 @@ Migrations existentes:
 - `V4__performance_indexes.sql`
 - `V5__review_events.sql`
 - `V6__review_events_accuracy.sql`
+- `V11__user_preferences.sql` (cria `user_preferences` com `allowed_review_days SMALLINT[]`)
+- `V12__routine_slot.sql` (cria `routine_slot` para rotina semanal por usuário)
 
-Próxima migration deve ser `V7__...`.
+Próxima migration deve ser `V13__...`.
 
 ## Variáveis de ambiente
 
@@ -109,6 +111,12 @@ RATE_LIMIT_* (vários parâmetros de rate limit)
 8. **Lazy loading**: relacionamentos JPA devem ser `LAZY` por padrão. `EAGER` deve ser justificado.
 
 9. **Clientside ID**: nunca confundir `id` (PK do banco) com `clientId` (ID gerado no frontend para sync). O frontend conhece apenas o `clientId`.
+
+10. **Autorização por usuário em `/api/routine` e `/api/preferences`**: ambos endpoints devem resolver o usuário via `Authentication.getName()` (que retorna o `userId`/email autenticado). Nunca confiar em parâmetro/body para identificar o dono dos dados — qualquer request precisa só conseguir ler/escrever a própria rotina/preferências.
+
+11. **Validações server-side de rotina e preferências**:
+    - `RoutineSlot`: `day` ∈ 0..6 e `slot_type` ∈ {`study`, `other`} (rejeitar fora do enum).
+    - `UserPreferences.allowedReviewDays`: cada valor ∈ 0..6 e o array **não pode ser vazio** (usuário precisa de ao menos um dia permitido). Retornar `ProblemDetail` 400 em violação.
 
 ## CI/CD
 

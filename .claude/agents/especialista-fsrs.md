@@ -92,6 +92,17 @@ Atenção: `w[17] = 0.0`, então a dificuldade nunca muda após a primeira revis
 - `getFormulaStatus(subject)` → `'Atrasado' | 'Hoje' | 'No Prazo' | ''`
 - `resetCiclo(subject)` → reseta todos os campos FSRS para estado inicial (`aula`)
 
+### Agendamento com rotina e preferências do usuário
+
+A data crua produzida pelo FSRS é ajustada por **`snapReviewDate(fsrsDate, area, routine, allowedDays?)`** (definida em `frontend/src/hooks/useSubjects.ts`). É a composição de duas restrições:
+
+1. **`allowedDays`** (vindo de `useReviewPreferences`, tabela `user_preferences.allowed_review_days`) é **restrição forte**: a data final precisa cair em um dia da semana presente em `allowedReviewDays`.
+2. **`routine`** (vindo de `useRoutine`, tabela `routine_slot`) é **preferência**: tenta cair em um dia em que o usuário estuda a `area`. Se nenhum dia compatível existir no horizonte, faz fallback para o próximo dia permitido por `allowedDays`.
+
+`findNextRoutineDate` permanece como **alias retrocompatível**, mas em código novo use sempre `snapReviewDate`.
+
+O hook central `useSubjects(routine, userEmail, allowedDays)` recebe os três parâmetros. `registerReview`, `registerFixacao` e `rescheduleByRoutine` precisam usar `snapReviewDate` (com `allowedDays` atual da `routine` e `allowedDays` capturados em refs) para que mudanças de preferência sejam respeitadas.
+
 ### Estados do ciclo
 
 ```
@@ -132,3 +143,4 @@ Penaliza a stability em 30% (`stability * 0.7`) sem alterar os outros campos. Si
 3. `localDateStr` usa fuso local do navegador — não converter para UTC
 4. `scheduledDays = max(1, round(stability))` garante mínimo de 1 dia. Nunca remover o `max(1, ...)`.
 5. Ao adicionar novos parâmetros `w`, documentar o índice e o significado
+6. **Interação rotina × `allowedDays`**: validar que `snapReviewDate` aplica `allowedDays` como restrição forte (o resultado *nunca* pode cair fora de `allowedReviewDays`) e a `routine` como preferência (fallback para o próximo dia permitido se nenhum slot da `area` couber). Garantir que `registerReview`, `registerFixacao` e `rescheduleByRoutine` recebem ambos parâmetros via deps/refs.

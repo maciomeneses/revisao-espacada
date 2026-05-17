@@ -13,10 +13,10 @@ As migrations seguem o padrão `V{n}__descricao.sql`. Identifique o maior `n` ex
 
 ## Passo 2 — Definir o nome do arquivo
 
-Converta a descrição do usuário para snake_case. Exemplos:
-- "criar tabela de notificações" → `V7__criar_tabela_de_notificacoes.sql`
-- "adicionar coluna created_at em subjects" → `V7__adicionar_coluna_created_at_em_subjects.sql`
-- "criar índice em review_events" → `V7__criar_indice_em_review_events.sql`
+Converta a descrição do usuário para snake_case. Exemplos (assumindo que a próxima versão livre é `V13`):
+- "criar tabela de notificações" → `V13__criar_tabela_de_notificacoes.sql`
+- "adicionar coluna created_at em subjects" → `V13__adicionar_coluna_created_at_em_subjects.sql`
+- "criar índice em review_events" → `V13__criar_indice_em_review_events.sql`
 
 ## Passo 3 — Analisar se SQL é necessário
 
