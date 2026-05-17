@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.stream.Collectors;
@@ -82,6 +83,21 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pd.setType(URI.create("urn:problem:not-found"));
         pd.setTitle("Recurso não encontrado");
+        return pd;
+    }
+
+    /**
+     * Exceções com status HTTP explícito ({@link ResponseStatusException}) —
+     * preserva o status definido pela origem e padroniza o corpo via ProblemDetail.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail handleResponseStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String detail = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        log.debug("ResponseStatusException [{}]: {}", status, detail);
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
+        pd.setType(URI.create("urn:problem:" + status.value()));
+        pd.setTitle(status.getReasonPhrase());
         return pd;
     }
 
