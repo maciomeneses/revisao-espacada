@@ -1,4 +1,4 @@
-import { User, Role, Area, Discipline } from '../types';
+import { User, Role, Area, Discipline, RoutineSlot } from '../types';
 import { clearSubjects } from './storage';
 
 export interface ReviewEventPayload {
@@ -194,6 +194,16 @@ export const api = {
       request<SubjectTemplatePayload[]>(
         `/api/subject-templates${disciplina ? `?disciplina=${encodeURIComponent(disciplina)}` : ''}`
       ),
+  },
+
+  routine: {
+    list: () => request<RoutineSlot[]>('/api/routine'),
+
+    save: (slots: RoutineSlot[]) =>
+      request<RoutineSlot[]>('/api/routine', {
+        method: 'PUT',
+        body: JSON.stringify(slots),
+      }),
   },
 
   examEntries: {

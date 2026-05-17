@@ -97,7 +97,11 @@ vi.mock('../src/services/api', () => ({
     },
     reviewEvents: {
       list: vi.fn().mockResolvedValue([]),
-    }
+    },
+    routine: {
+      list: vi.fn().mockResolvedValue([]),
+      save: vi.fn().mockResolvedValue([]),
+    },
   },
 }));
 

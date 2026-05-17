@@ -13,7 +13,7 @@ import { Provas } from './components/Provas';
 import { GerenciarCategorias } from './pages/GerenciarCategorias';
 import { useSubjects } from './hooks/useSubjects';
 import { useRoutine } from './hooks/useRoutine';
-import { clearSubjects } from './services/storage';
+import { clearSubjects, clearRoutine } from './services/storage';
 import type { Role } from './types';
 
 /** Extrai o valor do query param ?token= da URL atual. */
@@ -94,6 +94,7 @@ export function AppContent() {
     const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
     localStorage.removeItem('ebbing_session');
     clearSubjects(email);
+    clearRoutine(email);
     setIsAuthenticated(false);
     setUserRole(undefined);
     setUserEmail(null);
@@ -105,6 +106,7 @@ export function AppContent() {
     const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
     localStorage.removeItem('ebbing_session');
     clearSubjects(email);
+    clearRoutine(email);
     setIsAuthenticated(false);
     setUserRole(undefined);
     setResetToken(null);
