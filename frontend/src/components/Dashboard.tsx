@@ -14,6 +14,8 @@ interface DashboardProps {
   onAddSlot: (slot: Omit<RoutineSlot, 'id'>) => void;
   onUpdateSlot: (id: string, patch: Partial<Omit<RoutineSlot, 'id'>>) => void;
   onRemoveSlot: (id: string) => void;
+  allowedDays: Set<number>;
+  onToggleDay: (day: number) => void;
 }
 
 function shiftDate(dateStr: string, n: number): string {
@@ -56,7 +58,7 @@ function parseDuration(s: string): number {
   return 0;
 }
 
-export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview, routine, availableAreas, onAddSlot, onUpdateSlot, onRemoveSlot }: DashboardProps) {
+export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview, routine, availableAreas, onAddSlot, onUpdateSlot, onRemoveSlot, allowedDays, onToggleDay }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
   const [reviewingSubject, setReviewingSubject] = useState<Subject | null>(null);
@@ -263,6 +265,8 @@ export function Dashboard({ subjects, onNavigateCronograma, onRegisterReview, ro
         onAdd={onAddSlot}
         onUpdate={onUpdateSlot}
         onRemove={onRemoveSlot}
+        allowedDays={allowedDays}
+        onToggleDay={onToggleDay}
       />
 
       {/* ── FSRS card (fim da página) ─────────────────────────────── */}

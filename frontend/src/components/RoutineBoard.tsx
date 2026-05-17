@@ -8,10 +8,23 @@ interface RoutineBoardProps {
   onAdd: (slot: Omit<RoutineSlot, 'id'>) => void;
   onUpdate: (id: string, patch: Partial<Omit<RoutineSlot, 'id'>>) => void;
   onRemove: (id: string) => void;
+  allowedDays: Set<number>;
+  onToggleDay: (day: number) => void;
 }
 
 const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const DAY_INDEX = [1, 2, 3, 4, 5, 6, 0]; // maps column 0–6 to dayOfWeek
+
+// Toggles "permitir revisões". Ordem domingo..sábado, índices 0..6.
+const ALLOWED_DAY_TOGGLES: ReadonlyArray<{ day: number; label: string }> = [
+  { day: 0, label: 'D' },
+  { day: 1, label: 'S' },
+  { day: 2, label: 'T' },
+  { day: 3, label: 'Q' },
+  { day: 4, label: 'Q' },
+  { day: 5, label: 'S' },
+  { day: 6, label: 'S' },
+];
 
 interface SlotFormState {
   title: string;
@@ -34,7 +47,7 @@ type ModalMode =
   | { kind: 'add'; dayOfWeek: number }
   | { kind: 'edit'; slot: RoutineSlot };
 
-export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemove }: RoutineBoardProps) {
+export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemove, allowedDays, onToggleDay }: RoutineBoardProps) {
   const [modal, setModal] = useState<ModalMode>({ kind: 'closed' });
   const [form, setForm] = useState<SlotFormState>(emptyForm());
 
@@ -88,6 +101,35 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
           Defina sua rotina de estudos para que o algoritmo saiba em quais dias você estuda cada matéria — assim as
           revisões serão agendadas nos dias certos.
         </p>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-navy/50 uppercase tracking-wide mb-2">
+            Dias em que o algoritmo pode marcar revisões
+          </p>
+          <div className="flex gap-1.5">
+            {ALLOWED_DAY_TOGGLES.map(({ day, label }, idx) => {
+              const active = allowedDays.has(day);
+              const isLastActive = active && allowedDays.size <= 1;
+              return (
+                <button
+                  key={`${day}-${idx}`}
+                  type="button"
+                  onClick={() => onToggleDay(day)}
+                  disabled={isLastActive}
+                  aria-pressed={active}
+                  title={active ? 'Permitir revisões neste dia' : 'Não fazer revisões neste dia'}
+                  className={`w-9 h-9 rounded-full text-xs font-semibold transition-colors ${
+                    active
+                      ? 'bg-navy text-white hover:bg-navy/90'
+                      : 'bg-gray-200 text-gray-400 line-through hover:bg-gray-300'
+                  } ${isLastActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto p-4">

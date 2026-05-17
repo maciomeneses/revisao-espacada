@@ -13,6 +13,7 @@ import { Provas } from './components/Provas';
 import { GerenciarCategorias } from './pages/GerenciarCategorias';
 import { useSubjects } from './hooks/useSubjects';
 import { useRoutine } from './hooks/useRoutine';
+import { useReviewPreferences } from './hooks/useReviewPreferences';
 import { clearSubjects, clearRoutine } from './services/storage';
 import type { Role } from './types';
 
@@ -39,6 +40,7 @@ export function AppContent() {
   const navigate = useNavigate();
 
   const { routine, addSlot, updateSlot, removeSlot } = useRoutine(userEmail);
+  const { allowedDays, toggleDay } = useReviewPreferences(userEmail);
 
   const {
     subjects,
@@ -51,7 +53,7 @@ export function AppContent() {
     removeSubject,
     revertStage,
     rescheduleByRoutine,
-  } = useSubjects(routine, userEmail ?? undefined);
+  } = useSubjects(routine, userEmail ?? undefined, allowedDays);
 
   const handleAddSlot = useCallback(
     (slot: Parameters<typeof addSlot>[0]) => {
@@ -171,6 +173,8 @@ export function AppContent() {
                     onAddSlot={handleAddSlot}
                     onUpdateSlot={updateSlot}
                     onRemoveSlot={removeSlot}
+                    allowedDays={allowedDays}
+                    onToggleDay={toggleDay}
                   />
                 </div>
               </div>

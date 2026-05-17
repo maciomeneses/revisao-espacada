@@ -102,6 +102,10 @@ vi.mock('../src/services/api', () => ({
       list: vi.fn().mockResolvedValue([]),
       save: vi.fn().mockResolvedValue([]),
     },
+    preferences: {
+      get: vi.fn().mockResolvedValue({ allowedReviewDays: [0, 1, 2, 3, 4, 5, 6] }),
+      save: vi.fn().mockResolvedValue({ allowedReviewDays: [0, 1, 2, 3, 4, 5, 6] }),
+    },
   },
 }));
 
