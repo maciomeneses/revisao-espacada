@@ -179,7 +179,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject],
+    [updateSubject, routine],
   );
 
   const registerFixacao = useCallback(
@@ -210,7 +210,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject],
+    [updateSubject, routine],
   );
 
   const doResetCiclo = useCallback(
