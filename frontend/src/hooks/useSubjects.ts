@@ -8,23 +8,63 @@ import type { ReviewEventPayload } from '../services/api';
 export type { ReviewEventPayload };
 
 /**
- * Returns the first date within 21 days from `fsrsDate` where the student has
- * a study slot for the given area. Falls back to `fsrsDate` if none found.
- * `scheduledDays` is never modified — only the calendar date shifts.
+ * Snaps `fsrsDate` to the first date (within 21 days) that satisfies both:
+ *   - the student's `routine` (a study slot for the given area, or a generic slot), and
+ *   - `allowedDays` (Set of dayOfWeek 0..6) if provided and non-empty.
+ *
+ * Fallback rules:
+ *   1. If no date within 21 days satisfies both constraints, pick the first day
+ *      within 21 days that lies in `allowedDays` (routine is a preference,
+ *      allowedDays is a hard restriction).
+ *   2. If even that fails (allowedDays empty / undefined), return `fsrsDate`.
+ *
+ * `routine` is never modified — only the calendar date shifts.
  */
-export function findNextRoutineDate(fsrsDate: string, area: string, routine: StudentRoutine): string {
-  if (!routine.length) return fsrsDate;
+export function snapReviewDate(
+  fsrsDate: string,
+  area: string,
+  routine: StudentRoutine,
+  allowedDays?: Set<number>,
+): string {
   const studyDays = new Set(
-    routine.filter((s) => s.type === 'study' && (!s.area || s.area === area)).map((s) => s.dayOfWeek),
+    routine
+      .filter((s) => s.type === 'study' && (!s.area || s.area === area))
+      .map((s) => s.dayOfWeek),
   );
-  if (!studyDays.size) return fsrsDate;
+  const hasAllowed = allowedDays !== undefined && allowedDays.size > 0;
+  const hasStudy = studyDays.size > 0;
+
   const base = new Date(fsrsDate + 'T12:00:00');
+
+  // 1) tentar interseção: rotina (se houver) ∩ allowedDays (se houver)
   for (let i = 0; i <= 21; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
-    if (studyDays.has(d.getDay())) return localDateStr(d);
+    const dow = d.getDay();
+    const allowedOk = !hasAllowed || allowedDays!.has(dow);
+    const studyOk = !hasStudy || studyDays.has(dow);
+    if (allowedOk && studyOk) return localDateStr(d);
   }
+
+  // 2) fallback: primeiro dia em allowedDays, ignorando rotina
+  if (hasAllowed) {
+    for (let i = 0; i <= 21; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      if (allowedDays!.has(d.getDay())) return localDateStr(d);
+    }
+  }
+
+  // 3) nada encontrado
   return fsrsDate;
+}
+
+/**
+ * Back-compat alias para `snapReviewDate` sem restrição de `allowedDays`.
+ * Mantido para não quebrar callers/testes existentes.
+ */
+export function findNextRoutineDate(fsrsDate: string, area: string, routine: StudentRoutine): string {
+  return snapReviewDate(fsrsDate, area, routine, undefined);
 }
 
 /**
@@ -46,7 +86,7 @@ export function findNextRoutineDate(fsrsDate: string, area: string, routine: Stu
  * - Mutações exigem `userEmail` válido — sem ele, `saveSubjects` é no-op e
  *   nada é gravado no localStorage (ver storage.ts).
  */
-export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
+export function useSubjects(routine: StudentRoutine = [], userEmail?: string, allowedDays?: Set<number>) {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +199,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
       const snappedDate = updates.nextReviewDate
-        ? findNextRoutineDate(updates.nextReviewDate, subject.area, routine)
+        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays)
         : updates.nextReviewDate;
       const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null };
       updateSubject(updated);
@@ -179,7 +219,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject, routine],
+    [updateSubject, routine, allowedDays],
   );
 
   const registerFixacao = useCallback(
@@ -190,7 +230,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
       const fresh = { ...subject, reps: 0, stability: 0, difficulty: 0 };
       const updates = calculateNextReview(fresh, numCorrect);
       const snappedDate = updates.nextReviewDate
-        ? findNextRoutineDate(updates.nextReviewDate, subject.area, routine)
+        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays)
         : updates.nextReviewDate;
       const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null, flashcardsFeitos: true };
       updateSubject(updated);
@@ -210,7 +250,7 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject, routine],
+    [updateSubject, routine, allowedDays],
   );
 
   const doResetCiclo = useCallback(
@@ -309,13 +349,13 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string) {
       const today = localDateStr(new Date());
       for (const s of subjectsRef.current) {
         if (!s.nextReviewDate || s.nextReviewDate < today) continue;
-        const snapped = findNextRoutineDate(s.nextReviewDate, s.area, updatedRoutine);
+        const snapped = snapReviewDate(s.nextReviewDate, s.area, updatedRoutine, allowedDays);
         if (snapped !== s.nextReviewDate) {
           updateSubject({ ...s, nextReviewDate: snapped });
         }
       }
     },
-    [updateSubject],
+    [updateSubject, allowedDays],
   );
 
   return {
