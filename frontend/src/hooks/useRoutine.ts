@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RoutineSlot, StudentRoutine } from '../types';
 
 function storageKey(email: string | null): string {
@@ -25,6 +25,14 @@ function generateId(): string {
 
 export function useRoutine(email: string | null) {
   const [routine, setRoutine] = useState<StudentRoutine>(() => loadRoutine(email));
+
+  // Re-hidrata quando o email muda (login/logout/troca de usuário). Sem isso,
+  // o lazy initializer do useState fica preso ao email do mount e a rotina
+  // do usuário logado nunca aparece (mesmo padrão do bug #9 corrigido em
+  // useSubjects pelo commit d0d01d2).
+  useEffect(() => {
+    setRoutine(loadRoutine(email));
+  }, [email]);
 
   function addSlot(slot: Omit<RoutineSlot, 'id'>): void {
     const next = [...routine, { ...slot, id: generateId() }];
