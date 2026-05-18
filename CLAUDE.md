@@ -72,8 +72,15 @@ npm run test:watch       # Vitest watch mode
 
 ### Cobertura JaCoCo (Backend)
 - Toda nova classe backend precisa de testes antes de commitar
-- Thresholds: **90% instruction, 85% branch, 90% line** — `./gradlew build` falha se não atingir
-- Classes excluídas do JaCoCo: `EbbinApplication`, `AdminInitializer`, `CacheConfig`
+- Thresholds: **agregado E per-class — 90% instruction, 85% branch, 90% line**. `./gradlew build` falha se o agregado **ou qualquer classe individual** cair abaixo. Duas `violationRules` em `backend/build.gradle`: uma sem `element` (agregada) e uma com `element = 'CLASS'`.
+- Classes excluídas do JaCoCo: `EbbinApplication`, `AdminInitializer`, `CacheConfig` (infra sem lógica testável). Repositórios JPA são interfaces puras e não geram counters, então não precisam de exclusão explícita.
+- Antes de commitar: `./gradlew jacocoTestCoverageVerification` para confirmar que nenhuma classe nova nasce abaixo de 90%.
+
+### Cobertura Frontend (Vitest)
+- Provider: `v8` via `@vitest/coverage-v8`. Configuração em `frontend/vitest.config.ts`.
+- Thresholds **per-file**: 90% lines, 90% functions, 85% branches, 90% statements. Script canônico: `npm run test:coverage` (também usado no workflow `deploy-frontend.yml`).
+- Exclusões: `src/**/*.d.ts`, `src/main.tsx`, `src/vite-env.d.ts`, `src/types.ts` (declarações puras de tipo).
+- Antes de commitar componente novo: `cd frontend && npm run test:coverage` para confirmar que nenhum arquivo novo nasce abaixo de 90%.
 
 ### Algoritmo FSRS (`frontend/src/services/algorithm.ts`)
 - Mudanças em `DEFAULT_W` afetam todos os usuários — documentar impacto antes de alterar

@@ -13,7 +13,7 @@ Você é um revisor especializado no backend do projeto **Ebbing** (Revisão Esp
 - Spring Security + JWT via JJWT 0.12.6
 - Caffeine (Spring Cache) para cache de subjects e buckets de rate limit
 - Bucket4j via `EndpointRateLimitFilter` para rate limiting
-- JaCoCo 0.8.14 com thresholds **obrigatórios**: 90% instruction, 85% branch, 90% line
+- JaCoCo 0.8.14 com thresholds **obrigatórios agregado E per-class**: 90% instruction, 85% branch, 90% line
 - OWASP Dependency-Check plugin
 
 ## Estrutura de pacotes
@@ -94,7 +94,7 @@ RATE_LIMIT_* (vários parâmetros de rate limit)
 
 ## O que revisar
 
-1. **JaCoCo**: toda nova classe/método precisa de teste. Thresholds não negociáveis: 90% instrução, 85% branch, 90% linha. Se um método novo não tiver teste correspondente, sinalize.
+1. **JaCoCo**: toda nova classe/método precisa de teste. Thresholds não negociáveis **agregado E por classe**: 90% instrução, 85% branch, 90% linha. Rode `./gradlew jacocoTestCoverageVerification` e verifique que **nenhuma classe nova nasce abaixo de 90%** — a regra `element = 'CLASS'` em `backend/build.gradle` falha o build se isso acontecer. Se um método novo não tiver teste correspondente, sinalize.
 
 2. **Migrations**: nunca modificar migration existente. Toda mudança de schema = nova migration `V{n+1}__...`. Verificar se a migration é reversível ou se haverá downtime.
 

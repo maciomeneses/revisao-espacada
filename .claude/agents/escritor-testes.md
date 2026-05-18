@@ -113,11 +113,13 @@ const mockSubject = {
 
 ### Cobertura esperada
 
-Prioridade decrescente:
-1. Lógica de negócio em hooks (`useSubjects`) — comportamentos de toggles, registerReview, registerFixacao, revertStage
+**Política per-file (não negociável):** todo arquivo novo em `src/` precisa nascer **≥ 90%** lines/functions/statements e **≥ 85%** branches. Thresholds enforced em `frontend/vitest.config.ts` via `perFile: true` — `npm run test:coverage` falha o CI se um arquivo novo (ou modificado) cair abaixo.
+
+Prioridade decrescente quando faltar cobertura:
+1. Lógica de negócio em hooks (`useSubjects`, `useRoutine`, `useReviewPreferences`) — toggles, registerReview, registerFixacao, revertStage, sincronização com backend
 2. Componentes de autenticação (`AuthScreen`, `ResetPasswordScreen`) — fluxos de login, erro, reset
-3. Lógica condicional em componentes (`Cronograma`, `Dashboard`) — estados vazios, cards, filtros
-4. Funções utilitárias de `algorithm.ts` — cálculos FSRS, formatação de datas
+3. Lógica condicional em componentes (`Cronograma`, `Dashboard`, `RoutineBoard`, etc.) — estados vazios, cards, filtros, branches por allowedDays
+4. Funções utilitárias de `algorithm.ts` — cálculos FSRS, `snapReviewDate`, formatação de datas
 
 ---
 
@@ -154,13 +156,13 @@ class MinhaClasseTest {
 }
 ```
 
-### Thresholds JaCoCo (obrigatórios)
+### Thresholds JaCoCo (obrigatórios — agregado E per-class)
 
 - **90%** instruction coverage
 - **85%** branch coverage
 - **90%** line coverage
 
-Ao escrever testes para uma classe nova, cobrir **todos os branches** (if/else, switch, Optional.orElse, etc.).
+A regra é dupla em `backend/build.gradle`: uma `violationRule` agregada e outra com `element = 'CLASS'`. **Toda classe nova precisa nascer acima de 90%** — `./gradlew build` falha se qualquer classe individual ficar abaixo. Cobrir **todos os branches** (if/else, switch, `Optional.orElse`, ternários `x != null ? a : b`, etc.) é obrigatório, não opcional.
 
 ### Mocking de segurança em testes de controller
 

@@ -107,6 +107,7 @@ Padrão importante: usa `subjectsRef` para evitar re-criação de callbacks. Nun
 6. **Sync otimista**: atualizações locais + fire-and-forget na API (`updateSubject`)
 7. **Consistência de navegação**: usar `useNavigate()` para navegar, nunca `window.location.href`
 8. **Acessibilidade**: botões com `type="button"` explícito quando dentro de forms
+9. **Cobertura Vitest**: rode `cd frontend && npm run test:coverage` e confirme que **nenhum arquivo novo nasce abaixo de 90%**. Thresholds per-file ativos em `frontend/vitest.config.ts`: 90% lines, 90% functions, 85% branches, 90% statements. Arquivos puramente declarativos (`src/types.ts`, `src/main.tsx`, `*.d.ts`) já estão excluídos — qualquer nova exclusão precisa de justificativa explícita.
 
 ## O que NÃO fazer
 
