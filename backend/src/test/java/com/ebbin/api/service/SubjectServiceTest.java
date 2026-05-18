@@ -276,4 +276,72 @@ class SubjectServiceTest {
         SubjectDto result = subjectService.upsertSubject("user@test.com", withNullPerformance);
         assertThat(result.lastPerformance()).isNull();
     }
+
+    // --- CatalogCache: branches de isBlank e cache hit ---
+
+    @Test
+    @DisplayName("upsertSubject com area em branco não resolve discipline (Subject.discipline fica null)")
+    void upsertSubject_blankArea_skipsCatalogResolution() {
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findByUserAndClientId(user, "client-blank")).thenReturn(Optional.empty());
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SubjectDto dto = new SubjectDto(
+                "client-blank", "  ", "   ", "AP", "Alta",
+                false, false, false, false, false, false, false, false, false,
+                "aula", null, null, null, "nao_classificada"
+        );
+
+        subjectService.upsertSubject("user@test.com", dto);
+
+        // Repositórios de catálogo não devem ser consultados quando area/modulo são branco
+        verify(areaRepository, never()).findByUserAndName(any(), any());
+        verify(disciplineRepository, never()).findByUserAndAreaAndName(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("upsertSubject com area null tampouco resolve discipline")
+    void upsertSubject_nullArea_skipsCatalogResolution() {
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findByUserAndClientId(user, "client-null")).thenReturn(Optional.empty());
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        SubjectDto dto = new SubjectDto(
+                "client-null", null, null, "AP", "Alta",
+                false, false, false, false, false, false, false, false, false,
+                "aula", null, null, null, "nao_classificada"
+        );
+
+        subjectService.upsertSubject("user@test.com", dto);
+
+        verify(areaRepository, never()).findByUserAndName(any(), any());
+    }
+
+    @Test
+    @DisplayName("syncSubjects com dois subjects mesma area exercita o cache hit do CatalogCache")
+    void syncSubjects_cacheHit_onSameAreaAndDiscipline() {
+        SubjectDto a = new SubjectDto(
+                "client-A", "Módulo X", "Área X", "AP", "Alta",
+                false, false, false, false, false, false, false, false, false,
+                "aula", null, null, null, "nao_classificada"
+        );
+        SubjectDto b = new SubjectDto(
+                "client-B", "Módulo X", "Área X", "AP", "Alta",
+                false, false, false, false, false, false, false, false, false,
+                "aula", null, null, null, "nao_classificada"
+        );
+
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(subjectRepository.findAllByUser(user))
+                .thenReturn(new ArrayList<>())
+                .thenReturn(List.of());
+        when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        stubCatalogResolution();
+
+        subjectService.syncSubjects("user@test.com", List.of(a, b), false);
+
+        // Segundo subject deve achar a Discipline no cache → repositório só chamado 1 vez
+        verify(disciplineRepository, atMost(1))
+                .findByUserAndAreaAndName(any(), any(), any());
+    }
 }

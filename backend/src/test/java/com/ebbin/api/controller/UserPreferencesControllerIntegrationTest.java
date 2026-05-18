@@ -168,6 +168,28 @@ class UserPreferencesControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("PUT com elemento null no array retorna 400")
+    void put_nullElement_returns400() throws Exception {
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"allowedReviewDays\":[1,null,3]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").exists());
+    }
+
+    @Test
+    @DisplayName("PUT com body vazio retorna 400 (dto.allowedReviewDays() == null)")
+    void put_emptyBody_returns400() throws Exception {
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").exists());
+    }
+
+    @Test
     @DisplayName("Usuários distintos têm preferências isoladas")
     void preferences_isolatedPerUser() throws Exception {
         User otherUser = new User();

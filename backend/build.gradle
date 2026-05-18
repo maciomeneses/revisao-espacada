@@ -100,7 +100,31 @@ jacocoTestCoverageVerification {
         }))
     }
     violationRules {
+        // Regra AGREGADA: o build inteiro precisa atingir 90/85/90
         rule {
+            limit {
+                counter = 'INSTRUCTION'
+                value   = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+            limit {
+                counter = 'BRANCH'
+                value   = 'COVEREDRATIO'
+                minimum = 0.85
+            }
+            limit {
+                counter = 'LINE'
+                value   = 'COVEREDRATIO'
+                minimum = 0.90
+            }
+        }
+        // Regra PER-CLASS: cada classe individualmente também precisa atingir 90/85/90
+        // (previne que classes novas nasçam abaixo da política de cobertura).
+        rule {
+            element = 'CLASS'
+            // Mesmas exclusões da regra agregada já aplicadas via classDirectories.setFrom acima
+            // (EbbinApplication, AdminInitializer, CacheConfig). Repositórios JPA são interfaces
+            // puras sem código testável — o JaCoCo já as ignora por não emitir counters.
             limit {
                 counter = 'INSTRUCTION'
                 value   = 'COVEREDRATIO'

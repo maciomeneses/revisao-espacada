@@ -72,4 +72,23 @@ class SubjectEntityTest {
         assertThat(subject.getPerformanceLevel()).isEqualTo(PerformanceLevel.EXCELENTE);
         assertThat(subject.getCurrentStage()).isEqualTo(ReviewStage.REVIEW);
     }
+
+    @Test
+    @DisplayName("setters de enums devem aceitar null e zerar o campo interno")
+    void enumSetters_acceptNull() {
+        Subject subject = new Subject();
+        subject.setCurrentStage(ReviewStage.REVIEW);
+        subject.setLastPerformance(PerformanceLevel.BOM);
+        subject.setPerformanceLevel(PerformanceLevel.EXCELENTE);
+
+        subject.setCurrentStage(null);
+        subject.setLastPerformance(null);
+        subject.setPerformanceLevel(null);
+
+        // currentStage/performanceLevel armazenam null internamente; getters caem no
+        // fallback do fromValue (AULA e NAO_CLASSIFICADA respectivamente).
+        assertThat(subject.getCurrentStage()).isEqualTo(ReviewStage.AULA);
+        assertThat(subject.getLastPerformance()).isNull();
+        assertThat(subject.getPerformanceLevel()).isEqualTo(PerformanceLevel.NAO_CLASSIFICADA);
+    }
 }

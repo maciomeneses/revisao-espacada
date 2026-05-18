@@ -9,7 +9,12 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,5 +106,47 @@ class GlobalExceptionHandlerTest {
         assertThat(pd.getDetail()).contains("must not be blank");
         assertThat(pd.getType().toString()).isEqualTo("urn:problem:validation-error");
         assertThat(pd.getTitle()).isEqualTo("Erro de validação");
+    }
+
+    @Test
+    @DisplayName("MethodArgumentNotValidException deve agregar field errors no detail")
+    void handleValidation_aggregatesFieldErrors() {
+        BindingResult br = mock(BindingResult.class);
+        when(br.getFieldErrors()).thenReturn(List.of(
+                new FieldError("obj", "email", "must not be blank"),
+                new FieldError("obj", "password", "size must be >= 8")
+        ));
+        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
+        when(ex.getBindingResult()).thenReturn(br);
+
+        ProblemDetail pd = handler.handleValidation(ex);
+
+        assertThat(pd.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(pd.getDetail()).contains("email:", "password:");
+        assertThat(pd.getType().toString()).isEqualTo("urn:problem:validation-error");
+    }
+
+    @Test
+    @DisplayName("ResponseStatusException com reason explícito preserva detail")
+    void handleResponseStatus_withReason() {
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.BAD_REQUEST, "boom");
+
+        ProblemDetail pd = handler.handleResponseStatus(ex);
+
+        assertThat(pd.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(pd.getDetail()).isEqualTo("boom");
+        assertThat(pd.getType().toString()).isEqualTo("urn:problem:400");
+    }
+
+    @Test
+    @DisplayName("ResponseStatusException com reason null cai no reasonPhrase do status")
+    void handleResponseStatus_nullReason_fallsBackToReasonPhrase() {
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+        ProblemDetail pd = handler.handleResponseStatus(ex);
+
+        assertThat(pd.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        assertThat(pd.getDetail()).isEqualTo(HttpStatus.NOT_FOUND.getReasonPhrase());
+        assertThat(pd.getType().toString()).isEqualTo("urn:problem:404");
     }
 }
