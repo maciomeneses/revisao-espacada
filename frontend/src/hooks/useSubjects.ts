@@ -162,7 +162,6 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
   // garante convergência em 1-2 iterações.
   useEffect(() => {
     if (!userEmail) return;
-    if (!routine.length) return;
     if (!allowedDays || allowedDays.size === 0) return;
     const today = localDateStr(new Date());
     for (const s of subjects) {

@@ -188,6 +188,66 @@ describe('useSubjects + routine integration', () => {
     expect(mockApi.subjects.upsert).not.toHaveBeenCalled();
   });
 
+  it('re-snapa quando allowedDays exclui o dia atual da revisão (com rotina)', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    // 2026-05-30 é sábado (dayOfWeek=6). Subject de área SEM slot na rotina —
+    // assim o snap inicial cai no fallback de allowedDays e mantém o sábado.
+    const existing = makeSubject({ id: 'sub-toggle-r', area: 'Filosofia', nextReviewDate: '2026-05-30' });
+    storage.saveSubjects([existing], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([existing]);
+
+    const routine: StudentRoutine = [slot({ dayOfWeek: 4, area: 'Matemática' })];
+    const allowedAll = new Set([0, 1, 2, 3, 4, 5, 6]);
+    const allowedNoSat = new Set([0, 1, 2, 3, 4, 5]); // sem sábado
+
+    const { result, rerender } = renderHook(
+      ({ a }: { a: Set<number> }) => useSubjects(routine, 'u@e.com', a),
+      { initialProps: { a: allowedAll } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-30');
+    });
+
+    rerender({ a: allowedNoSat });
+
+    await waitFor(() => {
+      const s = result.current.subjects.find((x) => x.id === existing.id)!;
+      const dow = new Date(s.nextReviewDate + 'T12:00:00').getDay();
+      expect(dow).not.toBe(6);
+      expect(s.nextReviewDate >= '2026-05-30').toBe(true);
+    });
+  });
+
+  it('re-snapa quando allowedDays muda mesmo sem rotina configurada', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    // 2026-05-30 é sábado
+    const existing = makeSubject({ id: 'sub-toggle-norout', nextReviewDate: '2026-05-30' });
+    storage.saveSubjects([existing], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([existing]);
+
+    const noRoutine: StudentRoutine = [];
+    const allowedAll = new Set([0, 1, 2, 3, 4, 5, 6]);
+    const allowedNoSat = new Set([0, 1, 2, 3, 4, 5]);
+
+    const { result, rerender } = renderHook(
+      ({ a }: { a: Set<number> }) => useSubjects(noRoutine, 'u@e.com', a),
+      { initialProps: { a: allowedAll } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-30');
+    });
+
+    rerender({ a: allowedNoSat });
+
+    await waitFor(() => {
+      const s = result.current.subjects.find((x) => x.id === existing.id)!;
+      const dow = new Date(s.nextReviewDate + 'T12:00:00').getDay();
+      expect(dow).not.toBe(6);
+    });
+  });
+
   it('callback usa a rotina nova após re-render (fix das deps do #21)', async () => {
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
     const existing = makeSubject({ id: 'sub-rerender' });
