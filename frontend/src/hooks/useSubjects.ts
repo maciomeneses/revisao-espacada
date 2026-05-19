@@ -154,6 +154,26 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
     }
   }, [userEmail]);
 
+  // Re-snap automático: quando routine, allowedDays ou subjects mudam, garante
+  // que toda nextReviewDate futura respeita as restrições atuais. Cobre o caso
+  // em que routine/allowedDays chegam do backend depois do fetch de subjects,
+  // ou em que slots foram editados/removidos (updateSlot/removeSlot/toggleDay
+  // não disparam rescheduleByRoutine). A guarda `snapped !== s.nextReviewDate`
+  // garante convergência em 1-2 iterações.
+  useEffect(() => {
+    if (!userEmail) return;
+    if (!routine.length) return;
+    if (!allowedDays || allowedDays.size === 0) return;
+    const today = localDateStr(new Date());
+    for (const s of subjects) {
+      if (!s.nextReviewDate || s.nextReviewDate < today) continue;
+      const snapped = snapReviewDate(s.nextReviewDate, s.area, routine, allowedDays);
+      if (snapped !== s.nextReviewDate) {
+        updateSubject({ ...s, nextReviewDate: snapped });
+      }
+    }
+  }, [routine, allowedDays, subjects, userEmail, updateSubject]);
+
   /**
    * Usa subjectsRef para ler o estado atual sem declarar subjects como
    * dependência — evita re-criação do callback a cada atualização de subjects.

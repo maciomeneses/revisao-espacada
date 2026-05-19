@@ -112,6 +112,82 @@ describe('useSubjects + routine integration', () => {
     expect(updated.flashcardsFeitos).toBe(true);
   });
 
+  it('re-snapa automaticamente quando routine chega depois do fetch de subjects', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    // Subject já tem nextReviewDate desalinhada (uma quarta-feira, 2026-05-27)
+    const existing = makeSubject({ id: 'sub-async', nextReviewDate: '2026-05-27' });
+    storage.saveSubjects([existing], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([existing]);
+
+    // Estuda Mat só na quinta (dayOfWeek=4)
+    const routine: StudentRoutine = [slot({ dayOfWeek: 4, area: 'Matemática' })];
+    const allowed = new Set([0, 1, 2, 3, 4, 5, 6]);
+
+    const { result, rerender } = renderHook(
+      ({ r, a }: { r: StudentRoutine; a: Set<number> | undefined }) =>
+        useSubjects(r, 'u@e.com', a),
+      { initialProps: { r: [] as StudentRoutine, a: undefined as Set<number> | undefined } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-27');
+    });
+
+    // Agora a rotina + allowedDays chegam (simulando fetch async no login)
+    rerender({ r: routine, a: allowed });
+
+    await waitFor(() => {
+      const s = result.current.subjects.find((x) => x.id === existing.id)!;
+      const dow = new Date(s.nextReviewDate + 'T12:00:00').getDay();
+      expect(dow).toBe(4);
+    });
+  });
+
+  it('não re-snapa subjects com nextReviewDate no passado', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    const pastDate = '2000-01-05'; // muito no passado
+    const existing = makeSubject({ id: 'sub-past', nextReviewDate: pastDate });
+    storage.saveSubjects([existing], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([existing]);
+
+    const routine: StudentRoutine = [slot({ dayOfWeek: 4, area: 'Matemática' })];
+    const allowed = new Set([0, 1, 2, 3, 4, 5, 6]);
+
+    const { result } = renderHook(() => useSubjects(routine, 'u@e.com', allowed));
+
+    await waitFor(() => {
+      expect(result.current.subjects.find((s) => s.id === existing.id)).toBeDefined();
+    });
+
+    // Aguarda qualquer efeito de snap rodar
+    await new Promise((r) => setTimeout(r, 50));
+
+    const s = result.current.subjects.find((x) => x.id === existing.id)!;
+    expect(s.nextReviewDate).toBe(pastDate);
+    expect(mockApi.subjects.upsert).not.toHaveBeenCalled();
+  });
+
+  it('subjects já alinhados não disparam updateSubject (sem loop)', async () => {
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    // 2026-05-28 é quinta-feira (dayOfWeek=4) — já alinhada
+    const existing = makeSubject({ id: 'sub-aligned', nextReviewDate: '2026-05-28' });
+    storage.saveSubjects([existing], 'u@e.com');
+    mockApi.subjects.list.mockResolvedValue([existing]);
+
+    const routine: StudentRoutine = [slot({ dayOfWeek: 4, area: 'Matemática' })];
+    const allowed = new Set([0, 1, 2, 3, 4, 5, 6]);
+
+    const { result } = renderHook(() => useSubjects(routine, 'u@e.com', allowed));
+
+    await waitFor(() => {
+      expect(result.current.subjects.find((s) => s.id === existing.id)).toBeDefined();
+    });
+
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(mockApi.subjects.upsert).not.toHaveBeenCalled();
+  });
+
   it('callback usa a rotina nova após re-render (fix das deps do #21)', async () => {
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
     const existing = makeSubject({ id: 'sub-rerender' });
