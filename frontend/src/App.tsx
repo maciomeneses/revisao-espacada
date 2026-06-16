@@ -15,7 +15,7 @@ import { useSubjects } from './hooks/useSubjects';
 import { useRoutine } from './hooks/useRoutine';
 import { useReviewPreferences } from './hooks/useReviewPreferences';
 import { clearSubjects, clearRoutine } from './services/storage';
-import type { Role } from './types';
+import type { ActiveView, Role } from './types';
 
 /** Extrai o valor do query param ?token= da URL atual. */
 function getResetTokenFromUrl(): string | null {
@@ -131,7 +131,7 @@ export function AppContent() {
     <div className="flex flex-col min-h-screen bg-surface">
       {isAuthenticated && !isLogin && location.pathname !== '/' && (
         <Header
-          activeView={location.pathname.substring(1) as any}
+          activeView={location.pathname.substring(1) as ActiveView}
           userRole={userRole}
           onViewChange={(v) => navigate(`/${v}`)}
           onOpenGerenciar={() => setShowGerenciar(true)}
