@@ -65,6 +65,7 @@ Toda mudança de feature, decisão arquitetural, dependência ou processo dispar
 npm run dev          # frontend dev server
 npm run build        # build frontend
 npm run test         # testes frontend
+npm run ci           # validação local equivalente ao CI (backend + frontend) — scripts/ci-local.sh
 npm run deploy       # deploy frontend (gh-pages)
 npm run backend:build / backend:run / backend:test
 npm run format / format:check   # Prettier
