@@ -7,8 +7,18 @@ import type { Subject } from '../../src/types';
 // useCatalog: precisa de api mock para não falhar
 vi.mock('../../src/services/api', () => ({
   api: {
-    areas: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    disciplines: { list: vi.fn().mockResolvedValue([]), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    areas: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    disciplines: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
   },
 }));
 
@@ -166,9 +176,7 @@ describe('Cronograma (cobertura extra)', () => {
   });
 
   it('lastReviewDate definido renderiza data formatada (cobre fmtDate)', () => {
-    const subjects = [
-      makeSubject({ id: '1', lastReviewDate: '2024-01-15T10:00:00Z' }),
-    ];
+    const subjects = [makeSubject({ id: '1', lastReviewDate: '2024-01-15T10:00:00Z' })];
     render(<Cronograma {...defaultProps} subjects={subjects} />);
     // formato dd-mm-yyyy — apenas garantimos que existe um texto com hifens
     const elements = document.body.textContent ?? '';

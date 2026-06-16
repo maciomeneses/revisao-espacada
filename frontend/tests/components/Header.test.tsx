@@ -13,9 +13,7 @@ describe('Header', () => {
     onLogout = vi.fn();
   });
 
-  function renderHeader(
-    overrides: Partial<React.ComponentProps<typeof Header>> = {},
-  ) {
+  function renderHeader(overrides: Partial<React.ComponentProps<typeof Header>> = {}) {
     return render(
       <Header
         activeView="dashboard"
@@ -60,9 +58,7 @@ describe('Header', () => {
     renderHeader({ activeView: 'cronograma' });
     const buttons = screen.getAllByText('Estudos');
     // Desktop button deve ter border-yellow indicando ativo
-    const desktopButton = buttons.find((el) =>
-      el.className.includes('border-yellow'),
-    );
+    const desktopButton = buttons.find((el) => el.className.includes('border-yellow'));
     expect(desktopButton).toBeTruthy();
   });
 

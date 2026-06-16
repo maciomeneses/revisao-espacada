@@ -52,14 +52,16 @@ describe('GerenciarCategorias (cobertura extra)', () => {
     vi.clearAllMocks();
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
     listAreasMock.mockResolvedValue([{ id: 1, name: 'Área 1' }]);
-    listDisciplinesMock.mockResolvedValue([
-      { id: 10, areaId: 1, areaName: 'Área 1', name: 'D1' },
-    ]);
+    listDisciplinesMock.mockResolvedValue([{ id: 10, areaId: 1, areaName: 'Área 1', name: 'D1' }]);
   });
 
   it('exibe estado de loading e depois lista', async () => {
     let resolve!: (v: any) => void;
-    listAreasMock.mockReturnValueOnce(new Promise((r) => { resolve = r; }));
+    listAreasMock.mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
     listDisciplinesMock.mockResolvedValue([]);
     render(<GerenciarCategorias subjects={[]} />);
     expect(screen.getByText(/Carregando.../)).toBeInTheDocument();
@@ -232,20 +234,18 @@ describe('GerenciarCategorias (cobertura extra)', () => {
 
     await waitFor(() => expect(createDisciplineMock).toHaveBeenCalledWith(1, 'NovaDisc'));
     await waitFor(() => {
-      expect((screen.getByLabelText(/Nome da nova disciplina/i) as HTMLInputElement).value).toBe('');
+      expect((screen.getByLabelText(/Nome da nova disciplina/i) as HTMLInputElement).value).toBe(
+        '',
+      );
     });
   });
 
   it('countSubjectsForDiscipline com areaName ausente cai para fallback de areas.find', async () => {
     // Disciplina sem areaName forçando fallback `areas.find((a) => a.id === d.areaId)?.name`
-    listDisciplinesMock.mockResolvedValueOnce([
-      { id: 10, areaId: 1, name: 'D-NoAreaName' } as any,
-    ]);
+    listDisciplinesMock.mockResolvedValueOnce([{ id: 10, areaId: 1, name: 'D-NoAreaName' } as any]);
     render(
       <GerenciarCategorias
-        subjects={[
-          { id: 's1', area: 'Área 1', modulo: 'D-NoAreaName' } as any,
-        ]}
+        subjects={[{ id: 's1', area: 'Área 1', modulo: 'D-NoAreaName' } as any]}
       />,
     );
     await waitFor(() => expect(screen.getByText('D-NoAreaName')).toBeInTheDocument());

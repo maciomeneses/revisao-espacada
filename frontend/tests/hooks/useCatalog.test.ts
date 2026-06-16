@@ -120,7 +120,10 @@ describe('useCatalog', () => {
 
   it('createDiscipline adiciona a disciplina ao estado', async () => {
     mockApi.disciplines.create.mockResolvedValue({
-      id: 50, areaId: 1, areaName: 'Ciências da Natureza', name: 'Química',
+      id: 50,
+      areaId: 1,
+      areaName: 'Ciências da Natureza',
+      name: 'Química',
     });
     const { result } = renderHook(() => useCatalog());
     await waitFor(() => expect(result.current.loading).toBe(false));

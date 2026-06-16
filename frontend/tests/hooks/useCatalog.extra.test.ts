@@ -17,9 +17,7 @@ describe('useCatalog (cobertura extra)', () => {
     vi.clearAllMocks();
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
     mockApi.areas.list.mockResolvedValue([{ id: 1, name: 'A1' }]);
-    mockApi.disciplines.list.mockResolvedValue([
-      { id: 10, areaId: 1, areaName: 'A1', name: 'D1' },
-    ]);
+    mockApi.disciplines.list.mockResolvedValue([{ id: 10, areaId: 1, areaName: 'A1', name: 'D1' }]);
   });
 
   it('refresh expõe erro genérico quando lista falha', async () => {

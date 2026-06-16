@@ -62,9 +62,7 @@ describe('findNextRoutineDate', () => {
   });
 
   it('ignora slots type=other mesmo no dia certo', () => {
-    const routine: StudentRoutine = [
-      slot({ dayOfWeek: 4, area: 'Matemática', type: 'other' }),
-    ];
+    const routine: StudentRoutine = [slot({ dayOfWeek: 4, area: 'Matemática', type: 'other' })];
     // O único slot é "other", então não há dia de estudo válido — retorna fsrsDate
     const result = findNextRoutineDate('2026-05-20', 'Matemática', routine);
     expect(result).toBe('2026-05-20');

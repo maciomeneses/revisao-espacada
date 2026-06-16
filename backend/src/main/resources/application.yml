@@ -5,7 +5,7 @@ spring:
     password: ${PGPASSWORD:ebbin}
     driver-class-name: org.postgresql.Driver
   jpa:
-    open-in-view: false  # Libera conexões DB ao fim da transação, não ao fim do request HTTP
+    open-in-view: false # Libera conexões DB ao fim da transação, não ao fim do request HTTP
     hibernate:
       # Perfil padrão (desenvolvimento): cria/atualiza schema automaticamente.
       # Em produção, ative o perfil "prod" (SPRING_PROFILES_ACTIVE=prod) para usar "validate"
@@ -31,7 +31,7 @@ app:
     brevo-api-key: ${BREVO_API_KEY:}
   jwt:
     secret: ${JWT_SECRET:TroqueEssaChaveEmProducaoComNoMinimo256BitsParaSegurancaAdequadaEmAmbienteRailway}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}  # 24h
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://maciomeneses.github.io}
   admin:

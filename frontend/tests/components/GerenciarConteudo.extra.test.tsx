@@ -9,9 +9,11 @@ const createDisciplineMock = vi.fn();
 vi.mock('../../src/services/api', () => ({
   api: {
     subjectTemplates: {
-      list: vi.fn().mockResolvedValue([
-        { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Alta' },
-      ]),
+      list: vi
+        .fn()
+        .mockResolvedValue([
+          { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Alta' },
+        ]),
     },
     areas: {
       list: vi.fn().mockResolvedValue([
@@ -214,7 +216,9 @@ describe('GerenciarConteudo (cobertura extra)', () => {
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Leis' })).toBeInTheDocument();
     });
-    fireEvent.change(screen.getByRole('combobox', { name: /assunto/i }), { target: { value: '1' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /assunto/i }), {
+      target: { value: '1' },
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /REGISTRAR ESTUDO/i }));
 

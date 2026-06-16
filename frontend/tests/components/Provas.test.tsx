@@ -183,11 +183,13 @@ describe('Provas', () => {
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
     await waitFor(() => expect(mockedApi.examEntries.create).toHaveBeenCalledOnce());
-    expect(mockedApi.examEntries.create).toHaveBeenCalledWith(expect.objectContaining({
-      examName: 'Nova',
-      scorePercent: 75,
-      examType: 'Simulado',
-    }));
+    expect(mockedApi.examEntries.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        examName: 'Nova',
+        scorePercent: 75,
+        examType: 'Simulado',
+      }),
+    );
     await waitFor(() => expect(screen.getByText('Nova')).toBeInTheDocument());
   });
 
@@ -247,7 +249,9 @@ describe('Provas', () => {
     await waitFor(() => screen.getByText('P'));
     fireEvent.click(screen.getByText('P'));
 
-    const closeBtn = document.querySelector('button > svg.lucide-x')?.closest('button') as HTMLElement;
+    const closeBtn = document
+      .querySelector('button > svg.lucide-x')
+      ?.closest('button') as HTMLElement;
     fireEvent.click(closeBtn);
     expect(screen.queryByText(/aproveitamento/i)).not.toBeInTheDocument();
   });
@@ -272,10 +276,15 @@ describe('Provas', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 
-    await waitFor(() => expect(mockedApi.examEntries.update).toHaveBeenCalledWith(7, expect.objectContaining({
-      examName: 'Editada',
-      scorePercent: 90,
-    })));
+    await waitFor(() =>
+      expect(mockedApi.examEntries.update).toHaveBeenCalledWith(
+        7,
+        expect.objectContaining({
+          examName: 'Editada',
+          scorePercent: 90,
+        }),
+      ),
+    );
     await waitFor(() => expect(screen.getAllByText('Editada').length).toBeGreaterThan(0));
   });
 
@@ -338,9 +347,14 @@ describe('Provas', () => {
     fireEvent.change(textarea, { target: { value: 'novo conteúdo' } });
 
     fireEvent.click(screen.getByRole('button', { name: /salvar notas/i }));
-    await waitFor(() => expect(mockedApi.examEntries.update).toHaveBeenCalledWith(3, expect.objectContaining({
-      notes: 'novo conteúdo',
-    })));
+    await waitFor(() =>
+      expect(mockedApi.examEntries.update).toHaveBeenCalledWith(
+        3,
+        expect.objectContaining({
+          notes: 'novo conteúdo',
+        }),
+      ),
+    );
   });
 
   it('exibe erro ao falhar saveNotes', async () => {
@@ -397,7 +411,9 @@ describe('Provas', () => {
     fireEvent.click(screen.getByText('Sel'));
     fireEvent.click(screen.getByRole('button', { name: /^editar$/i }));
 
-    fireEvent.change(screen.getByPlaceholderText(/ENEM 2025/i), { target: { value: 'Sel Editada' } });
+    fireEvent.change(screen.getByPlaceholderText(/ENEM 2025/i), {
+      target: { value: 'Sel Editada' },
+    });
     fireEvent.change(screen.getByPlaceholderText('0–100'), { target: { value: '95' } });
     fireEvent.click(screen.getByRole('button', { name: /^salvar$/i }));
 

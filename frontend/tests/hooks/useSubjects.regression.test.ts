@@ -25,10 +25,18 @@ const mockApi = api as any;
 function fakeSubject(id: string): Subject {
   return {
     id,
-    modulo: 'M', area: 'A', aulaPrincipal: `Aula ${id}`, relevancia: 'Alta',
-    aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-    currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-    lastPerformance: null, performanceLevel: 'nao_classificada',
+    modulo: 'M',
+    area: 'A',
+    aulaPrincipal: `Aula ${id}`,
+    relevancia: 'Alta',
+    aulaAssistida: false,
+    preAulaFeita: false,
+    flashcardsFeitos: false,
+    currentStage: 'aula',
+    nextReviewDate: null,
+    lastReviewDate: null,
+    lastPerformance: null,
+    performanceLevel: 'nao_classificada',
   } as Subject;
 }
 
@@ -51,10 +59,7 @@ describe('useSubjects — regressão do bug 339→3 (#9)', () => {
     expect(mockApi.subjects.list).not.toHaveBeenCalled();
 
     // Simula login: app define a sessão e atualiza userEmail
-    localStorage.setItem(
-      'ebbing_session',
-      JSON.stringify({ token: 't', email: 'user@e.com' }),
-    );
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'user@e.com' }));
     userEmail = 'user@e.com';
     rerender();
 
@@ -69,15 +74,10 @@ describe('useSubjects — regressão do bug 339→3 (#9)', () => {
     const listA = [fakeSubject('a1'), fakeSubject('a2')];
     const listB = [fakeSubject('b1'), fakeSubject('b2'), fakeSubject('b3')];
 
-    mockApi.subjects.list
-      .mockResolvedValueOnce(listA)
-      .mockResolvedValueOnce(listB);
+    mockApi.subjects.list.mockResolvedValueOnce(listA).mockResolvedValueOnce(listB);
 
     let userEmail: string | undefined = 'a@e.com';
-    localStorage.setItem(
-      'ebbing_session',
-      JSON.stringify({ token: 't', email: 'a@e.com' }),
-    );
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'a@e.com' }));
 
     const { result, rerender } = renderHook(() => useSubjects([], userEmail));
     await waitFor(() => expect(result.current.subjects).toHaveLength(2));
@@ -85,10 +85,7 @@ describe('useSubjects — regressão do bug 339→3 (#9)', () => {
 
     // Logout + login como B
     localStorage.removeItem('ebbing_session');
-    localStorage.setItem(
-      'ebbing_session',
-      JSON.stringify({ token: 't', email: 'b@e.com' }),
-    );
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'b@e.com' }));
     userEmail = 'b@e.com';
     rerender();
 
@@ -104,10 +101,7 @@ describe('useSubjects — regressão do bug 339→3 (#9)', () => {
   it('addSubject pós-login persiste no key do usuário, não no key de guest', async () => {
     mockApi.subjects.list.mockResolvedValue([]);
     mockApi.subjects.upsert.mockResolvedValue({});
-    localStorage.setItem(
-      'ebbing_session',
-      JSON.stringify({ token: 't', email: 'foo@bar.com' }),
-    );
+    localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'foo@bar.com' }));
 
     const { result } = renderHook(() => useSubjects([], 'foo@bar.com'));
     await waitFor(() => expect(mockApi.subjects.list).toHaveBeenCalled());

@@ -1,25 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
-  --color-navy:        #1F3A5F;
-  --color-navy-light:  #2a4d7a;
-  --color-navy-dark:   #162b47;
-  --color-yellow:      #FFC72C;
+  --color-navy: #1f3a5f;
+  --color-navy-light: #2a4d7a;
+  --color-navy-dark: #162b47;
+  --color-yellow: #ffc72c;
   --color-yellow-dark: #e6b000;
-  --color-sky:         #4FA3D1;
-  --color-sky-dark:    #357fa8;
-  --color-surface:     #f4f6fb;
+  --color-sky: #4fa3d1;
+  --color-sky-dark: #357fa8;
+  --color-surface: #f4f6fb;
   --color-surface-alt: #f8fafc;
-  --color-border:      #e2e8f0;
-  --color-muted:       #6b7280;
+  --color-border: #e2e8f0;
+  --color-muted: #6b7280;
   --color-muted-light: #9ca3af;
 }
 
 @layer base {
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -27,33 +31,70 @@
 
   body {
     background-color: #f4f6fb;
-    color: #1F3A5F;
-    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    color: #1f3a5f;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 }
 
 @layer components {
-  .badge-alta  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white bg-red-600; }
-  .badge-media { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white; background-color: #b8860b; }
-  .badge-baixa { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white bg-sky-500; }
-  .badge-area  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-bold text-white bg-navy; }
+  .badge-alta {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white bg-red-600;
+  }
+  .badge-media {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white;
+    background-color: #b8860b;
+  }
+  .badge-baixa {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white bg-sky-500;
+  }
+  .badge-area {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-bold text-white bg-navy;
+  }
 
-  .status-ok   { @apply text-green-600 font-medium text-xs; }
-  .status-warn { @apply text-yellow-600 font-medium text-xs; }
-  .status-late { @apply text-red-600   font-medium text-xs; }
-  .status-done { @apply text-green-600 font-medium text-xs; }
+  .status-ok {
+    @apply text-green-600 font-medium text-xs;
+  }
+  .status-warn {
+    @apply text-yellow-600 font-medium text-xs;
+  }
+  .status-late {
+    @apply text-red-600   font-medium text-xs;
+  }
+  .status-done {
+    @apply text-green-600 font-medium text-xs;
+  }
 
-  .table-row-base { @apply border-b border-[#e2e8f0] hover:bg-[#f8fafc] transition-colors; }
-  .checkbox-cell  { @apply flex items-center justify-center; }
+  .table-row-base {
+    @apply border-b border-[#e2e8f0] hover:bg-[#f8fafc] transition-colors;
+  }
+  .checkbox-cell {
+    @apply flex items-center justify-center;
+  }
 
-  .tab-btn          { @apply flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors; }
-  .tab-btn-active   { @apply bg-navy text-white shadow-sm; }
-  .tab-btn-inactive { @apply text-muted hover:text-navy hover:bg-[#e2e8f0]; }
+  .tab-btn {
+    @apply flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors;
+  }
+  .tab-btn-active {
+    @apply bg-navy text-white shadow-sm;
+  }
+  .tab-btn-inactive {
+    @apply text-muted hover:text-navy hover:bg-[#e2e8f0];
+  }
 }

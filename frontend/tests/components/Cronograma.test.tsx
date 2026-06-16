@@ -75,7 +75,9 @@ describe('Cronograma', () => {
   it('chama onRegisterFixacao ao confirmar fixação', () => {
     const onRegisterFixacao = vi.fn();
     const subjects = [makeSubject({ id: 'sub-test' })];
-    render(<Cronograma {...defaultProps} subjects={subjects} onRegisterFixacao={onRegisterFixacao} />);
+    render(
+      <Cronograma {...defaultProps} subjects={subjects} onRegisterFixacao={onRegisterFixacao} />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /fixação/i }));
     // totalQuestions='10' (default), numCorrect=8 → normalized = round(8/10*10) = 8
@@ -109,7 +111,9 @@ describe('Cronograma', () => {
   it('chama onRegisterReview com id e numCorrect ao confirmar revisão', () => {
     const onRegisterReview = vi.fn();
     const subjects = [makeSubject({ id: 'sub-test' })];
-    render(<Cronograma {...defaultProps} subjects={subjects} onRegisterReview={onRegisterReview} />);
+    render(
+      <Cronograma {...defaultProps} subjects={subjects} onRegisterReview={onRegisterReview} />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /revisar/i }));
 
@@ -122,34 +126,40 @@ describe('Cronograma', () => {
   });
 
   it('exibe badge "Atrasado" para subjects com nextReviewDate no passado', () => {
-    const subjects = [makeSubject({
-      id: '1',
-      currentStage: 'Review',
-      nextReviewDate: yesterday,
-      stability: 5,
-    })];
+    const subjects = [
+      makeSubject({
+        id: '1',
+        currentStage: 'Review',
+        nextReviewDate: yesterday,
+        stability: 5,
+      }),
+    ];
     render(<Cronograma {...defaultProps} subjects={subjects} />);
     expect(screen.getByText('Atrasado')).toBeInTheDocument();
   });
 
   it('exibe badge "Hoje" para subjects com nextReviewDate hoje', () => {
-    const subjects = [makeSubject({
-      id: '1',
-      currentStage: 'Review',
-      nextReviewDate: today,
-      stability: 5,
-    })];
+    const subjects = [
+      makeSubject({
+        id: '1',
+        currentStage: 'Review',
+        nextReviewDate: today,
+        stability: 5,
+      }),
+    ];
     render(<Cronograma {...defaultProps} subjects={subjects} />);
     expect(screen.getByText('Hoje')).toBeInTheDocument();
   });
 
   it('exibe badge "No Prazo" para subjects com nextReviewDate no futuro', () => {
-    const subjects = [makeSubject({
-      id: '1',
-      currentStage: 'Review',
-      nextReviewDate: tomorrow,
-      stability: 5,
-    })];
+    const subjects = [
+      makeSubject({
+        id: '1',
+        currentStage: 'Review',
+        nextReviewDate: tomorrow,
+        stability: 5,
+      }),
+    ];
     render(<Cronograma {...defaultProps} subjects={subjects} />);
     expect(screen.getByText('No Prazo')).toBeInTheDocument();
   });
@@ -171,14 +181,14 @@ describe('Cronograma', () => {
     const { container } = render(<Cronograma {...defaultProps} subjects={subjects} />);
 
     fireEvent.click(screen.getByRole('button', { name: /revisar/i }));
-    
+
     const dateInput = container.querySelector('input[type="date"]');
-    if(dateInput) fireEvent.change(dateInput, { target: { value: '2023-01-01' } });
+    if (dateInput) fireEvent.change(dateInput, { target: { value: '2023-01-01' } });
 
     const numberInputs = container.querySelectorAll('input[type="number"]');
-    if(numberInputs[0]) fireEvent.change(numberInputs[0], { target: { value: '20' } });
-    if(numberInputs[1]) fireEvent.change(numberInputs[1], { target: { value: '18' } });
-    
+    if (numberInputs[0]) fireEvent.change(numberInputs[0], { target: { value: '20' } });
+    if (numberInputs[1]) fireEvent.change(numberInputs[1], { target: { value: '18' } });
+
     // Testar click background overlay closeModal
     const overlay = container.querySelector('.fixed.inset-0.bg-navy\\/20'); // The dialog overlay
     if (overlay) {
@@ -190,14 +200,21 @@ describe('Cronograma', () => {
     const onResetCiclo = vi.fn();
     const onRevertStage = vi.fn();
     const subjects = [makeSubject({ id: 'sub-test', currentStage: 'Review' })];
-    
-    render(<Cronograma {...defaultProps} subjects={subjects} onResetCiclo={onResetCiclo} onRevertStage={onRevertStage} />);
+
+    render(
+      <Cronograma
+        {...defaultProps}
+        subjects={subjects}
+        onResetCiclo={onResetCiclo}
+        onRevertStage={onRevertStage}
+      />,
+    );
 
     const menuButtons = document.querySelectorAll('button > svg > path[d^="M12 5v.01M12"]'); // Ellipsis button
     if (menuButtons[0]) {
       const btn = menuButtons[0].closest('button');
       fireEvent.click(btn!);
-      
+
       const resetCicloBtn = screen.getByText('Resetar Ciclo');
       fireEvent.click(resetCicloBtn);
       expect(onResetCiclo).toHaveBeenCalledWith('sub-test');
@@ -207,7 +224,7 @@ describe('Cronograma', () => {
       const revertEstabilidadeBtn = screen.getByText('Reverter Estabilidade');
       fireEvent.click(revertEstabilidadeBtn);
       expect(onRevertStage).toHaveBeenCalledWith('sub-test');
-      
+
       // Test the overlay for menu
       fireEvent.click(btn!);
       const overlay = document.querySelector('.fixed.inset-0.z-10');

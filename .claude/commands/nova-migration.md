@@ -5,6 +5,7 @@ O argumento fornecido pelo usuário descreve o que a migration deve fazer: $ARGU
 ## Passo 1 — Identificar o próximo número de versão
 
 Liste os arquivos existentes:
+
 ```bash
 ls backend/src/main/resources/db/migration/
 ```
@@ -14,6 +15,7 @@ As migrations seguem o padrão `V{n}__descricao.sql`. Identifique o maior `n` ex
 ## Passo 2 — Definir o nome do arquivo
 
 Converta a descrição do usuário para snake_case. Exemplos (assumindo que a próxima versão livre é `V13`):
+
 - "criar tabela de notificações" → `V13__criar_tabela_de_notificacoes.sql`
 - "adicionar coluna created_at em subjects" → `V13__adicionar_coluna_created_at_em_subjects.sql`
 - "criar índice em review_events" → `V13__criar_indice_em_review_events.sql`
@@ -27,6 +29,7 @@ Antes de criar a migration, leia os arquivos relevantes em `backend/src/main/jav
 Crie o arquivo em `backend/src/main/resources/db/migration/` com o SQL apropriado.
 
 **Boas práticas obrigatórias:**
+
 - Use `IF NOT EXISTS` em `CREATE TABLE` e `CREATE INDEX`
 - Use `IF EXISTS` em `DROP TABLE` e `DROP INDEX`
 - Para colunas novas em tabelas existentes: adicione `DEFAULT` se a coluna for `NOT NULL`
@@ -35,6 +38,7 @@ Crie o arquivo em `backend/src/main/resources/db/migration/` com o SQL apropriad
 ## Passo 5 — Alertas
 
 Após criar o arquivo, informe:
+
 - O nome exato do arquivo criado
 - Se a migration é **reversível** (pode ser desfeita sem perda de dados) ou **irreversível**
 - Se há dependências (ex: foreign keys, índices que afetam queries existentes)

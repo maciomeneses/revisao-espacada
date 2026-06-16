@@ -1,10 +1,24 @@
 import { useMemo, useState } from 'react';
 import {
-  TrendingUp, BookOpen, BarChart3, CheckCircle2, Calendar,
-  Target, Trophy, AlertCircle, ChevronLeft, ChevronRight, X,
+  TrendingUp,
+  BookOpen,
+  BarChart3,
+  CheckCircle2,
+  Calendar,
+  Target,
+  Trophy,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import type { Subject } from '../types';
@@ -27,11 +41,16 @@ function getAccuracy(e: ReviewEventPayload): number | null {
   if (e.accuracy > 0) return e.accuracy;
   // Fallback proxy for old data
   switch (e.performance) {
-    case 'excelente': return 95;
-    case 'bom':       return 75;
-    case 'medio':     return 55;
-    case 'ruim':      return 20;
-    default:          return null;
+    case 'excelente':
+      return 95;
+    case 'bom':
+      return 75;
+    case 'medio':
+      return 55;
+    case 'ruim':
+      return 20;
+    default:
+      return null;
   }
 }
 
@@ -49,7 +68,9 @@ function StatCard({ label, value, deltaStr, color, icon: Icon }: StatCardProps) 
   return (
     <div className="bg-white p-6 rounded-2xl border border-border shadow-sm">
       <div className="flex items-start justify-between mb-3">
-        <p className="text-muted-light text-[10px] font-black uppercase tracking-widest leading-snug">{label}</p>
+        <p className="text-muted-light text-[10px] font-black uppercase tracking-widest leading-snug">
+          {label}
+        </p>
         <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-navy/5 shrink-0 ml-2">
           <Icon className="w-4 h-4 text-navy/40" />
         </div>
@@ -77,7 +98,20 @@ interface ChartDataPoint {
   revisoesConcluidas: number;
 }
 
-const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MONTHS_SHORT = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+];
 
 function buildWeeklyData(events: ReviewEventPayload[], numWeeks: number): ChartDataPoint[] {
   const today = new Date();
@@ -92,14 +126,11 @@ function buildWeeklyData(events: ReviewEventPayload[], numWeeks: number): ChartD
     const startStr = localDateStr(startDate);
     const endStr = localDateStr(endDate);
 
-    const inBucket = events.filter(
-      e => e.reviewDate >= startStr && e.reviewDate <= endStr,
-    );
+    const inBucket = events.filter((e) => e.reviewDate >= startStr && e.reviewDate <= endStr);
 
-    const withAcc = inBucket.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
-    const acuraciaMedia = withAcc.length > 0
-      ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
-      : 0;
+    const withAcc = inBucket.map((e) => getAccuracy(e)).filter((v): v is number => v !== null);
+    const acuraciaMedia =
+      withAcc.length > 0 ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length) : 0;
 
     const label = `${String(startDate.getDate()).padStart(2, '0')} ${MONTHS_SHORT[startDate.getMonth()]}`;
 
@@ -107,7 +138,7 @@ function buildWeeklyData(events: ReviewEventPayload[], numWeeks: number): ChartD
       label,
       totalQuestoes: inBucket.reduce((sum, e) => sum + e.questions, 0),
       acuraciaMedia,
-      assuntosNovos: inBucket.filter(e => e.reps === 1).length,
+      assuntosNovos: inBucket.filter((e) => e.reps === 1).length,
       revisoesConcluidas: inBucket.length,
     });
   }
@@ -128,14 +159,11 @@ function buildMonthlyData(events: ReviewEventPayload[], numMonths: number): Char
     const lastDay = new Date(year, month + 1, 0).getDate();
     const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    const inBucket = events.filter(
-      e => e.reviewDate >= startStr && e.reviewDate <= endStr,
-    );
+    const inBucket = events.filter((e) => e.reviewDate >= startStr && e.reviewDate <= endStr);
 
-    const withAcc = inBucket.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
-    const acuraciaMedia = withAcc.length > 0
-      ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length)
-      : 0;
+    const withAcc = inBucket.map((e) => getAccuracy(e)).filter((v): v is number => v !== null);
+    const acuraciaMedia =
+      withAcc.length > 0 ? Math.round(withAcc.reduce((a, v) => a + v, 0) / withAcc.length) : 0;
 
     const label = `${MONTHS_SHORT[month]}${year !== today.getFullYear() ? ` '${String(year).slice(2)}` : ''}`;
 
@@ -143,7 +171,7 @@ function buildMonthlyData(events: ReviewEventPayload[], numMonths: number): Char
       label,
       totalQuestoes: inBucket.reduce((sum, e) => sum + e.questions, 0),
       acuraciaMedia,
-      assuntosNovos: inBucket.filter(e => e.reps === 1).length,
+      assuntosNovos: inBucket.filter((e) => e.reps === 1).length,
       revisoesConcluidas: inBucket.length,
     });
   }
@@ -153,9 +181,12 @@ function buildMonthlyData(events: ReviewEventPayload[], numMonths: number): Char
 
 function getChartData(events: ReviewEventPayload[], filter: ChartFilter): ChartDataPoint[] {
   switch (filter) {
-    case 'semanas': return buildWeeklyData(events, 8);
-    case '3meses':  return buildWeeklyData(events, 12);
-    case '6meses':  return buildMonthlyData(events, 6);
+    case 'semanas':
+      return buildWeeklyData(events, 8);
+    case '3meses':
+      return buildWeeklyData(events, 12);
+    case '6meses':
+      return buildMonthlyData(events, 6);
   }
 }
 
@@ -171,7 +202,15 @@ interface MiniChartProps {
   unit?: string;
 }
 
-function MiniChart({ data, dataKey, label, color, gradientId, icon: Icon, unit = '' }: MiniChartProps) {
+function MiniChart({
+  data,
+  dataKey,
+  label,
+  color,
+  gradientId,
+  icon: Icon,
+  unit = '',
+}: MiniChartProps) {
   return (
     <div className="bg-white border border-border rounded-3xl shadow-sm p-5">
       <div className="flex items-center gap-2 mb-4">
@@ -213,7 +252,12 @@ function MiniChart({ data, dataKey, label, color, gradientId, icon: Icon, unit =
               padding: '6px 12px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
             }}
-            labelStyle={{ color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: 700, marginBottom: 2 }}
+            labelStyle={{
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: 9,
+              fontWeight: 700,
+              marginBottom: 2,
+            }}
             itemStyle={{ color: '#fff', fontSize: 12, fontWeight: 900, padding: 0 }}
             formatter={(v) => [`${v}${unit}`, label]}
           />
@@ -246,12 +290,12 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
     cutoffDate.setDate(cutoffDate.getDate() - 7);
     const cutoff = localDateStr(cutoffDate);
 
-    const recentEvents = reviewEvents.filter(e => e.reviewDate >= cutoff);
+    const recentEvents = reviewEvents.filter((e) => e.reviewDate >= cutoff);
 
     const totalAssuntos = subjects.length;
     // New subjects: events with reps === 1 in the last 7 days (unique subjects)
     const newSubjectIds = new Set(
-      reviewEvents.filter(e => e.reps === 1 && e.reviewDate >= cutoff).map(e => e.subjectId),
+      reviewEvents.filter((e) => e.reps === 1 && e.reviewDate >= cutoff).map((e) => e.subjectId),
     );
     const totalAssuntosRecent = newSubjectIds.size;
 
@@ -262,29 +306,37 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
     const revisoesConcluidas = reviewEvents.length;
     const revisoesConcluidasRecent = recentEvents.length;
 
-    const revisoesHoje = subjects.filter(s => s.nextReviewDate && s.nextReviewDate <= today).length;
+    const revisoesHoje = subjects.filter(
+      (s) => s.nextReviewDate && s.nextReviewDate <= today,
+    ).length;
 
-    const conhecimentoEstavel = subjects.filter(s => (s.stability || 0) > 30).length;
-    const recentSubjects = subjects.filter(s => s.lastReviewDate && s.lastReviewDate >= cutoff);
-    const conhecimentoEstavelRecent = recentSubjects.filter(s => (s.stability || 0) > 30).length;
+    const conhecimentoEstavel = subjects.filter((s) => (s.stability || 0) > 30).length;
+    const recentSubjects = subjects.filter((s) => s.lastReviewDate && s.lastReviewDate >= cutoff);
+    const conhecimentoEstavelRecent = recentSubjects.filter((s) => (s.stability || 0) > 30).length;
 
-    const withAcc = reviewEvents.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
-    const avgAcc = withAcc.length > 0
-      ? withAcc.reduce((a, v) => a + v, 0) / withAcc.length
-      : 0;
+    const withAcc = reviewEvents.map((e) => getAccuracy(e)).filter((v): v is number => v !== null);
+    const avgAcc = withAcc.length > 0 ? withAcc.reduce((a, v) => a + v, 0) / withAcc.length : 0;
 
-    const recentWithAcc = recentEvents.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
-    const avgAccRecent = recentWithAcc.length > 0
-      ? recentWithAcc.reduce((a, v) => a + v, 0) / recentWithAcc.length
-      : null;
+    const recentWithAcc = recentEvents
+      .map((e) => getAccuracy(e))
+      .filter((v): v is number => v !== null);
+    const avgAccRecent =
+      recentWithAcc.length > 0
+        ? recentWithAcc.reduce((a, v) => a + v, 0) / recentWithAcc.length
+        : null;
 
     return {
-      totalAssuntos, totalAssuntosRecent,
-      totalQuestoes, totalQuestoesRecent,
-      revisoesConcluidas, revisoesConcluidasRecent,
+      totalAssuntos,
+      totalAssuntosRecent,
+      totalQuestoes,
+      totalQuestoesRecent,
+      revisoesConcluidas,
+      revisoesConcluidasRecent,
       revisoesHoje,
-      conhecimentoEstavel, conhecimentoEstavelRecent,
-      avgAcc, avgAccRecent,
+      conhecimentoEstavel,
+      conhecimentoEstavelRecent,
+      avgAcc,
+      avgAccRecent,
     };
   }, [subjects, reviewEvents]);
 
@@ -296,8 +348,12 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
       if (acc === null) continue;
       if (!subjectAccMap.has(e.subjectId)) {
         // Try to find area from current subjects list
-        const subj = subjects.find(s => s.id === e.subjectId);
-        subjectAccMap.set(e.subjectId, { name: e.subjectName, area: subj?.area ?? '', accValues: [] });
+        const subj = subjects.find((s) => s.id === e.subjectId);
+        subjectAccMap.set(e.subjectId, {
+          name: e.subjectName,
+          area: subj?.area ?? '',
+          accValues: [],
+        });
       }
       subjectAccMap.get(e.subjectId)!.accValues.push(acc);
     }
@@ -325,7 +381,7 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
   const historyData = useMemo(() => {
     const areaMap = new Map<string, Map<string, { name: string; events: ReviewEventPayload[] }>>();
     for (const e of reviewEvents) {
-      const subj = subjects.find(s => s.id === e.subjectId);
+      const subj = subjects.find((s) => s.id === e.subjectId);
       const area = subj?.area ?? 'Sem área';
       if (!areaMap.has(area)) areaMap.set(area, new Map());
       const subjMap = areaMap.get(area)!;
@@ -346,12 +402,16 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
       {/* Header */}
       <div>
         <h2 className="text-2xl font-black text-navy uppercase tracking-tight">Estatísticas</h2>
-        <p className="text-muted text-sm mt-1 font-medium">Visão geral do seu progresso de estudos</p>
+        <p className="text-muted text-sm mt-1 font-medium">
+          Visão geral do seu progresso de estudos
+        </p>
       </div>
 
       {/* Stat cards */}
       <div>
-        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">Visão Geral</p>
+        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">
+          Visão Geral
+        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
             label="Total de Assuntos"
@@ -375,7 +435,9 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
             <StatCard
               label="Revisões Concluídas"
               value={stats.revisoesConcluidas}
-              deltaStr={stats.revisoesConcluidasRecent > 0 ? `+${stats.revisoesConcluidasRecent}` : null}
+              deltaStr={
+                stats.revisoesConcluidasRecent > 0 ? `+${stats.revisoesConcluidasRecent}` : null
+              }
               color="text-green-600"
               icon={CheckCircle2}
             />
@@ -458,30 +520,40 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
 
       {/* Performance lists */}
       <div>
-        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">Desempenho por Assunto</p>
+        <p className="text-[10px] font-black text-muted-light uppercase tracking-widest mb-3">
+          Desempenho por Assunto
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Maiores desempenhos */}
           <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
               <Trophy className="w-4 h-4 text-green-500 shrink-0" />
-              <span className="font-black text-navy text-sm uppercase tracking-tight">Pontos Fortes</span>
+              <span className="font-black text-navy text-sm uppercase tracking-tight">
+                Pontos Fortes
+              </span>
             </div>
             <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
               {performerData.top.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
-                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhum dado ainda</p>
+                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">
+                    Nenhum dado ainda
+                  </p>
                 </div>
               ) : (
-                performerData.top.map(s => (
+                performerData.top.map((s) => (
                   <div
                     key={s.id}
                     className="flex items-center justify-between bg-surface rounded-xl px-4 py-3 border border-border/50"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-navy font-bold text-sm truncate">{s.aulaPrincipal}</p>
-                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">{s.area}</p>
+                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">
+                        {s.area}
+                      </p>
                     </div>
-                    <span className="text-green-600 font-black text-sm shrink-0 ml-3">{s.acc.toFixed(2)}%</span>
+                    <span className="text-green-600 font-black text-sm shrink-0 ml-3">
+                      {s.acc.toFixed(2)}%
+                    </span>
                   </div>
                 ))
               )}
@@ -492,24 +564,32 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
           <div className="bg-white border border-border rounded-3xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="font-black text-navy text-sm uppercase tracking-tight">Pontos a Melhorar</span>
+              <span className="font-black text-navy text-sm uppercase tracking-tight">
+                Pontos a Melhorar
+              </span>
             </div>
             <div className="p-4 space-y-2 max-h-[320px] overflow-y-auto">
               {performerData.bottom.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
-                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhum dado ainda</p>
+                  <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">
+                    Nenhum dado ainda
+                  </p>
                 </div>
               ) : (
-                performerData.bottom.map(s => (
+                performerData.bottom.map((s) => (
                   <div
                     key={s.id}
                     className="flex items-center justify-between bg-surface rounded-xl px-4 py-3 border border-border/50"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-navy font-bold text-sm truncate">{s.aulaPrincipal}</p>
-                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">{s.area}</p>
+                      <p className="text-muted-light text-[10px] font-black uppercase tracking-wider">
+                        {s.area}
+                      </p>
                     </div>
-                    <span className="text-amber-600 font-black text-sm shrink-0 ml-3">{s.acc.toFixed(2)}%</span>
+                    <span className="text-amber-600 font-black text-sm shrink-0 ml-3">
+                      {s.acc.toFixed(2)}%
+                    </span>
                   </div>
                 ))
               )}
@@ -526,14 +606,16 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
         >
           <div
             className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col overflow-hidden"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <div className="flex items-center gap-1 min-w-0">
-                {(historyArea) && (
+                {historyArea && (
                   <button
-                    onClick={() => historySubjectId ? setHistorySubjectId(null) : setHistoryArea(null)}
+                    onClick={() =>
+                      historySubjectId ? setHistorySubjectId(null) : setHistoryArea(null)
+                    }
                     className="p-1 text-muted-light hover:text-navy transition-colors shrink-0"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -542,10 +624,13 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
                 <p className="font-black text-navy text-sm uppercase tracking-tight truncate">
                   {historySubjectId
                     ? (historyData.get(historyArea!)?.get(historySubjectId)?.name ?? 'Revisões')
-                    : historyArea ?? 'Histórico de Revisões'}
+                    : (historyArea ?? 'Histórico de Revisões')}
                 </p>
               </div>
-              <button onClick={closeHistory} className="p-1 text-muted-light hover:text-navy transition-colors shrink-0">
+              <button
+                onClick={closeHistory}
+                className="p-1 text-muted-light hover:text-navy transition-colors shrink-0"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -553,14 +638,19 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
             {/* Panel content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {/* Level 1 — areas */}
-              {!historyArea && (
-                historyData.size === 0 ? (
+              {!historyArea &&
+                (historyData.size === 0 ? (
                   <div className="flex items-center justify-center py-12">
-                    <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">Nenhuma revisão registrada</p>
+                    <p className="text-muted-light text-xs font-black uppercase tracking-[0.2em]">
+                      Nenhuma revisão registrada
+                    </p>
                   </div>
                 ) : (
                   Array.from(historyData.entries()).map(([area, subjMap]) => {
-                    const total = Array.from(subjMap.values()).reduce((s, v) => s + v.events.length, 0);
+                    const total = Array.from(subjMap.values()).reduce(
+                      (s, v) => s + v.events.length,
+                      0,
+                    );
                     return (
                       <button
                         key={area}
@@ -569,48 +659,56 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
                       >
                         <p className="font-bold text-navy text-sm truncate">{area}</p>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
-                          <span className="text-[10px] font-black text-muted-light">{total} revisões</span>
+                          <span className="text-[10px] font-black text-muted-light">
+                            {total} revisões
+                          </span>
                           <ChevronRight className="w-4 h-4 text-muted-light" />
                         </div>
                       </button>
                     );
                   })
-                )
-              )}
+                ))}
 
               {/* Level 2 — subjects in area */}
-              {historyArea && !historySubjectId && (
-                Array.from(historyData.get(historyArea)?.entries() ?? []).map(([subjId, { name, events }]) => {
-                  const accValues = events.map(e => getAccuracy(e)).filter((v): v is number => v !== null);
-                  const avgAcc = accValues.length > 0
-                    ? Math.round(accValues.reduce((a, v) => a + v, 0) / accValues.length)
-                    : null;
-                  const totalSec = events.reduce((s, e) => s + (e.durationSeconds ?? 0), 0);
-                  const durLabel = totalSec > 0
-                    ? `${Math.floor(totalSec / 3600)}h ${Math.floor((totalSec % 3600) / 60)}m`
-                    : null;
-                  return (
-                    <button
-                      key={subjId}
-                      onClick={() => setHistorySubjectId(subjId)}
-                      className="w-full flex items-center justify-between bg-surface hover:bg-navy/5 border border-border rounded-2xl px-4 py-3 transition-colors text-left"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-navy text-sm truncate">{name}</p>
-                        <p className="text-[10px] text-muted font-bold">
-                          {events.length} revisões
-                          {avgAcc !== null ? ` • ${avgAcc}%` : ''}
-                          {durLabel ? ` • ${durLabel}` : ''}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-light shrink-0 ml-2" />
-                    </button>
-                  );
-                })
-              )}
+              {historyArea &&
+                !historySubjectId &&
+                Array.from(historyData.get(historyArea)?.entries() ?? []).map(
+                  ([subjId, { name, events }]) => {
+                    const accValues = events
+                      .map((e) => getAccuracy(e))
+                      .filter((v): v is number => v !== null);
+                    const avgAcc =
+                      accValues.length > 0
+                        ? Math.round(accValues.reduce((a, v) => a + v, 0) / accValues.length)
+                        : null;
+                    const totalSec = events.reduce((s, e) => s + (e.durationSeconds ?? 0), 0);
+                    const durLabel =
+                      totalSec > 0
+                        ? `${Math.floor(totalSec / 3600)}h ${Math.floor((totalSec % 3600) / 60)}m`
+                        : null;
+                    return (
+                      <button
+                        key={subjId}
+                        onClick={() => setHistorySubjectId(subjId)}
+                        className="w-full flex items-center justify-between bg-surface hover:bg-navy/5 border border-border rounded-2xl px-4 py-3 transition-colors text-left"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-navy text-sm truncate">{name}</p>
+                          <p className="text-[10px] text-muted font-bold">
+                            {events.length} revisões
+                            {avgAcc !== null ? ` • ${avgAcc}%` : ''}
+                            {durLabel ? ` • ${durLabel}` : ''}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-light shrink-0 ml-2" />
+                      </button>
+                    );
+                  },
+                )}
 
               {/* Level 3 — individual events */}
-              {historyArea && historySubjectId && (
+              {historyArea &&
+                historySubjectId &&
                 (historyData.get(historyArea)?.get(historySubjectId)?.events ?? [])
                   .slice()
                   .sort((a, b) => b.reviewDate.localeCompare(a.reviewDate))
@@ -620,31 +718,44 @@ export function EspiaoEstrategico({ subjects, reviewEvents }: EspiaoEstrategicoP
                     const h = Math.floor(dur / 3600);
                     const min = Math.floor((dur % 3600) / 60);
                     const sec = dur % 60;
-                    const durStr = dur > 0
-                      ? `${h > 0 ? `${h}h ` : ''}${min}m ${sec}s`
-                      : null;
+                    const durStr = dur > 0 ? `${h > 0 ? `${h}h ` : ''}${min}m ${sec}s` : null;
                     const perfCls =
-                      e.performance === 'excelente' ? 'bg-green-50 text-green-700 border-green-200' :
-                      e.performance === 'bom'       ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      e.performance === 'medio'     ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                                      'bg-red-50 text-red-600 border-red-200';
+                      e.performance === 'excelente'
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : e.performance === 'bom'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : e.performance === 'medio'
+                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            : 'bg-red-50 text-red-600 border-red-200';
                     return (
-                      <div key={i} className="bg-surface border border-border rounded-2xl px-4 py-3 space-y-1">
+                      <div
+                        key={i}
+                        className="bg-surface border border-border rounded-2xl px-4 py-3 space-y-1"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-navy">{fmtDate(e.reviewDate)}</span>
-                          {acc !== null && <span className="text-sm font-black text-navy">{acc}%</span>}
+                          <span className="text-xs font-bold text-navy">
+                            {fmtDate(e.reviewDate)}
+                          </span>
+                          {acc !== null && (
+                            <span className="text-sm font-black text-navy">{acc}%</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-[10px] text-muted font-bold">{e.questions} questões</span>
-                          {durStr && <span className="text-[10px] text-muted font-bold">{durStr}</span>}
-                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${perfCls}`}>
+                          <span className="text-[10px] text-muted font-bold">
+                            {e.questions} questões
+                          </span>
+                          {durStr && (
+                            <span className="text-[10px] text-muted font-bold">{durStr}</span>
+                          )}
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${perfCls}`}
+                          >
                             {e.performance}
                           </span>
                         </div>
                       </div>
                     );
-                  })
-              )}
+                  })}
             </div>
           </div>
         </div>

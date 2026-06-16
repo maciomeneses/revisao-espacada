@@ -1,4 +1,11 @@
-import { LayoutDashboard, Calendar, TrendingUp, Shield, ClipboardList, FolderTree } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Calendar,
+  TrendingUp,
+  Shield,
+  ClipboardList,
+  FolderTree,
+} from 'lucide-react';
 import type { ActiveView, Role } from '../types';
 
 interface HeaderProps {
@@ -10,25 +17,31 @@ interface HeaderProps {
 }
 
 const NAV_ICONS: Record<string, React.ElementType> = {
-  dashboard:  LayoutDashboard,
+  dashboard: LayoutDashboard,
   cronograma: Calendar,
-  espiao:     TrendingUp,
-  provas:     ClipboardList,
+  espiao: TrendingUp,
+  provas: ClipboardList,
   categorias: FolderTree,
-  admin:      Shield,
+  admin: Shield,
 };
 
-export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, onLogout }: HeaderProps) {
+export function Header({
+  activeView,
+  userRole,
+  onViewChange,
+  onOpenGerenciar,
+  onLogout,
+}: HeaderProps) {
   const navItems: { id: ActiveView; label: string; adminOnly?: boolean }[] = [
-    { id: 'dashboard',  label: 'Início' },
+    { id: 'dashboard', label: 'Início' },
     { id: 'cronograma', label: 'Estudos' },
-    { id: 'espiao',     label: 'Estatísticas' },
-    { id: 'provas',     label: 'Provas' },
+    { id: 'espiao', label: 'Estatísticas' },
+    { id: 'provas', label: 'Provas' },
     { id: 'categorias', label: 'Categorias' },
-    { id: 'admin',      label: 'Admin', adminOnly: true },
+    { id: 'admin', label: 'Admin', adminOnly: true },
   ];
 
-  const visibleItems = navItems.filter(item => !item.adminOnly || userRole === 'ADMIN');
+  const visibleItems = navItems.filter((item) => !item.adminOnly || userRole === 'ADMIN');
 
   return (
     <>
@@ -88,10 +101,7 @@ export function Header({ activeView, userRole, onViewChange, onOpenGerenciar, on
                 {active && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-yellow rounded-full" />
                 )}
-                <Icon
-                  className="w-5 h-5"
-                  strokeWidth={active ? 2.5 : 1.8}
-                />
+                <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
                 <span className="text-[9px] font-black uppercase tracking-wider leading-none">
                   {item.label}
                 </span>

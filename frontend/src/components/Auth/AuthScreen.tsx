@@ -58,7 +58,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full relative">
         {/* Back to Landing link */}
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="absolute -top-12 left-0 flex items-center gap-2 text-navy/40 hover:text-navy text-xs font-black uppercase tracking-widest transition-all group"
         >
@@ -82,7 +82,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5"
+                  >
                     E-mail
                   </label>
                   <div className="relative">
@@ -103,12 +106,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label htmlFor="password" className="block text-xs font-semibold text-navy uppercase tracking-wide">
+                    <label
+                      htmlFor="password"
+                      className="block text-xs font-semibold text-navy uppercase tracking-wide"
+                    >
                       Senha
                     </label>
                     <button
                       type="button"
-                      onClick={() => { setMode('forgot-password'); setError(null); setSuccessMessage(null); }}
+                      onClick={() => {
+                        setMode('forgot-password');
+                        setError(null);
+                        setSuccessMessage(null);
+                      }}
                       className="text-xs text-sky hover:text-sky-dark transition-colors"
                     >
                       Esqueceu a senha?
@@ -142,8 +152,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                   disabled={isLoading}
                   className="w-full font-bold py-3 rounded-full transition-all shadow-md flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ backgroundColor: '#FFC72C', color: '#1F3A5F' }}
-                  onMouseEnter={e => !isLoading && ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')}
-                  onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')}
+                  onMouseEnter={(e) =>
+                    !isLoading &&
+                    ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')
+                  }
                 >
                   {isLoading ? 'Entrando...' : 'Entrar'}
                 </button>
@@ -158,7 +173,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           ) : (
             <>
               <button
-                onClick={() => { setMode('login'); setError(null); setSuccessMessage(null); }}
+                onClick={() => {
+                  setMode('login');
+                  setError(null);
+                  setSuccessMessage(null);
+                }}
                 className="flex items-center gap-2 text-muted hover:text-navy transition-colors mb-6 text-sm"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -172,7 +191,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div>
-                  <label htmlFor="recover-email" className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5">
+                  <label
+                    htmlFor="recover-email"
+                    className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5"
+                  >
                     E-mail cadastrado
                   </label>
                   <div className="relative">

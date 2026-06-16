@@ -44,7 +44,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ token,
       setError(
         err instanceof Error
           ? err.message
-          : 'Token inválido ou expirado. Solicite um novo link de recuperação.'
+          : 'Token inválido ou expirado. Solicite um novo link de recuperação.',
       );
     } finally {
       setIsLoading(false);
@@ -68,9 +68,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ token,
 
         <div className="bg-white border border-[#e2e8f0] rounded-2xl p-8 shadow-md">
           <h2 className="text-xl font-bold text-navy mb-2">Redefinir senha</h2>
-          <p className="text-muted text-sm mb-6">
-            Escolha uma nova senha para a sua conta.
-          </p>
+          <p className="text-muted text-sm mb-6">Escolha uma nova senha para a sua conta.</p>
 
           {success ? (
             <div className="space-y-4">
@@ -85,8 +83,12 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ token,
                 onClick={onSuccess}
                 className="w-full font-bold py-3 rounded-full transition-all shadow-md flex items-center justify-center gap-2"
                 style={{ backgroundColor: '#FFC72C', color: '#1F3A5F' }}
-                onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')}
-                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')
+                }
               >
                 Ir para o login
               </button>
@@ -145,8 +147,13 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ token,
                 disabled={isLoading}
                 className="w-full font-bold py-3 rounded-full transition-all shadow-md flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: '#FFC72C', color: '#1F3A5F' }}
-                onMouseEnter={e => !isLoading && ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')}
-                onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')}
+                onMouseEnter={(e) =>
+                  !isLoading &&
+                  ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#e6b000')
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#FFC72C')
+                }
               >
                 {isLoading ? 'Salvando...' : 'Redefinir senha'}
               </button>

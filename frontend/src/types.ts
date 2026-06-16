@@ -4,7 +4,7 @@ export type Role = 'USER' | 'ADMIN';
 
 export interface ExamEntry {
   id: number;
-  examDate: string;       // YYYY-MM-DD
+  examDate: string; // YYYY-MM-DD
   examName: string;
   examType?: string;
   scorePercent: number;
@@ -39,13 +39,7 @@ export type Relevance = 'Alta' | 'Média' | 'Baixa' | string;
 export type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string;
 export type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente' | string;
 
-export type ReviewStage =
-  | 'aula'
-  | 'Learning'
-  | 'Review'
-  | 'Relearning'
-  | 'New'
-  | string;
+export type ReviewStage = 'aula' | 'Learning' | 'Review' | 'Relearning' | 'New' | string;
 
 export interface Subject {
   id: string;
@@ -89,9 +83,9 @@ export interface RoutineSlot {
   dayOfWeek: number; // 0=Dom, 1=Seg, ..., 6=Sáb
   title: string;
   startTime?: string; // "HH:MM"
-  endTime?: string;   // "HH:MM"
+  endTime?: string; // "HH:MM"
   type: 'study' | 'other';
-  area?: string;      // só quando type === 'study'; casa com Subject.area
+  area?: string; // só quando type === 'study'; casa com Subject.area
 }
 
 export type StudentRoutine = RoutineSlot[];

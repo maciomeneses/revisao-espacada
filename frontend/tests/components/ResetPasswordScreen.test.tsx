@@ -166,7 +166,7 @@ describe('ResetPasswordScreen', () => {
 
   it('exibe mensagem de erro da API quando o token é inválido', async () => {
     mockedApi.auth.resetPassword.mockRejectedValue(
-      new Error('Token de reset inválido ou expirado')
+      new Error('Token de reset inválido ou expirado'),
     );
 
     render(<ResetPasswordScreen token={VALID_TOKEN} onSuccess={mockOnSuccess} />);
@@ -198,7 +198,9 @@ describe('ResetPasswordScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /redefinir senha/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/token inválido ou expirado. solicite um novo link/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/token inválido ou expirado. solicite um novo link/i),
+      ).toBeInTheDocument();
     });
   });
 
@@ -227,7 +229,9 @@ describe('ResetPasswordScreen', () => {
   it('exibe "Salvando..." e desabilita o botão durante o envio', async () => {
     let resolveReset: () => void;
     mockedApi.auth.resetPassword.mockReturnValue(
-      new Promise<void>(resolve => { resolveReset = resolve; })
+      new Promise<void>((resolve) => {
+        resolveReset = resolve;
+      }),
     );
 
     render(<ResetPasswordScreen token={VALID_TOKEN} onSuccess={mockOnSuccess} />);

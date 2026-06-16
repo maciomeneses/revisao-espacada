@@ -6,9 +6,15 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
   };
 })();
 Object.defineProperty(global, 'localStorage', { value: localStorageMock });
@@ -19,10 +25,18 @@ const USER_KEY = `revisaENEM_subjects_v2_${EMAIL}`;
 function makeSubject(id: string, overrides: Partial<Subject> = {}): Subject {
   return {
     id,
-    modulo: 'M', area: 'A', aulaPrincipal: 'Aula', relevancia: 'Alta',
-    aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-    currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-    lastPerformance: null, performanceLevel: 'nao_classificada',
+    modulo: 'M',
+    area: 'A',
+    aulaPrincipal: 'Aula',
+    relevancia: 'Alta',
+    aulaAssistida: false,
+    preAulaFeita: false,
+    flashcardsFeitos: false,
+    currentStage: 'aula',
+    nextReviewDate: null,
+    lastReviewDate: null,
+    lastPerformance: null,
+    performanceLevel: 'nao_classificada',
     ...overrides,
   } as Subject;
 }

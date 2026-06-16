@@ -4,10 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'backend/**'
+      - "backend/**"
   pull_request:
     paths:
-      - 'backend/**'
+      - "backend/**"
   workflow_dispatch:
 
 jobs:
@@ -22,9 +22,9 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          java-version: '21'   # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI
-          distribution: 'temurin'
-          cache: 'gradle'
+          java-version: "21" # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI
+          distribution: "temurin"
+          cache: "gradle"
 
       - name: Build & Test
         run: ./gradlew build --no-daemon

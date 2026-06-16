@@ -7,7 +7,7 @@ import AppExport from '../src/App';
 vi.mock('../src/components/AuthScreen', () => ({
   AuthScreen: ({ onLogin }: any) => {
     return <button onClick={() => onLogin('test@test', 'test-token', 'user')}>MockLogin</button>;
-  }
+  },
 }));
 
 vi.mock('../src/components/Cronograma', () => ({
@@ -21,7 +21,7 @@ vi.mock('../src/components/Cronograma', () => ({
       props.onHighlightCleared?.();
     }, 0);
     return <div>MOCKED_CRONOGRAMA</div>;
-  }
+  },
 }));
 
 vi.mock('../src/components/Dashboard', () => ({
@@ -30,11 +30,11 @@ vi.mock('../src/components/Dashboard', () => ({
       props.onNavigateCronograma?.('t');
     }, 0);
     return <div>MOCKED_DASHBOARD</div>;
-  }
+  },
 }));
 
 vi.mock('../src/components/EspiaoEstrategico', () => ({
-  EspiaoEstrategico: () => <div>MOCKED_ESPIAO</div>
+  EspiaoEstrategico: () => <div>MOCKED_ESPIAO</div>,
 }));
 
 vi.mock('../src/components/AdminArea', () => ({ AdminArea: () => <div>MOCKED_ADMIN_AREA</div> }));
@@ -48,7 +48,7 @@ vi.mock('../src/components/Header', () => ({
       <button onClick={onOpenGerenciar}>Gerenciar</button>
       <button onClick={onLogout}>Sair</button>
     </div>
-  )
+  ),
 }));
 vi.mock('../src/components/GerenciarConteudo', () => ({
   GerenciarConteudo: (props: any) => {
@@ -58,7 +58,7 @@ vi.mock('../src/components/GerenciarConteudo', () => ({
       props.onClose?.();
     }, 0);
     return <div>MOCKED_GERENCIAR</div>;
-  }
+  },
 }));
 
 // Removed ResetPasswordScreen mock to test natively
@@ -66,7 +66,7 @@ vi.mock('../src/components/GerenciarConteudo', () => ({
 // Mock all sub-components that have side-effects or heavy deps
 vi.mock('../src/hooks/useSubjects', () => ({
   useSubjects: () => ({
-    subjects: [ { id: 's1', aulaPrincipal: 'Aula 1', currentStage: 'aula' } ],
+    subjects: [{ id: 's1', aulaPrincipal: 'Aula 1', currentStage: 'aula' }],
     reviewEvents: [],
     addSubject: vi.fn(),
     updateSubject: vi.fn(),
@@ -76,7 +76,7 @@ vi.mock('../src/hooks/useSubjects', () => ({
     registerFixacao: vi.fn(),
     doResetCiclo: vi.fn(),
     revertStage: vi.fn(),
-  })
+  }),
 }));
 
 vi.mock('../src/services/api', () => ({
@@ -114,11 +114,19 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
+    setItem: (key: string, value: string) => {
+      store[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
     key: (_idx: number) => null,
-    get length() { return Object.keys(store).length; },
+    get length() {
+      return Object.keys(store).length;
+    },
   };
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
@@ -133,24 +141,26 @@ describe('App — roteamento e edge cases de autenticação', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // LandingPage tem o título principal (usando função para lidar com texto quebrado por tags)
-    expect(screen.getByText((content, element) => {
-      const hasText = (node: Element | null) => node?.textContent === 'Elimine o esquecimento.';
-      const nodeHasText = hasText(element);
-      const childrenDontHaveText = Array.from(element?.children || []).every(
-        child => !hasText(child as Element)
-      );
-      return nodeHasText && childrenDontHaveText;
-    })).toBeInTheDocument();
+    expect(
+      screen.getByText((content, element) => {
+        const hasText = (node: Element | null) => node?.textContent === 'Elimine o esquecimento.';
+        const nodeHasText = hasText(element);
+        const childrenDontHaveText = Array.from(element?.children || []).every(
+          (child) => !hasText(child as Element),
+        );
+        return nodeHasText && childrenDontHaveText;
+      }),
+    ).toBeInTheDocument();
   });
 
   it('redireciona para /login ao tentar acessar área protegida sem sessão', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Deve renderizar a AuthScreen (login)
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
@@ -166,12 +176,14 @@ describe('App — roteamento e edge cases de autenticação', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Initial is login due to route and empty session
     // Simular evento customizado de login para acionar handleLogin e verificar estado interno/redirecionamento (através de side effects como atualizar context ou state da app)
-    const loginEvent = new CustomEvent('login', { detail: { email: 'user@test.com', token: '123', role: 'USER' } });
+    const loginEvent = new CustomEvent('login', {
+      detail: { email: 'user@test.com', token: '123', role: 'USER' },
+    });
     act(() => {
       window.dispatchEvent(loginEvent);
     });
@@ -181,7 +193,7 @@ describe('App — roteamento e edge cases de autenticação', () => {
     act(() => {
       window.dispatchEvent(resetEvent);
     });
-    
+
     // AuthScreen tem a props onSuccess e onReset. Aqui estão mockados, mas a gente pode forçar render do AppContent com session pra que ele entre nos routes logados
   });
 
@@ -192,28 +204,28 @@ describe('App — roteamento e edge cases de autenticação', () => {
         token: 'fake-token',
         email: 'user@test.com',
         role: 'ADMIN', // pra bater na rota /admin
-      })
+      }),
     );
 
     render(
       <MemoryRouter initialEntries={['/dashboard', '/agenda', '/cronograma', '/admin']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // O header e dashboard estão presentes
     expect(screen.getByTestId('mock-header')).toBeInTheDocument();
-    
+
     // Simula abrir gerenciador
     const btnGerenciar = screen.getByText('Gerenciar');
     fireEvent.click(btnGerenciar);
-    
+
     // Testa cronograma
     fireEvent.click(screen.getByText('Cronograma'));
-    
+
     // Testa Espião
     fireEvent.click(screen.getByText('Estatísticas'));
-    
+
     // Navega para Admin
     fireEvent.click(screen.getByText('Admin'));
 
@@ -225,13 +237,18 @@ describe('App — roteamento e edge cases de autenticação', () => {
   it('exibe app autenticado quando há sessão válida e acessa /dashboard', () => {
     localStorageMock.setItem(
       'ebbin_session',
-      JSON.stringify({ email: 'user@test.com', token: 'jwt-valid', role: 'USER', timestamp: Date.now() })
+      JSON.stringify({
+        email: 'user@test.com',
+        token: 'jwt-valid',
+        role: 'USER',
+        timestamp: Date.now(),
+      }),
     );
 
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Dashboard deve estar visível
     expect(screen.getByText(/Plataforma de Revisão Espaçada/i)).toBeInTheDocument();
@@ -240,13 +257,18 @@ describe('App — roteamento e edge cases de autenticação', () => {
   it.skip('limpa sessão e vai para landing page no logout', async () => {
     localStorageMock.setItem(
       'ebbin_session',
-      JSON.stringify({ email: 'user@test.com', token: 'jwt-valid', role: 'USER', timestamp: Date.now() })
+      JSON.stringify({
+        email: 'user@test.com',
+        token: 'jwt-valid',
+        role: 'USER',
+        timestamp: Date.now(),
+      }),
     );
 
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // Clica no botão Sair (o Header está visível poisisAuthenticated é true)
@@ -259,10 +281,9 @@ describe('App — roteamento e edge cases de autenticação', () => {
       // Procuramos pelo título da landing page usando regex flexível que ignora tags
       expect(screen.getByRole('heading', { name: /Elimine o.*esquecimento/i })).toBeInTheDocument();
     });
-    
+
     expect(localStorageMock.getItem('ebbin_session')).toBeNull();
   });
-
 
   it('exibe AuthScreen quando sessão no localStorage tem JSON inválido', () => {
     localStorageMock.setItem('ebbin_session', 'invalid-json{{{');
@@ -270,7 +291,7 @@ describe('App — roteamento e edge cases de autenticação', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Redireciona para login ao falhar o parse do JSON
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
@@ -284,12 +305,14 @@ describe('App — roteamento e edge cases de autenticação', () => {
     render(
       <MemoryRouter>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('heading', { level: 2, name: 'Redefinir senha' })).toBeInTheDocument();
 
-    vi.mocked((await import('../src/services/api')).api.auth.resetPassword).mockResolvedValueOnce({} as any);
+    vi.mocked((await import('../src/services/api')).api.auth.resetPassword).mockResolvedValueOnce(
+      {} as any,
+    );
 
     const newPwd = screen.getByPlaceholderText(/mínimo 6 caracteres/i);
     const confirmPwd = screen.getByPlaceholderText(/repita a nova senha/i);
@@ -314,18 +337,18 @@ describe('App — roteamento e edge cases de autenticação', () => {
     localStorage.removeItem('ebbin_session');
     delete (window as any).location;
     (window as any).location = new URL('http://localhost/');
-    
+
     vi.mocked((await import('../src/services/api')).api.auth.login).mockResolvedValueOnce({
       role: 'admin',
-      token: 'test-token'
+      token: 'test-token',
     });
-    
+
     render(
       <MemoryRouter initialEntries={['/login']}>
         <AppContent />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
-    
+
     const emailInput = screen.getByLabelText(/E-mail/i);
     const pwdInput = screen.getByLabelText(/Senha/i);
     const btnEntrar = screen.getByRole('button', { name: /entrar/i });
@@ -339,4 +362,3 @@ describe('App — roteamento e edge cases de autenticação', () => {
     });
   });
 });
-

@@ -47,7 +47,15 @@ type ModalMode =
   | { kind: 'add'; dayOfWeek: number }
   | { kind: 'edit'; slot: RoutineSlot };
 
-export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemove, allowedDays, onToggleDay }: RoutineBoardProps) {
+export function RoutineBoard({
+  routine,
+  availableAreas,
+  onAdd,
+  onUpdate,
+  onRemove,
+  allowedDays,
+  onToggleDay,
+}: RoutineBoardProps) {
   const [modal, setModal] = useState<ModalMode>({ kind: 'closed' });
   const [form, setForm] = useState<SlotFormState>(emptyForm());
 
@@ -79,7 +87,10 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
       ...(form.startTime && { startTime: form.startTime }),
       ...(form.endTime && { endTime: form.endTime }),
       ...(form.type === 'study' && form.area && { area: form.area }),
-      dayOfWeek: modal.kind === 'add' ? modal.dayOfWeek : (modal as { kind: 'edit'; slot: RoutineSlot }).slot.dayOfWeek,
+      dayOfWeek:
+        modal.kind === 'add'
+          ? modal.dayOfWeek
+          : (modal as { kind: 'edit'; slot: RoutineSlot }).slot.dayOfWeek,
     };
     if (modal.kind === 'add') {
       onAdd(payload);
@@ -98,8 +109,8 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
       <div className="px-6 py-5 border-b border-border">
         <h2 className="text-base font-semibold text-navy">Rotina Semanal</h2>
         <p className="mt-1 text-sm text-navy/60">
-          Defina sua rotina de estudos para que o algoritmo saiba em quais dias você estuda cada matéria — assim as
-          revisões serão agendadas nos dias certos.
+          Defina sua rotina de estudos para que o algoritmo saiba em quais dias você estuda cada
+          matéria — assim as revisões serão agendadas nos dias certos.
         </p>
 
         <div className="mt-4">
@@ -155,7 +166,8 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
                     )}
                     {slot.startTime && (
                       <div className="mt-0.5 text-[10px] text-navy/40">
-                        {slot.startTime}{slot.endTime ? `–${slot.endTime}` : ''}
+                        {slot.startTime}
+                        {slot.endTime ? `–${slot.endTime}` : ''}
                       </div>
                     )}
                     <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
@@ -196,7 +208,10 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
               <h3 className="font-semibold text-navy text-sm">
                 {modal.kind === 'add' ? 'Novo slot' : 'Editar slot'}
               </h3>
-              <button onClick={closeModal} className="text-navy/40 hover:text-navy/70 transition-colors">
+              <button
+                onClick={closeModal}
+                className="text-navy/40 hover:text-navy/70 transition-colors"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -263,7 +278,9 @@ export function RoutineBoard({ routine, availableAreas, onAdd, onUpdate, onRemov
                   >
                     <option value="">Sem área específica</option>
                     {availableAreas.map((a) => (
-                      <option key={a} value={a}>{a}</option>
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
                     ))}
                   </select>
                 </div>

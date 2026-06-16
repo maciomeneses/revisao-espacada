@@ -8,7 +8,7 @@ describe('LandingPage', () => {
     render(
       <MemoryRouter>
         <LandingPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText(/Acessar Plataforma/i)).toBeInTheDocument();
@@ -20,7 +20,7 @@ describe('LandingPage', () => {
     render(
       <MemoryRouter>
         <LandingPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // A demo avança automaticamente via setInterval (2000ms por step)

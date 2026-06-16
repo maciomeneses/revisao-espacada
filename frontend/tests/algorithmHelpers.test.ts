@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  getProximaTarefa,
-  getFormulaStatus,
-  today,
-  addDays,
-} from '../src/services/algorithm';
+import { getProximaTarefa, getFormulaStatus, today, addDays } from '../src/services/algorithm';
 import type { Subject } from '../src/types';
 
 const makeSubject = (overrides: Partial<Subject>): Subject => ({

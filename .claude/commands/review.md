@@ -3,12 +3,14 @@ Revise as mudanças atuais no projeto Ebbing, roteando para o revisor especializ
 ## Passo 1 — Identificar o escopo das mudanças
 
 Execute:
+
 ```bash
 git diff --stat HEAD
 git diff --stat --cached
 ```
 
 Se não houver diff (nada staged/unstaged), tente:
+
 ```bash
 git diff --stat HEAD~1
 ```

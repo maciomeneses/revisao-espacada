@@ -71,13 +71,11 @@ export function useReviewPreferences(email: string | null) {
     setAllowedDaysState(next);
     if (!email) return;
     if (!localStorage.getItem('ebbing_session')) return;
-    api.preferences
-      .save({ allowedReviewDays: [...next].sort() })
-      .catch((err) => {
-        console.error('preferences save failed:', err);
-        save(email, previous);
-        setAllowedDaysState(previous);
-      });
+    api.preferences.save({ allowedReviewDays: [...next].sort() }).catch((err) => {
+      console.error('preferences save failed:', err);
+      save(email, previous);
+      setAllowedDaysState(previous);
+    });
   }
 
   function toggleDay(day: number): void {

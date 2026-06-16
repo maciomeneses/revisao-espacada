@@ -75,9 +75,7 @@ describe('useReviewPreferences', () => {
 
     const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
 
-    await waitFor(() =>
-      expect(result.current.allowedDays).toEqual(new Set([1, 2, 3, 4, 5])),
-    );
+    await waitFor(() => expect(result.current.allowedDays).toEqual(new Set([1, 2, 3, 4, 5])));
     expect(mockApi.preferences.get).toHaveBeenCalledTimes(1);
   });
 
