@@ -41,7 +41,7 @@ export function AdminArea() {
     try {
       const data = await api.admin.users.list();
       setUsers(data);
-    } catch (err) {
+    } catch {
       setError('Falha ao carregar usuários.');
     } finally {
       setIsLoading(false);
@@ -101,7 +101,7 @@ export function AdminArea() {
       setSuccess('Usuário removido.');
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
+    } catch {
       setError('Erro ao excluir usuário.');
     }
   };

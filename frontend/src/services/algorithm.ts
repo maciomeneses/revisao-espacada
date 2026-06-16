@@ -40,12 +40,12 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     rating = 3; // Good
   else rating = 4; // Easy
 
-  let { stability = 0, difficulty = 0, reps = 0, lapses = 0 } = subject;
+  const { stability = 0, difficulty = 0 } = subject;
+  let { reps = 0, lapses = 0 } = subject;
   const now = new Date();
 
   let nextStability: number;
   let nextDifficulty: number;
-  let scheduledDays: number;
   let state: string;
 
   if (reps === 0 || !stability) {
@@ -95,7 +95,7 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
   }
 
   reps++;
-  scheduledDays = Math.max(1, Math.round(nextStability));
+  const scheduledDays = Math.max(1, Math.round(nextStability));
   const nextReviewDate = new Date();
   nextReviewDate.setDate(now.getDate() + scheduledDays);
 
