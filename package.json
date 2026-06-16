@@ -5,6 +5,7 @@
     "dev": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
     "test": "cd frontend && npm test",
+    "ci": "bash scripts/ci-local.sh",
     "deploy": "cd frontend && npm run deploy",
     "backend:build": "cd backend && ./gradlew build",
     "backend:run": "cd backend && ./gradlew bootRun",

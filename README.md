@@ -39,6 +39,14 @@ npm run format:check     # Prettier
 npm run lint             # ESLint do frontend
 ```
 
+Para rodar o **conjunto completo de validações localmente, equivalente ao CI** do GitHub Actions (útil quando os minutos do Actions estão esgotados):
+
+```bash
+npm run ci               # backend (./gradlew build) + frontend (npm ci + test:coverage)
+npm run ci backend       # só o job de backend
+npm run ci frontend      # só o job de frontend
+```
+
 Para o conjunto completo de comandos, variáveis de ambiente e particularidades de deploy, consulte [`CLAUDE.md`](./CLAUDE.md).
 
 ## Documentação e harness de IA
