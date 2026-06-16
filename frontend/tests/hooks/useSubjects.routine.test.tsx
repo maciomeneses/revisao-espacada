@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSubjects } from '../../src/hooks/useSubjects';
 import { api } from '../../src/services/api';
@@ -54,8 +54,19 @@ function slot(overrides: Partial<RoutineSlot> = {}): RoutineSlot {
 
 describe('useSubjects + routine integration', () => {
   beforeEach(() => {
+    // Fixa apenas o relógio (não os timers) numa data anterior às datas usadas
+    // nos cenários abaixo. Sem isso, as nextReviewDate fixas (2026-05-27/30)
+    // ficam no passado conforme o tempo avança e o efeito de re-snap as ignora
+    // (guarda `nextReviewDate < today`), quebrando os testes por rot de data.
+    // `toFake: ['Date']` mantém setTimeout/waitFor com timers reais.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-05-20T12:00:00'));
     vi.clearAllMocks();
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('registerReview snapa nextReviewDate para um dia da rotina', async () => {
