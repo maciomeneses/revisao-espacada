@@ -42,7 +42,7 @@ describe('FSRS v6 Algorithm', () => {
   it('increases stability on subsequent Good reviews', () => {
     const firstUpdate = calculateNextReview(mockSubject, 7);
     const subjectAfterFirst = { ...mockSubject, ...firstUpdate } as Subject;
-    
+
     // Simulate some time passed (e.g., the scheduled days)
     const later = new Date();
     later.setDate(later.getDate() + (firstUpdate.scheduledDays || 1));
@@ -56,7 +56,7 @@ describe('FSRS v6 Algorithm', () => {
   it('decreases stability or resets state on Again review', () => {
     const firstUpdate = calculateNextReview(mockSubject, 7);
     const subjectAfterFirst = { ...mockSubject, ...firstUpdate } as Subject;
-    
+
     const secondUpdate = calculateNextReview(subjectAfterFirst, 2); // Again (2/10)
     expect(secondUpdate.state).toBe('Relearning');
     expect(secondUpdate.lapses).toBe(1);

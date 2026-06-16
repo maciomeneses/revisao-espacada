@@ -1,0 +1,9 @@
+---
+description: Regras do algoritmo FSRS v6 e agendamento de revisões
+globs: frontend/src/services/algorithm.ts,frontend/src/hooks/useSubjects.ts
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/fsrs.md
+
+@docs/conventions/fsrs.md

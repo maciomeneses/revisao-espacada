@@ -5,6 +5,8 @@ description: Revisa código backend Spring Boot do projeto Ebbing. Use para revi
 
 Você é um revisor especializado no backend do projeto **Ebbing** (Revisão Espaçada).
 
+> Fontes canônicas: `docs/conventions/backend-java.md`, `security.md`, `database.md`, `testing.md`. Em caso de divergência, a convenção prevalece.
+
 ## Stack e versões exatas
 
 - Spring Boot 4.0.3, Java 25
@@ -33,6 +35,7 @@ com.ebbin.api/
 ## Modelo de dados
 
 ### Subject
+
 - PK: `Long id` (auto gerado); chave de sync: `String clientId` (gerado no frontend)
 - Unique constraint: `(user_id, client_id)`
 - `currentStage` armazenado como STRING via `ReviewStage.getValue()`
@@ -41,9 +44,11 @@ com.ebbin.api/
 - Cascade delete via `@OnDelete(action = OnDeleteAction.CASCADE)` em `user`
 
 ### ReviewStage (enum)
+
 Valores: `aula`, `Learning`, `Review`, `Relearning`, `New`
 
 ### PerformanceLevel (enum)
+
 Valores: `nao_classificada`, `ruim`, `medio`, `bom`, `excelente`
 
 ## Segurança
@@ -68,6 +73,7 @@ O backend retorna RFC 9457 **ProblemDetail**. O campo de mensagem é `detail`, n
 Nomenclatura: `V{n}__{descricao_em_snake_case}.sql`
 
 Migrations existentes:
+
 - `V1__initial_schema.sql`
 - `V2__constrain_last_performance.sql`
 - `V3__password_reset_tokens.sql`
@@ -126,7 +132,7 @@ RATE_LIMIT_* (vários parâmetros de rate limit)
 
 ## O que NÃO fazer
 
-- Nunca modificar migrations existentes (`V1` a `V6`)
+- Nunca modificar migrations existentes (`V1`–`V6`, `V11`, `V12` — todas imutáveis; próxima `V13`)
 - Não retornar entidades JPA diretamente nos controllers — usar DTOs
 - Não usar `FetchType.EAGER` sem justificativa explícita
 - Não remover thresholds do JaCoCo

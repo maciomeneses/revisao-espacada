@@ -36,8 +36,8 @@ vi.mock('../../src/services/api', () => ({
     reviewEvents: {
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({}),
-    }
-  }
+    },
+  },
 }));
 
 const mockApi = api as any;
@@ -50,13 +50,22 @@ describe('useSubjects hook', () => {
 
   it('lista os assutos e eventos ao montar com sessao ativa', async () => {
     mockApi.subjects.list.mockResolvedValue([
-      { id: 'sub-1', aulaPrincipal: 'Aula test', area: 'Area test', modulo: 'M1', relevancia: 'Alta' }
+      {
+        id: 'sub-1',
+        aulaPrincipal: 'Aula test',
+        area: 'Area test',
+        modulo: 'M1',
+        relevancia: 'Alta',
+      },
     ]);
     mockApi.reviewEvents.list.mockResolvedValue([
-      { id: 'ev-1', subjectId: 'sub-1', reps: 1, questions: 0, accuracy: 0 }
+      { id: 'ev-1', subjectId: 'sub-1', reps: 1, questions: 0, accuracy: 0 },
     ]);
 
-    localStorage.setItem('ebbing_session', JSON.stringify({ token: 'test-token', email: 'u@e.com' }));
+    localStorage.setItem(
+      'ebbing_session',
+      JSON.stringify({ token: 'test-token', email: 'u@e.com' }),
+    );
 
     const { result } = renderHook(() => useSubjects([], 'u@e.com'));
 
@@ -76,7 +85,7 @@ describe('useSubjects hook', () => {
     });
 
     expect(result.current.subjects.length).toBeGreaterThan(0);
-    expect(result.current.subjects.find(s => s.aulaPrincipal === 'Nova Aula')).toBeDefined();
+    expect(result.current.subjects.find((s) => s.aulaPrincipal === 'Nova Aula')).toBeDefined();
   });
 
   it('deleta subjects', async () => {
@@ -126,7 +135,7 @@ describe('useSubjects hook', () => {
 
     await waitFor(() => {
       // Após o fetch, o estado reflete o backend — sem o subject fantasma
-      expect(result.current.subjects.find(s => s.id === 'ghost')).toBeUndefined();
+      expect(result.current.subjects.find((s) => s.id === 'ghost')).toBeUndefined();
     });
 
     // Crucial: NÃO deve chamar sync para tentar "reenviar" o subject local
@@ -146,7 +155,7 @@ describe('useSubjects hook', () => {
     });
 
     // Subject otimista deve ter sido removido após falha
-    expect(result.current.subjects.find(s => s.aulaPrincipal === 'Falha')).toBeUndefined();
+    expect(result.current.subjects.find((s) => s.aulaPrincipal === 'Falha')).toBeUndefined();
     expect(result.current.error).toBeTruthy();
   });
 
@@ -159,7 +168,7 @@ describe('useSubjects hook', () => {
 
     const { result } = renderHook(() => useSubjects([], 'u@e.com'));
     await waitFor(() =>
-      expect(result.current.subjects.find(s => s.id === 'victim')).toBeDefined()
+      expect(result.current.subjects.find((s) => s.id === 'victim')).toBeDefined(),
     );
 
     await act(async () => {
@@ -167,18 +176,21 @@ describe('useSubjects hook', () => {
     });
 
     // Após falha, o subject deve ter voltado ao estado local
-    expect(result.current.subjects.find(s => s.id === 'victim')).toBeDefined();
+    expect(result.current.subjects.find((s) => s.id === 'victim')).toBeDefined();
     expect(result.current.error).toBeTruthy();
   });
-  
+
   it('registra review alterando a data pro futuro e criando evento', async () => {
     mockApi.subjects.list.mockResolvedValue([
-      { id: '1', aulaPrincipal: 'Sub', nextReviewDate: '2020-01-01', reps: 0 }
+      { id: '1', aulaPrincipal: 'Sub', nextReviewDate: '2020-01-01', reps: 0 },
     ]);
-    localStorage.setItem('ebbing_session', JSON.stringify({ token: 'test-token', email: 'u@e.com' }));
-    
+    localStorage.setItem(
+      'ebbing_session',
+      JSON.stringify({ token: 'test-token', email: 'u@e.com' }),
+    );
+
     const { result } = renderHook(() => useSubjects([], 'u@e.com'));
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
 
     await act(async () => {
       result.current.registerReview(result.current.subjects[0].id, 8, 10, 80, '2023-01-01');
@@ -192,47 +204,47 @@ describe('useSubjects hook', () => {
     const existing = makeSubject({ id: 'tst', currentStage: 'New' });
     storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.upsert.mockResolvedValue(existing);
-    
+
     const { result } = renderHook(() => useSubjects([], 'u@e.com'));
-    
+
     await waitFor(async () => {
       expect(result.current.subjects.length).toBeGreaterThan(0);
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise((r) => setTimeout(r, 10));
     });
 
     await act(async () => {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
       await result.current.registerFixacao(result.current.subjects[0].id, 8, 10, 80);
     });
-    
+
     await act(async () => {
       await result.current.toggleAula(result.current.subjects[0].id);
       await result.current.togglePreAula(result.current.subjects[0].id);
       await result.current.toggleFlashcards(result.current.subjects[0].id);
     });
-    
+
     await waitFor(() => {
       expect(mockApi.subjects.upsert).toHaveBeenCalled();
     });
   });
-  
+
   it('doResetCiclo e revertStage', async () => {
     const existing = makeSubject({ id: 'tst2', currentStage: 'Review', stability: 1.5 });
     storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.upsert.mockResolvedValue(existing);
-    
+
     const { result } = renderHook(() => useSubjects([], 'u@e.com'));
-    
+
     await waitFor(async () => {
       expect(result.current.subjects.length).toBeGreaterThan(0);
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise((r) => setTimeout(r, 10));
     });
 
     await act(async () => {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
       await result.current.revertStage(result.current.subjects[0].id); // should revert
     });
-    
+
     await act(async () => {
       await result.current.doResetCiclo(result.current.subjects[0].id); // should reset
     });

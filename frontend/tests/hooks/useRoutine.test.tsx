@@ -58,9 +58,7 @@ describe('useRoutine', () => {
   });
 
   it('email null usa a chave do guest e não chama a API', async () => {
-    const slots: StudentRoutine = [
-      { id: 'g1', dayOfWeek: 3, type: 'other', title: 'Academia' },
-    ];
+    const slots: StudentRoutine = [{ id: 'g1', dayOfWeek: 3, type: 'other', title: 'Academia' }];
     localStorage.setItem(v2Key(null), JSON.stringify(slots));
 
     const { result } = renderHook(() => useRoutine(null));

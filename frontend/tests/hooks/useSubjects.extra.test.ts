@@ -146,10 +146,15 @@ describe('useSubjects (cobertura extra)', () => {
 
   it('snapReviewDate com rotina-incompatível fallback para allowedDays', () => {
     // Cobre branches 50 (fallback) e o caso onde rotina não tem intersecção
-    const r = snapReviewDate('2025-01-15', 'X', [
-      // study só em domingos para outra área
-      { id: '1', dayOfWeek: 0, type: 'study', area: 'Outra', title: 't' },
-    ], new Set([3]));
+    const r = snapReviewDate(
+      '2025-01-15',
+      'X',
+      [
+        // study só em domingos para outra área
+        { id: '1', dayOfWeek: 0, type: 'study', area: 'Outra', title: 't' },
+      ],
+      new Set([3]),
+    );
     expect(typeof r).toBe('string');
   });
 
@@ -216,9 +221,7 @@ describe('useSubjects (cobertura extra)', () => {
     storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.upsert.mockResolvedValue({});
 
-    const { result } = renderHook(() =>
-      useSubjects([], 'u@e.com', new Set([0, 1, 2, 3, 4, 5, 6])),
-    );
+    const { result } = renderHook(() => useSubjects([], 'u@e.com', new Set([0, 1, 2, 3, 4, 5, 6])));
     await waitFor(() => expect(result.current.subjects.length).toBeGreaterThan(0));
 
     // Nova rotina força "study" só na 4a feira

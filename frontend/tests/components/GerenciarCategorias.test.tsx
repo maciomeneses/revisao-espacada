@@ -31,10 +31,19 @@ vi.mock('../../src/services/api', () => ({
 
 function makeSubject(area: string, modulo: string, id: string): Subject {
   return {
-    id, modulo, area, aulaPrincipal: `Aula ${id}`, relevancia: 'Alta',
-    aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false,
-    currentStage: 'aula', nextReviewDate: null, lastReviewDate: null,
-    lastPerformance: null, performanceLevel: 'nao_classificada',
+    id,
+    modulo,
+    area,
+    aulaPrincipal: `Aula ${id}`,
+    relevancia: 'Alta',
+    aulaAssistida: false,
+    preAulaFeita: false,
+    flashcardsFeitos: false,
+    currentStage: 'aula',
+    nextReviewDate: null,
+    lastReviewDate: null,
+    lastPerformance: null,
+    performanceLevel: 'nao_classificada',
   };
 }
 
@@ -77,13 +86,20 @@ describe('GerenciarCategorias', () => {
 
   it('cria nova disciplina dentro de uma área selecionada', async () => {
     createDisciplineMock.mockResolvedValue({
-      id: 50, areaId: 1, areaName: 'Ciências da Natureza', name: 'Química',
+      id: 50,
+      areaId: 1,
+      areaName: 'Ciências da Natureza',
+      name: 'Química',
     });
     render(<GerenciarCategorias subjects={[]} />);
-    await waitFor(() => expect(screen.getByLabelText(/Área da nova disciplina/i)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Área da nova disciplina/i)).toBeInTheDocument(),
+    );
 
     fireEvent.change(screen.getByLabelText(/Área da nova disciplina/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/Nome da nova disciplina/i), { target: { value: 'Química' } });
+    fireEvent.change(screen.getByLabelText(/Nome da nova disciplina/i), {
+      target: { value: 'Química' },
+    });
 
     const buttons = screen.getAllByRole('button', { name: /Adicionar/i });
     fireEvent.click(buttons[buttons.length - 1]);
@@ -99,7 +115,7 @@ describe('GerenciarCategorias', () => {
     ];
     render(<GerenciarCategorias subjects={subjects} />);
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: 'Ciências da Natureza' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Ciências da Natureza' })).toBeInTheDocument(),
     );
 
     fireEvent.click(screen.getByLabelText(/Excluir área Ciências da Natureza/i));

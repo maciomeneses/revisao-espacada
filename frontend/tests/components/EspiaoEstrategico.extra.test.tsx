@@ -162,11 +162,51 @@ describe('EspiaoEstrategico (cobertura extra)', () => {
 
   it('getAccuracy: todas as performances cobertas via fallback', () => {
     const events: ReviewEventPayload[] = [
-      { subjectId: 's1', subjectName: 'S1', reviewDate: createDate(2), performance: 'excelente', reps: 1, questions: 10, accuracy: 0 },
-      { subjectId: 's2', subjectName: 'S2', reviewDate: createDate(2), performance: 'bom', reps: 1, questions: 10, accuracy: 0 },
-      { subjectId: 's3', subjectName: 'S3', reviewDate: createDate(2), performance: 'medio', reps: 1, questions: 10, accuracy: 0 },
-      { subjectId: 's4', subjectName: 'S4', reviewDate: createDate(2), performance: 'ruim', reps: 1, questions: 10, accuracy: 0 },
-      { subjectId: 's5', subjectName: 'S5', reviewDate: createDate(2), performance: 'desconhecido' as any, reps: 1, questions: 10, accuracy: 0 },
+      {
+        subjectId: 's1',
+        subjectName: 'S1',
+        reviewDate: createDate(2),
+        performance: 'excelente',
+        reps: 1,
+        questions: 10,
+        accuracy: 0,
+      },
+      {
+        subjectId: 's2',
+        subjectName: 'S2',
+        reviewDate: createDate(2),
+        performance: 'bom',
+        reps: 1,
+        questions: 10,
+        accuracy: 0,
+      },
+      {
+        subjectId: 's3',
+        subjectName: 'S3',
+        reviewDate: createDate(2),
+        performance: 'medio',
+        reps: 1,
+        questions: 10,
+        accuracy: 0,
+      },
+      {
+        subjectId: 's4',
+        subjectName: 'S4',
+        reviewDate: createDate(2),
+        performance: 'ruim',
+        reps: 1,
+        questions: 10,
+        accuracy: 0,
+      },
+      {
+        subjectId: 's5',
+        subjectName: 'S5',
+        reviewDate: createDate(2),
+        performance: 'desconhecido' as any,
+        reps: 1,
+        questions: 10,
+        accuracy: 0,
+      },
     ];
     render(<EspiaoEstrategico subjects={[]} reviewEvents={events} />);
     expect(screen.getByText('Estatísticas')).toBeInTheDocument();

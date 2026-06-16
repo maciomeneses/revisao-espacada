@@ -63,7 +63,11 @@ export function snapReviewDate(
  * Back-compat alias para `snapReviewDate` sem restrição de `allowedDays`.
  * Mantido para não quebrar callers/testes existentes.
  */
-export function findNextRoutineDate(fsrsDate: string, area: string, routine: StudentRoutine): string {
+export function findNextRoutineDate(
+  fsrsDate: string,
+  area: string,
+  routine: StudentRoutine,
+): string {
   return snapReviewDate(fsrsDate, area, routine, undefined);
 }
 
@@ -86,7 +90,11 @@ export function findNextRoutineDate(fsrsDate: string, area: string, routine: Stu
  * - Mutações exigem `userEmail` válido — sem ele, `saveSubjects` é no-op e
  *   nada é gravado no localStorage (ver storage.ts).
  */
-export function useSubjects(routine: StudentRoutine = [], userEmail?: string, allowedDays?: Set<number>) {
+export function useSubjects(
+  routine: StudentRoutine = [],
+  userEmail?: string,
+  allowedDays?: Set<number>,
+) {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -115,13 +123,16 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
   useEffect(() => {
     if (!userEmail) return;
     if (!localStorage.getItem('ebbing_session')) return;
-    api.subjects.list().then((data) => {
-      if (Array.isArray(data)) {
-        const apiSubjects = data as Subject[];
-        setSubjects(apiSubjects);
-        saveSubjects(apiSubjects, userEmail);
-      }
-    }).catch(console.error);
+    api.subjects
+      .list()
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const apiSubjects = data as Subject[];
+          setSubjects(apiSubjects);
+          saveSubjects(apiSubjects, userEmail);
+        }
+      })
+      .catch(console.error);
   }, [userEmail]);
 
   // Load review event history on mount
@@ -132,27 +143,30 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
 
   const clearError = useCallback(() => setError(null), []);
 
-  const updateSubject = useCallback(async (updated: Subject) => {
-    const previous = subjectsRef.current.find((s) => s.id === updated.id);
-    setSubjects((prev) => {
-      const next = prev.map((s) => (s.id === updated.id ? updated : s));
-      saveSubjects(next, userEmail);
-      return next;
-    });
-    try {
-      await api.subjects.upsert(updated.id, updated);
-    } catch (err) {
-      console.error('API update failed:', err);
-      if (previous) {
-        setSubjects((prev) => {
-          const rolledBack = prev.map((s) => (s.id === updated.id ? previous : s));
-          saveSubjects(rolledBack, userEmail);
-          return rolledBack;
-        });
+  const updateSubject = useCallback(
+    async (updated: Subject) => {
+      const previous = subjectsRef.current.find((s) => s.id === updated.id);
+      setSubjects((prev) => {
+        const next = prev.map((s) => (s.id === updated.id ? updated : s));
+        saveSubjects(next, userEmail);
+        return next;
+      });
+      try {
+        await api.subjects.upsert(updated.id, updated);
+      } catch (err) {
+        console.error('API update failed:', err);
+        if (previous) {
+          setSubjects((prev) => {
+            const rolledBack = prev.map((s) => (s.id === updated.id ? previous : s));
+            saveSubjects(rolledBack, userEmail);
+            return rolledBack;
+          });
+        }
+        setError('Não foi possível salvar a alteração. Verifique sua conexão.');
       }
-      setError('Não foi possível salvar a alteração. Verifique sua conexão.');
-    }
-  }, [userEmail]);
+    },
+    [userEmail],
+  );
 
   // Re-snap automático: quando routine, allowedDays ou subjects mudam, garante
   // que toda nextReviewDate futura respeita as restrições atuais. Cobre o caso
@@ -213,7 +227,14 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
   }
 
   const registerReview = useCallback(
-    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0, reviewDate?: string, durationSeconds = 0) => {
+    (
+      id: string,
+      numCorrect: number,
+      totalQuestions = 10,
+      accuracy = 0,
+      reviewDate?: string,
+      durationSeconds = 0,
+    ) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
@@ -229,12 +250,13 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
         subjectName: subject.aulaPrincipal,
         reviewDate: reviewDate || localDateStr(new Date()),
         performance: numCorrectToPerformance(numCorrect),
-        reps: (updated.reps ?? 1),
+        reps: updated.reps ?? 1,
         questions: totalQuestions,
         accuracy,
         durationSeconds,
       };
-      api.reviewEvents.create(event)
+      api.reviewEvents
+        .create(event)
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
@@ -242,7 +264,14 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
   );
 
   const registerFixacao = useCallback(
-    (id: string, numCorrect: number, totalQuestions = 10, accuracy = 0, reviewDate?: string, durationSeconds = 0) => {
+    (
+      id: string,
+      numCorrect: number,
+      totalQuestions = 10,
+      accuracy = 0,
+      reviewDate?: string,
+      durationSeconds = 0,
+    ) => {
       const subject = subjectsRef.current.find((s) => s.id === id);
       if (!subject) return;
       // Força cálculo de primeira revisão zerando o estado FSRS
@@ -251,7 +280,12 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
       const snappedDate = updates.nextReviewDate
         ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays)
         : updates.nextReviewDate;
-      const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null, flashcardsFeitos: true };
+      const updated = {
+        ...subject,
+        ...updates,
+        nextReviewDate: snappedDate ?? null,
+        flashcardsFeitos: true,
+      };
       updateSubject(updated);
 
       // Fire-and-forget: log fixacao event as reps=1
@@ -265,7 +299,8 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
         accuracy,
         durationSeconds,
       };
-      api.reviewEvents.create(event)
+      api.reviewEvents
+        .create(event)
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
@@ -323,28 +358,31 @@ export function useSubjects(routine: StudentRoutine = [], userEmail?: string, al
     [userEmail],
   );
 
-  const removeSubject = useCallback(async (id: string) => {
-    const previous = subjectsRef.current.find((s) => s.id === id);
-    setSubjects((prev) => {
-      const next = prev.filter((s) => s.id !== id);
-      saveSubjects(next, userEmail);
-      return next;
-    });
-    try {
-      await api.subjects.delete(id);
-    } catch (err) {
-      console.error('API delete failed:', err);
-      if (previous) {
-        // Rollback: repõe o item na posição original preservando a ordem anterior.
-        setSubjects((prev) => {
-          const next = [...prev, previous];
-          saveSubjects(next, userEmail);
-          return next;
-        });
+  const removeSubject = useCallback(
+    async (id: string) => {
+      const previous = subjectsRef.current.find((s) => s.id === id);
+      setSubjects((prev) => {
+        const next = prev.filter((s) => s.id !== id);
+        saveSubjects(next, userEmail);
+        return next;
+      });
+      try {
+        await api.subjects.delete(id);
+      } catch (err) {
+        console.error('API delete failed:', err);
+        if (previous) {
+          // Rollback: repõe o item na posição original preservando a ordem anterior.
+          setSubjects((prev) => {
+            const next = [...prev, previous];
+            saveSubjects(next, userEmail);
+            return next;
+          });
+        }
+        setError('Não foi possível excluir o assunto. Verifique sua conexão.');
       }
-      setError('Não foi possível excluir o assunto. Verifique sua conexão.');
-    }
-  }, [userEmail]);
+    },
+    [userEmail],
+  );
 
   const revertStage = useCallback(
     (id: string) => {

@@ -3,6 +3,7 @@ Execute o checklist de validação pré-deploy do projeto Ebbing. Siga cada pass
 ## 1. TypeScript — Frontend
 
 Execute no terminal:
+
 ```bash
 cd frontend && npx tsc -b --noEmit
 ```
@@ -13,6 +14,7 @@ cd frontend && npx tsc -b --noEmit
 ## 2. Build Vite — Frontend
 
 Execute:
+
 ```bash
 cd frontend && npm run build
 ```
@@ -32,6 +34,7 @@ Leia `frontend/src/services/api.ts` e todos os arquivos em `frontend/src/` que c
 ## 4. Migrations pendentes — Backend
 
 Execute:
+
 ```bash
 ls backend/src/main/resources/db/migration/
 ```
@@ -43,6 +46,7 @@ Depois leia os arquivos em `backend/src/main/java/com/ebbin/api/model/` e compar
 ## 5. Testes backend
 
 Execute:
+
 ```bash
 cd backend && ./gradlew test 2>&1 | tail -20
 ```

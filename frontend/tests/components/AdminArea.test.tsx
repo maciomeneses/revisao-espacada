@@ -113,7 +113,7 @@ describe('AdminArea', () => {
     fireEvent.submit(screen.getByRole('button', { name: /criar usuário/i }).closest('form')!);
 
     // Give time for any async operations
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, 50));
     expect(api.admin.users.create).not.toHaveBeenCalled();
   });
 
@@ -125,7 +125,10 @@ describe('AdminArea', () => {
     });
     vi.mocked(api.admin.users.list)
       .mockResolvedValueOnce(mockUsers)
-      .mockResolvedValueOnce([...mockUsers, { id: 'uuid-3', email: 'novo@test.com', role: 'USER' }]);
+      .mockResolvedValueOnce([
+        ...mockUsers,
+        { id: 'uuid-3', email: 'novo@test.com', role: 'USER' },
+      ]);
 
     render(<AdminArea />);
     await waitFor(() => screen.getByText('admin@test.com'));
@@ -144,7 +147,7 @@ describe('AdminArea', () => {
 
     await waitFor(() => {
       expect(api.admin.users.create).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'novo@test.com', password: 'senha123' })
+        expect.objectContaining({ email: 'novo@test.com', password: 'senha123' }),
       );
     });
 

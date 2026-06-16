@@ -11,8 +11,18 @@ type AgendaView = 'week' | 'month';
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 function toDateStr(year: number, month: number, day: number): string {
@@ -136,11 +146,15 @@ export function Agenda({ subjects }: AgendaProps) {
                   className="border-r border-border/40 last:border-r-0 min-h-[140px] flex flex-col"
                 >
                   {/* Column header */}
-                  <div className={`py-2.5 text-center border-b border-border/40 ${isToday ? 'bg-yellow/10' : ''}`}>
+                  <div
+                    className={`py-2.5 text-center border-b border-border/40 ${isToday ? 'bg-yellow/10' : ''}`}
+                  >
                     <p className="text-[9px] font-black text-muted-light uppercase tracking-widest">
                       {WEEKDAYS[date.getDay()]}
                     </p>
-                    <p className={`text-base font-black mt-0.5 ${isToday ? 'text-navy' : 'text-navy/60'}`}>
+                    <p
+                      className={`text-base font-black mt-0.5 ${isToday ? 'text-navy' : 'text-navy/60'}`}
+                    >
                       {date.getDate()}
                     </p>
                   </div>
@@ -162,11 +176,13 @@ export function Agenda({ subjects }: AgendaProps) {
                             isPast
                               ? 'bg-red-50 border border-red-100'
                               : isToday
-                              ? 'bg-yellow/10 border border-yellow/20'
-                              : 'bg-sky-50 border border-sky-100'
+                                ? 'bg-yellow/10 border border-yellow/20'
+                                : 'bg-sky-50 border border-sky-100'
                           }`}
                         >
-                          <p className="text-[9px] font-bold text-navy truncate">{s.aulaPrincipal}</p>
+                          <p className="text-[9px] font-bold text-navy truncate">
+                            {s.aulaPrincipal}
+                          </p>
                           <p className="text-[8px] text-muted truncate">{s.area}</p>
                         </div>
                       ))
@@ -241,7 +257,13 @@ export function Agenda({ subjects }: AgendaProps) {
                     {count > 0 && (
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          isSelected ? 'bg-white' : hasOverdue ? 'bg-red-500' : isToday ? 'bg-navy' : 'bg-sky-400'
+                          isSelected
+                            ? 'bg-white'
+                            : hasOverdue
+                              ? 'bg-red-500'
+                              : isToday
+                                ? 'bg-navy'
+                                : 'bg-sky-400'
                         }`}
                       />
                     )}
@@ -260,8 +282,8 @@ export function Agenda({ subjects }: AgendaProps) {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'long',
-                  })}
-              {' '}— {selectedSubjects.length} revisão{selectedSubjects.length !== 1 ? 'ões' : ''}
+                  })}{' '}
+              — {selectedSubjects.length} revisão{selectedSubjects.length !== 1 ? 'ões' : ''}
             </p>
 
             {selectedSubjects.length === 0 ? (
@@ -289,11 +311,15 @@ export function Agenda({ subjects }: AgendaProps) {
                           selectedIsPast
                             ? 'bg-red-50 text-red-600 border border-red-200'
                             : selectedDay === todayStr
-                            ? 'bg-yellow/20 text-yellow-700 border border-yellow/30'
-                            : 'bg-sky-50 text-sky-700 border border-sky-200'
+                              ? 'bg-yellow/20 text-yellow-700 border border-yellow/30'
+                              : 'bg-sky-50 text-sky-700 border border-sky-200'
                         }`}
                       >
-                        {selectedIsPast ? 'Atrasado' : selectedDay === todayStr ? 'Hoje' : 'Agendado'}
+                        {selectedIsPast
+                          ? 'Atrasado'
+                          : selectedDay === todayStr
+                            ? 'Hoje'
+                            : 'Agendado'}
                       </span>
                     </div>
                   </div>

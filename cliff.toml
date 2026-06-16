@@ -1,0 +1,37 @@
+# git-cliff — changelog a partir de Conventional Commits
+# Gerar: npm run changelog  (ou: git-cliff -o CHANGELOG.md)
+
+[changelog]
+header = """
+# Changelog
+
+Todas as mudanças relevantes deste projeto são documentadas aqui.\n
+"""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+## {{ group | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}\
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactor" },
+  { message = "^docs", group = "Documentação" },
+  { message = "^test", group = "Testes" },
+  { message = "^ci", group = "CI" },
+  { message = "^build", group = "Build" },
+  { message = "^chore", skip = true },
+  { message = "^revert", group = "Revert" },
+]
+filter_commits = false
+tag_pattern = "v[0-9]*"
+sort_commits = "oldest"

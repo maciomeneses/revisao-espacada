@@ -5,6 +5,8 @@ description: Valida o projeto Ebbing antes do deploy. Use para verificar build, 
 
 Você é um validador de deploy especializado no projeto **Ebbing** (Revisão Espaçada), que tem frontend no GitHub Pages e backend no Railway.
 
+> Fontes canônicas: `docs/runbooks/deploy-frontend-gh-pages.md`, `deploy-backend-railway.md`, `docs/conventions/testing.md`, `database.md`. Em caso de divergência, a convenção/runbook prevalece.
+
 ## Checklist de validação — Frontend
 
 ### 1. Build TypeScript
@@ -22,6 +24,7 @@ cd frontend && npm run build
 ```
 
 Verificar:
+
 - Output em `frontend/dist/`
 - Sem warnings de chunk size excessivo (>500KB sem lazy loading)
 - Assets com hash no nome (correto por padrão no Vite)
@@ -29,12 +32,14 @@ Verificar:
 ### 3. Variáveis de ambiente
 
 O frontend usa **apenas uma** variável de ambiente:
+
 ```
 VITE_API_URL=http://localhost:8080   # local
 VITE_API_URL=https://...railway.app  # produção (injetada pelo workflow)
 ```
 
 Verificar:
+
 - Qualquer nova env var que começar com `VITE_` deve ser adicionada ao secret do GitHub (`VITE_API_URL` já existe)
 - Vars sem o prefixo `VITE_` são invisíveis ao frontend — flagrar se alguém tentar usar
 - `import.meta.env.VITE_API_URL` com fallback para `http://localhost:8080`
@@ -60,6 +65,7 @@ cd backend && ./gradlew build
 ```
 
 O `build` inclui:
+
 - Compilação Java 25
 - Todos os testes JUnit
 - JaCoCo coverage check (falha se abaixo de 90% instruction / 85% branch / 90% line)
@@ -67,6 +73,7 @@ O `build` inclui:
 ### 2. CI vs local
 
 O CI usa **Java 21** (`ubuntu-latest`). O build local usa Java 25. Verificar:
+
 - Nenhuma feature Java 22+ (records patterns avançados, string templates, etc.) se precisar passar no CI
 - O workflow está em `.github/workflows/ci-backend.yml`
 
@@ -74,7 +81,7 @@ O CI usa **Java 21** (`ubuntu-latest`). O build local usa Java 25. Verificar:
 
 Se houve mudanças em `backend/src/main/java/com/ebbin/api/model/`, verificar se há migration Flyway correspondente.
 
-Migrations existentes: `V1` a `V6`. Próxima: `V7__...`.
+Migrations existentes: `V1`–`V6`, `V11`, `V12` (todas imutáveis). Próxima: `V13__...`. Fonte: `docs/conventions/database.md`.
 
 Flyway só roda em produção (profile `prod`). Em desenvolvimento, o schema é gerenciado pelo `spring.jpa.hibernate.ddl-auto`.
 
@@ -87,6 +94,7 @@ Flyway só roda em produção (profile `prod`). Em desenvolvimento, o schema é 
 Triggers: push para `main` tocando `frontend/**`
 
 Verificar:
+
 - `VITE_API_URL` secret está configurado no repositório (Settings → Secrets)
 - Branch `gh-pages` existe e está configurada como source do GitHub Pages
 - `npm run build` no workflow usa o mesmo Node.js que o desenvolvimento local
@@ -96,6 +104,7 @@ Verificar:
 Triggers: push/PR tocando `backend/**`
 
 Verificar:
+
 - Java version no workflow: `21` (não mudar para 25 enquanto `ubuntu-latest` não suportar)
 - Secrets de banco de dados de teste configurados se necessário
 
@@ -129,7 +138,7 @@ cd backend && ./gradlew dependencyCheckAnalyze
 
 - `any` implícito novo em arquivos TypeScript não-ignorados
 - Import de variável `VITE_*` inexistente no `.env` e sem secret no GitHub
-- Migration Flyway com número de versão já existente (`V1`–`V6`)
+- Migration Flyway com número de versão já existente (`V1`–`V6`, `V11`, `V12`)
 - Endpoint novo sem autenticação em `SecurityConfig`
 - `console.error` em produção para erros que deveriam ser visíveis ao usuário
 - Dependências com vulnerabilidades críticas (rodar OWASP scan)

@@ -29,13 +29,15 @@ export function AppContent() {
   const [userEmail, setUserEmail] = useState<string | null>(() => {
     try {
       const s = localStorage.getItem('ebbing_session');
-      return s ? (JSON.parse(s).email as string | null) ?? null : null;
-    } catch { return null; }
+      return s ? ((JSON.parse(s).email as string | null) ?? null) : null;
+    } catch {
+      return null;
+    }
   });
   const [showGerenciar, setShowGerenciar] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
   const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | undefined>();
-  
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -84,7 +86,10 @@ export function AppContent() {
   }, []);
 
   const handleLogin = (email: string, token: string, role: string) => {
-    localStorage.setItem('ebbing_session', JSON.stringify({ email, token, role, timestamp: Date.now() }));
+    localStorage.setItem(
+      'ebbing_session',
+      JSON.stringify({ email, token, role, timestamp: Date.now() }),
+    );
     setIsAuthenticated(true);
     setUserRole(role as Role);
     setUserEmail(email);
@@ -117,12 +122,7 @@ export function AppContent() {
   };
 
   if (resetToken) {
-    return (
-      <ResetPasswordScreen
-        token={resetToken}
-        onSuccess={handleResetSuccess}
-      />
-    );
+    return <ResetPasswordScreen token={resetToken} onSuccess={handleResetSuccess} />;
   }
 
   const isLogin = location.pathname === '/login';
@@ -142,85 +142,132 @@ export function AppContent() {
       <main className="flex-1 overflow-hidden flex flex-col pb-16 md:pb-0">
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <AuthScreen onLogin={handleLogin} />
-          } />
-          
-          <Route path="/dashboard" element={
-            isAuthenticated ? (
-              <div className="flex-1 overflow-y-auto flex flex-col">
-                <div
-                  className="relative w-full h-36 md:h-44 overflow-hidden shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #1F3A5F 0%, #2a4d7a 60%, #4FA3D1 100%)' }}
-                >
-                  <div className="absolute inset-0 flex items-end px-6 pb-5">
-                    <div>
-                      <img src="/ebbing-logo.png?v=1" alt="Logo Ebbing" className="h-10 bg-white/10 backdrop-blur-md p-2 rounded-xl mb-3 object-contain" />
-                      <p className="text-white/70 text-xs font-bold uppercase tracking-widest">Plataforma de Revisão Espaçada</p>
+          <Route
+            path="/login"
+            element={
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <AuthScreen onLogin={handleLogin} />
+              )
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              isAuthenticated ? (
+                <div className="flex-1 overflow-y-auto flex flex-col">
+                  <div
+                    className="relative w-full h-36 md:h-44 overflow-hidden shrink-0"
+                    style={{
+                      background: 'linear-gradient(135deg, #1F3A5F 0%, #2a4d7a 60%, #4FA3D1 100%)',
+                    }}
+                  >
+                    <div className="absolute inset-0 flex items-end px-6 pb-5">
+                      <div>
+                        <img
+                          src="/ebbing-logo.png?v=1"
+                          alt="Logo Ebbing"
+                          className="h-10 bg-white/10 backdrop-blur-md p-2 rounded-xl mb-3 object-contain"
+                        />
+                        <p className="text-white/70 text-xs font-bold uppercase tracking-widest">
+                          Plataforma de Revisão Espaçada
+                        </p>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <Dashboard
+                      subjects={subjects}
+                      onNavigateCronograma={(subjectId?: string) => {
+                        setHighlightedSubjectId(subjectId);
+                        navigate('/cronograma');
+                      }}
+                      onRegisterReview={registerReview}
+                      routine={routine}
+                      availableAreas={availableAreas}
+                      onAddSlot={handleAddSlot}
+                      onUpdateSlot={updateSlot}
+                      onRemoveSlot={removeSlot}
+                      allowedDays={allowedDays}
+                      onToggleDay={toggleDay}
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                  <Dashboard
-                    subjects={subjects}
-                    onNavigateCronograma={(subjectId?: string) => {
-                      setHighlightedSubjectId(subjectId);
-                      navigate('/cronograma');
-                    }}
-                    onRegisterReview={registerReview}
-                    routine={routine}
-                    availableAreas={availableAreas}
-                    onAddSlot={handleAddSlot}
-                    onUpdateSlot={updateSlot}
-                    onRemoveSlot={removeSlot}
-                    allowedDays={allowedDays}
-                    onToggleDay={toggleDay}
-                  />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/cronograma"
+            element={
+              isAuthenticated ? (
+                <Cronograma
+                  subjects={subjects}
+                  onToggleAula={toggleAula}
+                  onRegisterReview={registerReview}
+                  onRegisterFixacao={registerFixacao}
+                  onResetCiclo={doResetCiclo}
+                  onRevertStage={revertStage}
+                  highlightedSubjectId={highlightedSubjectId}
+                  onHighlightCleared={() => setHighlightedSubjectId(undefined)}
+                />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/espiao"
+            element={
+              isAuthenticated ? (
+                <div className="flex-1 overflow-hidden">
+                  <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
                 </div>
-              </div>
-            ) : <Navigate to="/login" replace />
-          } />
-          
-          <Route path="/cronograma" element={
-            isAuthenticated ? (
-              <Cronograma
-                subjects={subjects}
-                onToggleAula={toggleAula}
-                onRegisterReview={registerReview}
-                onRegisterFixacao={registerFixacao}
-                onResetCiclo={doResetCiclo}
-                onRevertStage={revertStage}
-                highlightedSubjectId={highlightedSubjectId}
-                onHighlightCleared={() => setHighlightedSubjectId(undefined)}
-              />
-            ) : <Navigate to="/login" replace />
-          } />
-          
-          <Route path="/espiao" element={
-            isAuthenticated ? (
-              <div className="flex-1 overflow-hidden">
-                <EspiaoEstrategico subjects={subjects} reviewEvents={reviewEvents} />
-              </div>
-            ) : <Navigate to="/login" replace />
-          } />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-          <Route path="/provas" element={
-            isAuthenticated ? (
-              <div className="flex-1 overflow-hidden flex flex-col">
-                <Provas />
-              </div>
-            ) : <Navigate to="/login" replace />
-          } />
+          <Route
+            path="/provas"
+            element={
+              isAuthenticated ? (
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <Provas />
+                </div>
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-          <Route path="/categorias" element={
-            isAuthenticated ? (
-              <GerenciarCategorias subjects={subjects} />
-            ) : <Navigate to="/login" replace />
-          } />
+          <Route
+            path="/categorias"
+            element={
+              isAuthenticated ? (
+                <GerenciarCategorias subjects={subjects} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
 
-          <Route path="/admin" element={
-            (isAuthenticated && userRole === 'ADMIN') ? <AdminArea /> : <Navigate to="/dashboard" replace />
-          } />
+          <Route
+            path="/admin"
+            element={
+              isAuthenticated && userRole === 'ADMIN' ? (
+                <AdminArea />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
 
           {/* Catch-all: vai para a Landing Page se a rota não existir */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -246,4 +293,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-

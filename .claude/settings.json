@@ -11,9 +11,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/maciomeneses/Documents/github/revisao-espacada/.claude/hooks/run-tests.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-tests.sh\"",
             "timeout": 120,
             "statusMessage": "Rodando testes relacionados..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-doc-update.sh\"",
+            "timeout": 15
           }
         ]
       }

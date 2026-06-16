@@ -78,7 +78,9 @@ export function useRoutine(email: string | null) {
           if (legacy && legacy.length > 0) {
             saveRoutine(email, legacy);
             setRoutine(legacy);
-            api.routine.save(legacy).catch((err) => console.error('routine v1->v2 migration failed:', err));
+            api.routine
+              .save(legacy)
+              .catch((err) => console.error('routine v1->v2 migration failed:', err));
             return;
           }
         }

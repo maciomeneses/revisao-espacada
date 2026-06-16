@@ -5,6 +5,7 @@ Arquivo alvo: $ARGUMENTS
 ## Passo 1 — Ler o arquivo alvo
 
 Leia o arquivo especificado e identifique:
+
 - Se é frontend (`.ts`, `.tsx`) ou backend (`.java`)
 - Todas as funções/métodos públicos exportados
 - Dependências externas (imports) que precisarão de mock
@@ -17,7 +18,7 @@ Se for arquivo frontend, crie o arquivo de teste em `{mesmo-diretorio}/{nome-arq
 **Boilerplate obrigatório:**
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Adicionar imports de Testing Library se for componente React:
 // import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 // import userEvent from '@testing-library/user-event'
@@ -25,6 +26,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 ```
 
 **Mock da API (sempre incluir se o arquivo usa `api`):**
+
 ```typescript
 vi.mock('../services/api', () => ({
   api: {
@@ -43,24 +45,33 @@ vi.mock('../services/api', () => ({
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: 1 }),
     },
-    admin: { users: { list: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() } },
+    admin: {
+      users: {
+        list: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+    },
   },
-}))
+}));
 ```
 
 **Mock do localStorage (sempre incluir):**
+
 ```typescript
 beforeEach(() => {
-  localStorage.clear()
-  vi.clearAllMocks()
+  localStorage.clear();
+  vi.clearAllMocks();
   // Simular usuário logado se necessário:
   // localStorage.setItem('ebbing_session', JSON.stringify({
   //   email: 'test@test.com', token: 'fake-token', role: 'USER', timestamp: Date.now(),
   // }))
-})
+});
 ```
 
 **Subject mock padrão:**
+
 ```typescript
 const mockSubject = {
   id: 'test-id-001',
@@ -76,10 +87,11 @@ const mockSubject = {
   lastReviewDate: null,
   lastPerformance: null,
   performanceLevel: 'nao_classificada',
-}
+};
 ```
 
 **Para componentes com React Router v7:**
+
 ```typescript
 import { MemoryRouter } from 'react-router-dom'
 // Wrapper:
@@ -87,8 +99,9 @@ render(<MemoryRouter initialEntries={['/rota']}><Componente /></MemoryRouter>)
 ```
 
 **Para hooks (`useSubjects`):**
+
 ```typescript
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react';
 ```
 
 Gere casos de teste para: caminho feliz, entrada inválida, estado vazio, e os principais branches condicionais do arquivo.
@@ -98,6 +111,7 @@ Gere casos de teste para: caminho feliz, entrada inválida, estado vazio, e os p
 Se for arquivo Java, crie o arquivo de teste em `backend/src/test/java/com/ebbin/api/{mesmo-pacote}/{NomeClasse}Test.java`.
 
 **Boilerplate obrigatório:**
+
 ```java
 package com.ebbin.api.{pacote};
 
@@ -125,6 +139,7 @@ class {NomeClasse}Test {
 ```
 
 **Regras obrigatórias:**
+
 - `@DisplayName` em português descrevendo o cenário
 - Usar AssertJ (`assertThat`), nunca `assertEquals`
 - Cobrir todos os branches: caminho feliz, recurso não encontrado, acesso negado, exceção
@@ -134,6 +149,7 @@ Gere `@Test` para cada método público da classe, cobrindo todos os branches co
 ## Passo 4 — Confirmar
 
 Após criar o arquivo, informe:
+
 - Caminho completo do arquivo criado
 - Quantos casos de teste foram gerados
 - Quais branches ainda precisam de atenção manual (lógica complexa, integrações externas)

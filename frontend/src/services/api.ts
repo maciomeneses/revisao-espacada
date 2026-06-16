@@ -5,12 +5,12 @@ export interface ReviewEventPayload {
   id?: number;
   subjectId: string;
   subjectName: string;
-  reviewDate: string;        // ISO date: YYYY-MM-DD
-  performance: string;       // 'ruim' | 'medio' | 'bom' | 'excelente' | 'nao_classificada'
+  reviewDate: string; // ISO date: YYYY-MM-DD
+  performance: string; // 'ruim' | 'medio' | 'bom' | 'excelente' | 'nao_classificada'
   reps: number;
   questions: number;
-  accuracy: number;          // 0–100 real accuracy %
-  durationSeconds: number;   // duração da sessão em segundos (0 = não informado)
+  accuracy: number; // 0–100 real accuracy %
+  durationSeconds: number; // duração da sessão em segundos (0 = não informado)
 }
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
@@ -45,7 +45,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     // Token expirado ou inválido: só recarrega se havia sessão ativa (evita loop em endpoints
     // chamados antes do login, como api.subjects.list no useSubjects)
-    if (res.status === 401 && !path.startsWith('/api/auth/') && localStorage.getItem('ebbing_session')) {
+    if (
+      res.status === 401 &&
+      !path.startsWith('/api/auth/') &&
+      localStorage.getItem('ebbing_session')
+    ) {
       const session = localStorage.getItem('ebbing_session');
       const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
       localStorage.removeItem('ebbing_session');
@@ -72,10 +76,10 @@ export interface SubjectTemplatePayload {
 
 export interface ExamEntryPayload {
   id?: number;
-  examDate: string;       // ISO date: YYYY-MM-DD
+  examDate: string; // ISO date: YYYY-MM-DD
   examName: string;
   examType?: string;
-  scorePercent: number;   // 0–100
+  scorePercent: number; // 0–100
   notes?: string;
   createdAt?: string;
 }
@@ -114,8 +118,7 @@ export const api = {
           method: 'PUT',
           body: JSON.stringify(user),
         }),
-      delete: (id: string) =>
-        request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
+      delete: (id: string) => request<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
     },
   },
 
@@ -134,8 +137,7 @@ export const api = {
         body: JSON.stringify(subject),
       }),
 
-    delete: (id: string) =>
-      request<void>(`/api/subjects/${id}`, { method: 'DELETE' }),
+    delete: (id: string) => request<void>(`/api/subjects/${id}`, { method: 'DELETE' }),
   },
 
   areas: {
@@ -153,15 +155,12 @@ export const api = {
         body: JSON.stringify({ name }),
       }),
 
-    delete: (id: number) =>
-      request<void>(`/api/areas/${id}`, { method: 'DELETE' }),
+    delete: (id: number) => request<void>(`/api/areas/${id}`, { method: 'DELETE' }),
   },
 
   disciplines: {
     list: (areaId?: number) =>
-      request<Discipline[]>(
-        `/api/disciplines${areaId != null ? `?areaId=${areaId}` : ''}`
-      ),
+      request<Discipline[]>(`/api/disciplines${areaId != null ? `?areaId=${areaId}` : ''}`),
 
     create: (areaId: number, name: string) =>
       request<Discipline>('/api/disciplines', {
@@ -175,8 +174,7 @@ export const api = {
         body: JSON.stringify({ name }),
       }),
 
-    delete: (id: number) =>
-      request<void>(`/api/disciplines/${id}`, { method: 'DELETE' }),
+    delete: (id: number) => request<void>(`/api/disciplines/${id}`, { method: 'DELETE' }),
   },
 
   reviewEvents: {
@@ -192,7 +190,7 @@ export const api = {
   subjectTemplates: {
     list: (disciplina?: string) =>
       request<SubjectTemplatePayload[]>(
-        `/api/subject-templates${disciplina ? `?disciplina=${encodeURIComponent(disciplina)}` : ''}`
+        `/api/subject-templates${disciplina ? `?disciplina=${encodeURIComponent(disciplina)}` : ''}`,
       ),
   },
 
@@ -231,7 +229,6 @@ export const api = {
         body: JSON.stringify(payload),
       }),
 
-    delete: (id: number) =>
-      request<void>(`/api/exam-entries/${id}`, { method: 'DELETE' }),
+    delete: (id: number) => request<void>(`/api/exam-entries/${id}`, { method: 'DELETE' }),
   },
 };

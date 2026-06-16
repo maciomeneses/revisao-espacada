@@ -124,13 +124,14 @@ describe('useSubjects + routine integration', () => {
     const allowed = new Set([0, 1, 2, 3, 4, 5, 6]);
 
     const { result, rerender } = renderHook(
-      ({ r, a }: { r: StudentRoutine; a: Set<number> | undefined }) =>
-        useSubjects(r, 'u@e.com', a),
+      ({ r, a }: { r: StudentRoutine; a: Set<number> | undefined }) => useSubjects(r, 'u@e.com', a),
       { initialProps: { r: [] as StudentRoutine, a: undefined as Set<number> | undefined } },
     );
 
     await waitFor(() => {
-      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-27');
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe(
+        '2026-05-27',
+      );
     });
 
     // Agora a rotina + allowedDays chegam (simulando fetch async no login)
@@ -192,7 +193,11 @@ describe('useSubjects + routine integration', () => {
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
     // 2026-05-30 é sábado (dayOfWeek=6). Subject de área SEM slot na rotina —
     // assim o snap inicial cai no fallback de allowedDays e mantém o sábado.
-    const existing = makeSubject({ id: 'sub-toggle-r', area: 'Filosofia', nextReviewDate: '2026-05-30' });
+    const existing = makeSubject({
+      id: 'sub-toggle-r',
+      area: 'Filosofia',
+      nextReviewDate: '2026-05-30',
+    });
     storage.saveSubjects([existing], 'u@e.com');
     mockApi.subjects.list.mockResolvedValue([existing]);
 
@@ -206,7 +211,9 @@ describe('useSubjects + routine integration', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-30');
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe(
+        '2026-05-30',
+      );
     });
 
     rerender({ a: allowedNoSat });
@@ -236,7 +243,9 @@ describe('useSubjects + routine integration', () => {
     );
 
     await waitFor(() => {
-      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe('2026-05-30');
+      expect(result.current.subjects.find((s) => s.id === existing.id)?.nextReviewDate).toBe(
+        '2026-05-30',
+      );
     });
 
     rerender({ a: allowedNoSat });

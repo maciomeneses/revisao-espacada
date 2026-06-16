@@ -8,11 +8,7 @@ type FetchCall = { url: string; init: RequestInit };
 let calls: FetchCall[] = [];
 let fetchMock: ReturnType<typeof vi.fn>;
 
-function mockFetchOnce(response: {
-  ok?: boolean;
-  status?: number;
-  json?: () => Promise<unknown>;
-}) {
+function mockFetchOnce(response: { ok?: boolean; status?: number; json?: () => Promise<unknown> }) {
   const res = {
     ok: response.ok ?? true,
     status: response.status ?? 200,
@@ -98,9 +94,9 @@ describe('request<T> helper', () => {
   it('seta header Authorization quando token existe', async () => {
     localStorage.setItem(
       'ebbing_session',
-      JSON.stringify({ email: 'a@b.com', token: 'tok-123', role: 'USER', timestamp: Date.now() })
+      JSON.stringify({ email: 'a@b.com', token: 'tok-123', role: 'USER', timestamp: Date.now() }),
     );
-    mockFetchOnce({ ok: true, status: 200, json: async () => ([]) });
+    mockFetchOnce({ ok: true, status: 200, json: async () => [] });
     await api.subjects.list();
     const headers = calls[0].init.headers as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer tok-123');
@@ -108,7 +104,7 @@ describe('request<T> helper', () => {
   });
 
   it('não seta Authorization quando não há sessão', async () => {
-    mockFetchOnce({ ok: true, status: 200, json: async () => ([]) });
+    mockFetchOnce({ ok: true, status: 200, json: async () => [] });
     await api.subjects.list();
     const headers = calls[0].init.headers as Record<string, string>;
     expect(headers['Authorization']).toBeUndefined();
@@ -116,7 +112,7 @@ describe('request<T> helper', () => {
 
   it('não seta Authorization quando session é JSON inválido', async () => {
     localStorage.setItem('ebbing_session', '{not-json');
-    mockFetchOnce({ ok: true, status: 200, json: async () => ([]) });
+    mockFetchOnce({ ok: true, status: 200, json: async () => [] });
     await api.subjects.list();
     const headers = calls[0].init.headers as Record<string, string>;
     expect(headers['Authorization']).toBeUndefined();
@@ -124,7 +120,7 @@ describe('request<T> helper', () => {
 
   it('não seta Authorization quando session não contém token', async () => {
     localStorage.setItem('ebbing_session', JSON.stringify({ email: 'a@b.com' }));
-    mockFetchOnce({ ok: true, status: 200, json: async () => ([]) });
+    mockFetchOnce({ ok: true, status: 200, json: async () => [] });
     await api.subjects.list();
     const headers = calls[0].init.headers as Record<string, string>;
     expect(headers['Authorization']).toBeUndefined();
@@ -133,7 +129,7 @@ describe('request<T> helper', () => {
   it('401 com sessão ativa em path protegido: limpa session, clearSubjects e reload', async () => {
     localStorage.setItem(
       'ebbing_session',
-      JSON.stringify({ email: 'a@b.com', token: 't', role: 'USER', timestamp: Date.now() })
+      JSON.stringify({ email: 'a@b.com', token: 't', role: 'USER', timestamp: Date.now() }),
     );
     const clearSpy = vi.spyOn(storage, 'clearSubjects').mockImplementation(() => {});
     const reloadMock = vi.fn();
@@ -154,7 +150,7 @@ describe('request<T> helper', () => {
   it('401 em /api/auth/* NÃO recarrega — lança Error com detail', async () => {
     localStorage.setItem(
       'ebbing_session',
-      JSON.stringify({ email: 'a@b.com', token: 't', role: 'USER', timestamp: Date.now() })
+      JSON.stringify({ email: 'a@b.com', token: 't', role: 'USER', timestamp: Date.now() }),
     );
     const reloadMock = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -168,9 +164,7 @@ describe('request<T> helper', () => {
       json: async () => ({ detail: 'credenciais inválidas' }),
     });
 
-    await expect(api.auth.login('a@b.com', 'wrong')).rejects.toThrow(
-      'credenciais inválidas'
-    );
+    await expect(api.auth.login('a@b.com', 'wrong')).rejects.toThrow('credenciais inválidas');
     expect(reloadMock).not.toHaveBeenCalled();
     // session preservada
     expect(localStorage.getItem('ebbing_session')).not.toBeNull();
@@ -196,7 +190,7 @@ describe('request<T> helper', () => {
 
 describe('endpoints — URL, método e body', () => {
   beforeEach(() => {
-    mockFetchDefault({ ok: true, status: 200, json: async () => ([]) });
+    mockFetchDefault({ ok: true, status: 200, json: async () => [] });
   });
 
   it('api.auth.login: POST /api/auth/login', async () => {
@@ -354,7 +348,7 @@ describe('endpoints — URL, método e body', () => {
   it('api.subjectTemplates.list com disciplina: encoda querystring', async () => {
     await api.subjectTemplates.list('Álgebra Linear');
     expect(calls[0].url).toBe(
-      `${BASE_URL}/api/subject-templates?disciplina=${encodeURIComponent('Álgebra Linear')}`
+      `${BASE_URL}/api/subject-templates?disciplina=${encodeURIComponent('Álgebra Linear')}`,
     );
   });
 

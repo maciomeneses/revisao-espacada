@@ -71,7 +71,15 @@ describe('RoutineBoard', () => {
   it('renderiza slots no dia correto com horário e área', () => {
     const routine: StudentRoutine = [
       makeSlot({ id: 'a', dayOfWeek: 1, title: 'Matemática', area: 'Álgebra' }),
-      makeSlot({ id: 'b', dayOfWeek: 6, title: 'Corrida', type: 'other', area: undefined, startTime: '07:00', endTime: undefined }),
+      makeSlot({
+        id: 'b',
+        dayOfWeek: 6,
+        title: 'Corrida',
+        type: 'other',
+        area: undefined,
+        startTime: '07:00',
+        endTime: undefined,
+      }),
     ];
     setup({ routine });
     expect(screen.getByText('Matemática')).toBeInTheDocument();
@@ -83,9 +91,7 @@ describe('RoutineBoard', () => {
 
   it('renderiza 7 toggles de allowedDays com aria-pressed correto', () => {
     setup({ allowedDays: new Set([1, 3, 5]) });
-    const toggles = screen
-      .getAllByRole('button')
-      .filter((b) => b.hasAttribute('aria-pressed'));
+    const toggles = screen.getAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'));
     expect(toggles).toHaveLength(7);
     // ordem: dom(0), seg(1), ter(2), qua(3), qui(4), sex(5), sáb(6)
     const pressed = toggles.map((t) => t.getAttribute('aria-pressed'));
@@ -105,9 +111,7 @@ describe('RoutineBoard', () => {
     const activeToggle = toggles[3]; // day 3
     expect(activeToggle).toBeDisabled();
     // outros não estão disabled
-    toggles
-      .filter((_, i) => i !== 3)
-      .forEach((t) => expect(t).not.toBeDisabled());
+    toggles.filter((_, i) => i !== 3).forEach((t) => expect(t).not.toBeDisabled());
   });
 
   it('abre modal ao clicar no botão + de adicionar', () => {
@@ -218,7 +222,14 @@ describe('RoutineBoard', () => {
 
   it('lida com slot sem startTime e sem area (type other)', () => {
     const routine: StudentRoutine = [
-      makeSlot({ id: 's1', type: 'other', area: undefined, startTime: undefined, endTime: undefined, title: 'Descanso' }),
+      makeSlot({
+        id: 's1',
+        type: 'other',
+        area: undefined,
+        startTime: undefined,
+        endTime: undefined,
+        title: 'Descanso',
+      }),
     ];
     setup({ routine });
     expect(screen.getByText('Descanso')).toBeInTheDocument();

@@ -13,8 +13,20 @@ vi.mock('../../src/services/api', () => ({
   api: {
     subjectTemplates: {
       list: vi.fn().mockResolvedValue([
-        { id: 1, area: 'Ciências da Natureza', disciplina: 'Física', assunto: 'Leis de Newton', relevancia: 'Alta' },
-        { id: 2, area: 'Ciências da Natureza', disciplina: 'Física', assunto: 'Cinemática', relevancia: 'Alta' },
+        {
+          id: 1,
+          area: 'Ciências da Natureza',
+          disciplina: 'Física',
+          assunto: 'Leis de Newton',
+          relevancia: 'Alta',
+        },
+        {
+          id: 2,
+          area: 'Ciências da Natureza',
+          disciplina: 'Física',
+          assunto: 'Cinemática',
+          relevancia: 'Alta',
+        },
       ]),
     },
     areas: {
@@ -58,19 +70,46 @@ describe('GerenciarConteudo', () => {
 
   const mockSubjects: Subject[] = [
     {
-      id: 'sub-1', modulo: 'Física', area: 'Ciências da Natureza', aulaPrincipal: 'Biologia 101', relevancia: 'Alta',
-      aulaAssistida: true, preAulaFeita: false, flashcardsFeitos: false, currentStage: 'Review',
-      nextReviewDate: localDateStr(new Date()), lastReviewDate: null, lastPerformance: null, performanceLevel: 'nao_classificada',
+      id: 'sub-1',
+      modulo: 'Física',
+      area: 'Ciências da Natureza',
+      aulaPrincipal: 'Biologia 101',
+      relevancia: 'Alta',
+      aulaAssistida: true,
+      preAulaFeita: false,
+      flashcardsFeitos: false,
+      currentStage: 'Review',
+      nextReviewDate: localDateStr(new Date()),
+      lastReviewDate: null,
+      lastPerformance: null,
+      performanceLevel: 'nao_classificada',
     },
     {
-      id: 'sub-2', modulo: 'Matemática', area: 'Matemática e suas Tecnologias', aulaPrincipal: 'Álgebra 101', relevancia: 'Alta',
-      aulaAssistida: false, preAulaFeita: false, flashcardsFeitos: false, currentStage: 'New',
-      nextReviewDate: null, lastReviewDate: null, lastPerformance: null, performanceLevel: 'nao_classificada',
+      id: 'sub-2',
+      modulo: 'Matemática',
+      area: 'Matemática e suas Tecnologias',
+      aulaPrincipal: 'Álgebra 101',
+      relevancia: 'Alta',
+      aulaAssistida: false,
+      preAulaFeita: false,
+      flashcardsFeitos: false,
+      currentStage: 'New',
+      nextReviewDate: null,
+      lastReviewDate: null,
+      lastPerformance: null,
+      performanceLevel: 'nao_classificada',
     },
   ];
 
   it('renderiza corretamente o modal com a lista de assuntos atuais e os formulários de adição', () => {
-    render(<GerenciarConteudo subjects={mockSubjects} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
+    render(
+      <GerenciarConteudo
+        subjects={mockSubjects}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
+    );
 
     expect(screen.getByText('Biologia 101')).toBeInTheDocument();
     expect(screen.getByText('Álgebra 101')).toBeInTheDocument();
@@ -78,7 +117,14 @@ describe('GerenciarConteudo', () => {
   });
 
   it('permite preencher o form e adiciona novo assunto', async () => {
-    render(<GerenciarConteudo subjects={mockSubjects} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
+    render(
+      <GerenciarConteudo
+        subjects={mockSubjects}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
+    );
 
     // Aguarda carregamento do catálogo.
     await waitFor(() => {
@@ -112,19 +158,30 @@ describe('GerenciarConteudo', () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(onAddMock).toHaveBeenCalledWith(expect.objectContaining({
-        modulo: 'Física',
-        area: 'Ciências da Natureza',
-        aulaPrincipal: 'Termologia',
-      }));
+      expect(onAddMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          modulo: 'Física',
+          area: 'Ciências da Natureza',
+          aulaPrincipal: 'Termologia',
+        }),
+      );
     });
   });
 
   it('auto-seleciona a única disciplina quando a área tem apenas uma', async () => {
-    render(<GerenciarConteudo subjects={[]} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
+    render(
+      <GerenciarConteudo
+        subjects={[]}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
+    );
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Matemática e suas Tecnologias' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'Matemática e suas Tecnologias' }),
+      ).toBeInTheDocument();
     });
 
     const areaSelect = screen.getByRole('combobox', { name: /área/i });
@@ -132,14 +189,23 @@ describe('GerenciarConteudo', () => {
 
     // A disciplina única (Matemática) deve ser pré-selecionada.
     await waitFor(() => {
-      const disciplinaSelect = screen.getByRole('combobox', { name: /disciplina/i }) as HTMLSelectElement;
+      const disciplinaSelect = screen.getByRole('combobox', {
+        name: /disciplina/i,
+      }) as HTMLSelectElement;
       expect(disciplinaSelect.value).toBe('201');
     });
   });
 
   it('permite criar uma nova área inline e seleciona-a automaticamente', async () => {
     createAreaMock.mockResolvedValue({ id: 99, name: 'Redação' });
-    render(<GerenciarConteudo subjects={[]} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
+    render(
+      <GerenciarConteudo
+        subjects={[]}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
+    );
 
     await waitFor(() => {
       expect(screen.getByRole('option', { name: /\+ Nova área/i })).toBeInTheDocument();
@@ -158,18 +224,35 @@ describe('GerenciarConteudo', () => {
   });
 
   it('chama onRemove ao clicar na lixeira do assunto', () => {
-    render(<GerenciarConteudo subjects={mockSubjects} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
-
-    const trashButtons = screen.getAllByRole('button').filter(btn =>
-      btn.className.includes('text-muted-light') && btn.className.includes('hover:text-red')
+    render(
+      <GerenciarConteudo
+        subjects={mockSubjects}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
     );
+
+    const trashButtons = screen
+      .getAllByRole('button')
+      .filter(
+        (btn) =>
+          btn.className.includes('text-muted-light') && btn.className.includes('hover:text-red'),
+      );
     fireEvent.click(trashButtons[0]);
 
     expect(onRemoveMock).toHaveBeenCalledWith('sub-1');
   });
 
   it('chama onClose ao fechar', () => {
-    render(<GerenciarConteudo subjects={mockSubjects} onAdd={onAddMock} onRemove={onRemoveMock} onClose={onCloseMock} />);
+    render(
+      <GerenciarConteudo
+        subjects={mockSubjects}
+        onAdd={onAddMock}
+        onRemove={onRemoveMock}
+        onClose={onCloseMock}
+      />,
+    );
 
     const closeButtons = screen.getAllByRole('button');
     fireEvent.click(closeButtons[0]);

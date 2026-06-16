@@ -41,7 +41,12 @@ describe('AuthScreen', () => {
   });
 
   it('chama onLogin com dados corretos após login bem-sucedido', async () => {
-    const mockResponse = { email: 'test@test.com', token: 'jwt-123', role: 'USER' as any, userId: '1' };
+    const mockResponse = {
+      email: 'test@test.com',
+      token: 'jwt-123',
+      role: 'USER' as any,
+      userId: '1',
+    };
     vi.mocked(api.auth.login).mockResolvedValue(mockResponse);
 
     renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
@@ -65,7 +70,9 @@ describe('AuthScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /Entrar/i }));
 
     await waitFor(() => {
-      expect(screen.getByText((content) => content.includes('Credenciais inválidas'))).toBeInTheDocument();
+      expect(
+        screen.getByText((content) => content.includes('Credenciais inválidas')),
+      ).toBeInTheDocument();
     });
   });
 
@@ -87,7 +94,10 @@ describe('AuthScreen', () => {
 
     // O erro é renderizado via state, usamos findByText para lidar com o ciclo de vida do React
     const errorMsg = await screen.findByText((content, element) => {
-      return content.toLowerCase().includes('por favor') && content.toLowerCase().includes('insira seu e-mail');
+      return (
+        content.toLowerCase().includes('por favor') &&
+        content.toLowerCase().includes('insira seu e-mail')
+      );
     });
     expect(errorMsg).toBeInTheDocument();
   });

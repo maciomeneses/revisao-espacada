@@ -1,0 +1,9 @@
+---
+description: Regras de gitflow e commits (Conventional Commits, sem IA)
+globs:
+alwaysApply: true
+---
+
+Fonte canônica: docs/conventions/gitflow.md
+
+@docs/conventions/gitflow.md

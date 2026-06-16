@@ -6,8 +6,22 @@ import { useCatalog } from '../hooks/useCatalog';
 interface CronogramaProps {
   subjects: Subject[];
   onToggleAula: (id: string) => void;
-  onRegisterReview: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string, durationSeconds: number) => void;
-  onRegisterFixacao: (id: string, numCorrect: number, totalQuestions: number, accuracy: number, reviewDate: string, durationSeconds: number) => void;
+  onRegisterReview: (
+    id: string,
+    numCorrect: number,
+    totalQuestions: number,
+    accuracy: number,
+    reviewDate: string,
+    durationSeconds: number,
+  ) => void;
+  onRegisterFixacao: (
+    id: string,
+    numCorrect: number,
+    totalQuestions: number,
+    accuracy: number,
+    reviewDate: string,
+    durationSeconds: number,
+  ) => void;
   onResetCiclo: (id: string) => void;
   onRevertStage: (id: string) => void;
   /** ID do assunto a destacar e rolar até ele (vindo do Dashboard). */
@@ -66,7 +80,9 @@ export function Cronograma({
   const areas = useMemo(() => {
     const set = new Set<string>();
     catalogAreas.forEach((a) => set.add(a.name));
-    subjects.forEach((s) => { if (s.area) set.add(s.area); });
+    subjects.forEach((s) => {
+      if (s.area) set.add(s.area);
+    });
     return Array.from(set).sort();
   }, [catalogAreas, subjects]);
 
@@ -77,7 +93,7 @@ export function Cronograma({
   // Scroll to and flash a highlighted subject coming from the Dashboard
   useEffect(() => {
     if (!highlightedSubjectId) return;
-    const target = subjects.find(s => s.id === highlightedSubjectId);
+    const target = subjects.find((s) => s.id === highlightedSubjectId);
     if (!target) return;
 
     // 1. Make the subject visible — switch to its area (or show all)
@@ -96,7 +112,7 @@ export function Cronograma({
     }, 80);
 
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightedSubjectId]);
 
   const openModal = (subject: Subject, mode: 'review' | 'fixacao') => {
@@ -126,7 +142,14 @@ export function Cronograma({
     const accuracy = Math.round((form.numCorrect / total) * 100);
     const durationSeconds = parseDuration(form.duration);
     if (modalMode === 'fixacao') {
-      onRegisterFixacao(selectedSubject.id, normalized, total, accuracy, form.date, durationSeconds);
+      onRegisterFixacao(
+        selectedSubject.id,
+        normalized,
+        total,
+        accuracy,
+        form.date,
+        durationSeconds,
+      );
     } else {
       onRegisterReview(selectedSubject.id, normalized, total, accuracy, form.date, durationSeconds);
     }
@@ -164,7 +187,9 @@ export function Cronograma({
               }`}
             >
               Todos
-              <span className={`ml-1.5 text-[9px] ${selectedArea === '__all__' ? 'text-white/70' : 'text-muted-light'}`}>
+              <span
+                className={`ml-1.5 text-[9px] ${selectedArea === '__all__' ? 'text-white/70' : 'text-muted-light'}`}
+              >
                 {subjects.length}
               </span>
             </button>
@@ -180,7 +205,9 @@ export function Cronograma({
                 }`}
               >
                 {area}
-                <span className={`ml-1.5 text-[9px] ${area === activeArea ? 'text-white/70' : 'text-muted-light'}`}>
+                <span
+                  className={`ml-1.5 text-[9px] ${area === activeArea ? 'text-white/70' : 'text-muted-light'}`}
+                >
                   {subjects.filter((s) => s.area === area).length}
                 </span>
               </button>
@@ -193,7 +220,9 @@ export function Cronograma({
         {visibleSubjects.map((s) => (
           <div
             key={s.id}
-            ref={el => { cardRefs.current[s.id] = el; }}
+            ref={(el) => {
+              cardRefs.current[s.id] = el;
+            }}
             className={`bg-white p-6 rounded-2xl border flex flex-col md:flex-row gap-6 items-start md:items-center justify-between group shadow-sm hover:shadow-md transition-all ${
               flashId === s.id
                 ? 'border-amber-400 ring-2 ring-amber-300 ring-offset-1'
@@ -202,40 +231,67 @@ export function Cronograma({
           >
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-bold bg-navy text-white px-2 py-0.5 rounded uppercase tracking-wider">{s.area}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                  s.relevancia === 'Alta' ? 'bg-red-600 text-white' :
-                  s.relevancia === 'Média' ? 'bg-yellow text-navy' :
-                  'bg-sky-500 text-white'
-                }`}>{s.relevancia}</span>
-                <span className="text-[10px] font-bold bg-surface text-navy/50 px-2 py-0.5 rounded uppercase tracking-wider">{getProximaTarefa(s.currentStage)}</span>
+                <span className="text-[10px] font-bold bg-navy text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                  {s.area}
+                </span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                    s.relevancia === 'Alta'
+                      ? 'bg-red-600 text-white'
+                      : s.relevancia === 'Média'
+                        ? 'bg-yellow text-navy'
+                        : 'bg-sky-500 text-white'
+                  }`}
+                >
+                  {s.relevancia}
+                </span>
+                <span className="text-[10px] font-bold bg-surface text-navy/50 px-2 py-0.5 rounded uppercase tracking-wider">
+                  {getProximaTarefa(s.currentStage)}
+                </span>
                 {getFormulaStatus(s) && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                    getFormulaStatus(s) === 'Atrasado' ? 'bg-red-100 text-red-600' :
-                    getFormulaStatus(s) === 'Hoje' ? 'bg-yellow/20 text-yellow-dark' :
-                    'bg-green-100 text-green-600'
-                  }`}>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                      getFormulaStatus(s) === 'Atrasado'
+                        ? 'bg-red-100 text-red-600'
+                        : getFormulaStatus(s) === 'Hoje'
+                          ? 'bg-yellow/20 text-yellow-dark'
+                          : 'bg-green-100 text-green-600'
+                    }`}
+                  >
                     {getFormulaStatus(s)}
                   </span>
                 )}
               </div>
               <h3 className="text-lg font-black text-navy mb-0.5">{s.aulaPrincipal}</h3>
-              <p className="text-muted text-[10px] font-bold uppercase tracking-widest">{s.modulo}</p>
+              <p className="text-muted text-[10px] font-bold uppercase tracking-widest">
+                {s.modulo}
+              </p>
 
               <div className="flex items-center gap-8 mt-4 flex-wrap">
                 <div className="flex flex-col">
-                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Estabilidade</span>
-                  <span className="text-navy text-xs font-bold">{s.stability ? `${s.stability.toFixed(1)} dias` : 'Iniciante'}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Última Revisão</span>
+                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">
+                    Estabilidade
+                  </span>
                   <span className="text-navy text-xs font-bold">
-                    {fmtDate(s.lastReviewDate ? localDateStr(new Date(s.lastReviewDate)) : null) || 'Nunca'}
+                    {s.stability ? `${s.stability.toFixed(1)} dias` : 'Iniciante'}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">Próxima Revisão</span>
-                  <span className={`text-xs font-bold ${s.nextReviewDate && s.nextReviewDate <= todayStr ? 'text-red-600' : 'text-navy'}`}>
+                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">
+                    Última Revisão
+                  </span>
+                  <span className="text-navy text-xs font-bold">
+                    {fmtDate(s.lastReviewDate ? localDateStr(new Date(s.lastReviewDate)) : null) ||
+                      'Nunca'}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-muted-light text-[9px] font-black uppercase mb-0.5">
+                    Próxima Revisão
+                  </span>
+                  <span
+                    className={`text-xs font-bold ${s.nextReviewDate && s.nextReviewDate <= todayStr ? 'text-red-600' : 'text-navy'}`}
+                  >
                     {fmtDate(s.nextReviewDate) || 'A definir'}
                   </span>
                 </div>
@@ -271,18 +327,41 @@ export function Cronograma({
                     onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
                     className="p-2 text-muted-light hover:text-navy transition-colors"
                   >
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                    <svg
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2.5"
+                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                      />
+                    </svg>
                   </button>
                   {openMenuId === s.id && (
                     <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-xl z-20 shadow-xl py-1">
                       <button
-                        onClick={() => { onResetCiclo(s.id); setOpenMenuId(null); }}
+                        onClick={() => {
+                          onResetCiclo(s.id);
+                          setOpenMenuId(null);
+                        }}
                         className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase"
-                      >Resetar Ciclo</button>
+                      >
+                        Resetar Ciclo
+                      </button>
                       <button
-                        onClick={() => { onRevertStage(s.id); setOpenMenuId(null); }}
+                        onClick={() => {
+                          onRevertStage(s.id);
+                          setOpenMenuId(null);
+                        }}
                         className="w-full text-left px-4 py-2.5 text-[10px] font-bold text-navy hover:bg-surface transition-colors uppercase border-t border-border"
-                      >Reverter Estabilidade</button>
+                      >
+                        Reverter Estabilidade
+                      </button>
                     </div>
                   )}
                 </div>
@@ -292,9 +371,7 @@ export function Cronograma({
         ))}
       </div>
 
-      {openMenuId && (
-        <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
-      )}
+      {openMenuId && <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />}
 
       {selectedSubject && modalMode && (
         <div className="fixed inset-0 bg-navy/20 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
@@ -336,7 +413,10 @@ export function Cronograma({
                   />
                 </div>
                 <div>
-                  <label htmlFor="review-num-correct" className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5">
+                  <label
+                    htmlFor="review-num-correct"
+                    className="block text-[9px] font-black text-muted-light uppercase tracking-widest mb-1.5"
+                  >
                     Acertos
                   </label>
                   <input
@@ -345,7 +425,9 @@ export function Cronograma({
                     min={0}
                     max={parseInt(form.totalQuestions) || undefined}
                     value={form.numCorrect}
-                    onChange={(e) => setForm({ ...form, numCorrect: Math.max(0, parseInt(e.target.value) || 0) })}
+                    onChange={(e) =>
+                      setForm({ ...form, numCorrect: Math.max(0, parseInt(e.target.value) || 0) })
+                    }
                     className="w-full bg-surface border border-border rounded-xl px-3 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
                   />
                 </div>
@@ -372,15 +454,20 @@ export function Cronograma({
                 return (
                   <div className="bg-surface rounded-2xl border border-border p-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-[9px] font-black text-muted-light uppercase tracking-widest">Aproveitamento</span>
-                      <span className="text-2xl font-black text-navy">{total > 0 ? Math.round(pct) : '—'}%</span>
+                      <span className="text-[9px] font-black text-muted-light uppercase tracking-widest">
+                        Aproveitamento
+                      </span>
+                      <span className="text-2xl font-black text-navy">
+                        {total > 0 ? Math.round(pct) : '—'}%
+                      </span>
                     </div>
                     <div className="w-full h-2 bg-border rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626',
+                          backgroundColor:
+                            pct >= 80 ? '#16a34a' : pct >= 60 ? '#ca8a04' : '#dc2626',
                         }}
                       />
                     </div>

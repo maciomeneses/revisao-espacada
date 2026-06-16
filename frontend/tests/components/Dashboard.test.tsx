@@ -36,7 +36,9 @@ function makeSubject(overrides: Partial<Subject> = {}): Subject {
  */
 function getStatValue(label: string): string {
   const elements = screen.getAllByText(label);
-  const labelEl = elements.find(el => el.tagName === 'P' && el.nextElementSibling?.tagName === 'P') ?? elements[0];
+  const labelEl =
+    elements.find((el) => el.tagName === 'P' && el.nextElementSibling?.tagName === 'P') ??
+    elements[0];
   const valueEl = labelEl.nextElementSibling;
   return valueEl?.textContent ?? '';
 }
@@ -86,7 +88,20 @@ describe('Dashboard', () => {
 
   it('chama onNavigateCronograma ao clicar no botão', () => {
     const mockNavigate = vi.fn();
-    render(<Dashboard subjects={[]} onNavigateCronograma={mockNavigate} onRegisterReview={vi.fn()} routine={[]} availableAreas={[]} onAddSlot={vi.fn()} onUpdateSlot={vi.fn()} onRemoveSlot={vi.fn()} allowedDays={new Set([0, 1, 2, 3, 4, 5, 6])} onToggleDay={vi.fn()} />);
+    render(
+      <Dashboard
+        subjects={[]}
+        onNavigateCronograma={mockNavigate}
+        onRegisterReview={vi.fn()}
+        routine={[]}
+        availableAreas={[]}
+        onAddSlot={vi.fn()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        allowedDays={new Set([0, 1, 2, 3, 4, 5, 6])}
+        onToggleDay={vi.fn()}
+      />,
+    );
 
     const btn = screen.getByRole('button', { name: /cronograma/i });
     fireEvent.click(btn);
@@ -100,7 +115,9 @@ describe('Dashboard', () => {
   });
 
   it('botão Revisar no card abre modal de revisão', () => {
-    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
+    const subjects = [
+      makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today }),
+    ];
     render(<Dashboard subjects={subjects} {...defaultProps} />);
 
     const revisarBtn = screen.getByRole('button', { name: /^Revisar$/i });
@@ -111,8 +128,23 @@ describe('Dashboard', () => {
 
   it('confirma revisão chamando onRegisterReview com os dados corretos', () => {
     const onRegisterReview = vi.fn();
-    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
-    render(<Dashboard subjects={subjects} onNavigateCronograma={vi.fn()} onRegisterReview={onRegisterReview} routine={[]} availableAreas={[]} onAddSlot={vi.fn()} onUpdateSlot={vi.fn()} onRemoveSlot={vi.fn()} allowedDays={new Set([0, 1, 2, 3, 4, 5, 6])} onToggleDay={vi.fn()} />);
+    const subjects = [
+      makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today }),
+    ];
+    render(
+      <Dashboard
+        subjects={subjects}
+        onNavigateCronograma={vi.fn()}
+        onRegisterReview={onRegisterReview}
+        routine={[]}
+        availableAreas={[]}
+        onAddSlot={vi.fn()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        allowedDays={new Set([0, 1, 2, 3, 4, 5, 6])}
+        onToggleDay={vi.fn()}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
     // numCorrect default é 7, totalQuestions default é 10 → normalized=7, accuracy=70
@@ -122,15 +154,17 @@ describe('Dashboard', () => {
   });
 
   it('navega no minicalendário de revisões agendadas', () => {
-    const subjects = [makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today })];
+    const subjects = [
+      makeSubject({ id: 'sub-rev', currentStage: 'Review', nextReviewDate: today }),
+    ];
     render(<Dashboard subjects={subjects} {...defaultProps} />);
 
     // Navegar nos dias
     const btnLeft = document.querySelector('button > svg.lucide-chevron-left');
     const btnRight = document.querySelector('button > svg.lucide-chevron-right');
 
-    if(btnLeft) fireEvent.click(btnLeft!.closest('button')!);
-    if(btnRight) {
+    if (btnLeft) fireEvent.click(btnLeft!.closest('button')!);
+    if (btnRight) {
       fireEvent.click(btnRight!.closest('button')!);
       fireEvent.click(btnRight!.closest('button')!); // Avança 2 dias
     }
