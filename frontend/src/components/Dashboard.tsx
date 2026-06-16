@@ -101,9 +101,8 @@ export function Dashboard({
     () => ({
       totalMaterias: subjects.length,
       revisoesHoje: subjects.filter((s) => s.nextReviewDate && s.nextReviewDate <= todayStr).length,
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }),
-    [subjects],
+    [subjects, todayStr],
   );
 
   const reviewsByDate = useMemo(() => {
@@ -124,8 +123,7 @@ export function Dashboard({
       subjects
         .filter((s) => s.nextReviewDate && s.nextReviewDate < todayStr)
         .sort((a, b) => (a.nextReviewDate! < b.nextReviewDate! ? -1 : 1)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [subjects],
+    [subjects, todayStr],
   );
 
   const openReviewModal = (s: Subject) => {
