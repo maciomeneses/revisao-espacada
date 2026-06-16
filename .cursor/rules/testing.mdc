@@ -1,0 +1,9 @@
+---
+description: Regras de testes e cobertura (JaCoCo / Vitest)
+globs: frontend/tests/**/*.{ts,tsx},backend/src/test/**/*.java
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/testing.md
+
+@docs/conventions/testing.md

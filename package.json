@@ -8,6 +8,30 @@
     "deploy": "cd frontend && npm run deploy",
     "backend:build": "cd backend && ./gradlew build",
     "backend:run": "cd backend && ./gradlew bootRun",
-    "backend:test": "cd backend && ./gradlew test"
+    "backend:test": "cd backend && ./gradlew test",
+    "lint": "cd frontend && npm run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "changelog": "git-cliff -o CHANGELOG.md",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "git-cliff": "^2.6.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

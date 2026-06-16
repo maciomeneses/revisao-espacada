@@ -1,0 +1,9 @@
+---
+description: Regras para o frontend React / TypeScript
+globs: frontend/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/frontend-react.md
+
+@docs/conventions/frontend-react.md

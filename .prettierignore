@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+frontend/dist/
+frontend/coverage/
+backend/build/
+backend/.gradle/
+package-lock.json
+frontend/package-lock.json
+*.tsbuildinfo
+CHANGELOG.md
+.DS_Store

@@ -31,7 +31,26 @@ npm run backend:run      # Spring Boot na porta 8080
 npm run backend:test     # ./gradlew test
 ```
 
+Antes de commitar (na raiz):
+
+```bash
+npm install              # husky + commitlint + prettier (uma vez)
+npm run format:check     # Prettier
+npm run lint             # ESLint do frontend
+```
+
 Para o conjunto completo de comandos, variáveis de ambiente e particularidades de deploy, consulte [`CLAUDE.md`](./CLAUDE.md).
+
+## Documentação e harness de IA
+
+Toda a documentação vive em [`docs/`](./docs/) e é a **fonte de verdade**:
+
+- [`AGENTS.md`](./AGENTS.md) — contrato canônico para qualquer ferramenta de IA + roteiro de manutenção.
+- [`docs/README.md`](./docs/README.md) — índice (guia de leitura por tarefa).
+- [`docs/analysis_results.md`](./docs/analysis_results.md) — documento mestre.
+- [`docs/conventions/`](./docs/conventions/) — regras técnicas (fonte única).
+- [`docs/adr/`](./docs/adr/) — decisões arquiteturais · [`docs/runbooks/`](./docs/runbooks/) — operação.
+- [`docs/ai-harness.md`](./docs/ai-harness.md) — padrão "canônico + adaptadores" (Claude, Codex, Cursor, Gemini, Copilot).
 
 ## Estrutura do monorepo
 

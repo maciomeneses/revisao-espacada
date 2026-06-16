@@ -5,6 +5,8 @@ description: Escreve testes para o projeto Ebbing. Use para gerar testes Vitest/
 
 Você é um especialista em escrita de testes para o projeto **Ebbing** (Revisão Espaçada).
 
+> Fonte canônica: `docs/conventions/testing.md`. Em caso de divergência, a convenção prevalece.
+
 ## Frontend: Vitest + Testing Library
 
 ### Setup
@@ -12,10 +14,10 @@ Você é um especialista em escrita de testes para o projeto **Ebbing** (Revisã
 ```typescript
 // vitest.config ou vite.config — ambiente: jsdom
 // imports típicos:
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
-import '@testing-library/jest-dom'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
 ```
 
 ### Como mockar a API
@@ -40,43 +42,55 @@ vi.mock('../services/api', () => ({
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: 1 }),
     },
-    admin: { users: { list: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() } },
+    admin: {
+      users: {
+        list: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+    },
   },
-}))
+}));
 ```
 
 ### Como mockar localStorage
 
 ```typescript
 beforeEach(() => {
-  localStorage.clear()
+  localStorage.clear();
   // Simular usuário logado:
-  localStorage.setItem('ebbing_session', JSON.stringify({
-    email: 'test@test.com',
-    token: 'fake-token',
-    role: 'USER',
-    timestamp: Date.now(),
-  }))
-})
+  localStorage.setItem(
+    'ebbing_session',
+    JSON.stringify({
+      email: 'test@test.com',
+      token: 'fake-token',
+      role: 'USER',
+      timestamp: Date.now(),
+    }),
+  );
+});
 ```
 
 ### Como testar hooks (`useSubjects`)
 
 ```typescript
-import { renderHook, act } from '@testing-library/react'
-import { useSubjects } from '../hooks/useSubjects'
+import { renderHook, act } from '@testing-library/react';
+import { useSubjects } from '../hooks/useSubjects';
 
 it('toggleAula altera aulaAssistida', async () => {
-  const { result } = renderHook(() => useSubjects())
-  const id = result.current.subjects[0]?.id
-  if (!id) return
+  const { result } = renderHook(() => useSubjects());
+  const id = result.current.subjects[0]?.id;
+  if (!id) return;
 
   await act(async () => {
-    result.current.toggleAula(id)
-  })
+    result.current.toggleAula(id);
+  });
 
-  expect(result.current.subjects.find(s => s.id === id)?.aulaAssistida).toBe(true)
-})
+  expect(result.current.subjects.find((s) => s.id === id)?.aulaAssistida).toBe(
+    true,
+  );
+});
 ```
 
 ### Como testar componentes com React Router v7
@@ -108,7 +122,7 @@ const mockSubject = {
   lastReviewDate: null,
   lastPerformance: null,
   performanceLevel: 'nao_classificada',
-}
+};
 ```
 
 ### Cobertura esperada
@@ -116,6 +130,7 @@ const mockSubject = {
 **Política per-file (não negociável):** todo arquivo novo em `src/` precisa nascer **≥ 90%** lines/functions/statements e **≥ 85%** branches. Thresholds enforced em `frontend/vitest.config.ts` via `perFile: true` — `npm run test:coverage` falha o CI se um arquivo novo (ou modificado) cair abaixo.
 
 Prioridade decrescente quando faltar cobertura:
+
 1. Lógica de negócio em hooks (`useSubjects`, `useRoutine`, `useReviewPreferences`) — toggles, registerReview, registerFixacao, revertStage, sincronização com backend
 2. Componentes de autenticação (`AuthScreen`, `ResetPasswordScreen`) — fluxos de login, erro, reset
 3. Lógica condicional em componentes (`Cronograma`, `Dashboard`, `RoutineBoard`, etc.) — estados vazios, cards, filtros, branches por allowedDays
@@ -192,12 +207,14 @@ assertEquals("Review", resultado.getStatus());
 ### Convenção de nomenclatura de testes backend
 
 Seguir o padrão já usado no projeto:
+
 - `@DisplayName` em português descrevendo o cenário
 - Nome do método: `metodoCenarioResultado` (camelCase)
 
 ### Casos sempre a cobrir
 
 Para qualquer novo Service/Controller:
+
 - Caminho feliz (happy path)
 - Entrada inválida / validação falhando
 - Recurso não encontrado (404)

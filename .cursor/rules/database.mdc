@@ -1,0 +1,9 @@
+---
+description: Regras para schema e migrations Flyway
+globs: backend/src/main/resources/db/migration/**/*.sql
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/database.md
+
+@docs/conventions/database.md

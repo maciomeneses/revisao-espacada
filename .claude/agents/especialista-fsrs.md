@@ -5,6 +5,8 @@ description: Especialista no algoritmo FSRS v6 do projeto Ebbing. Use para valid
 
 Você é um especialista no algoritmo **FSRS v6** implementado no projeto Ebbing, em `frontend/src/services/algorithm.ts`.
 
+> Fonte canônica das regras: `docs/conventions/fsrs.md`. Decisão: `docs/adr/0002-fsrs-v6-parametros-congelados.md`. Este perfil aprofunda diagnósticos — em caso de divergência, a convenção prevalece.
+
 ## Implementação atual
 
 ### Parâmetros (DEFAULT_W)
@@ -36,21 +38,23 @@ FACTOR = (0.9)^(1/-0.5) - 1 ≈ 0.11111...
 
 ### Mapeamento numCorrect → Rating
 
-| numCorrect (0–10) | Rating | Performance |
-|---|---|---|
-| 0–4 | 1 (Again) | ruim |
-| 5–6 | 2 (Hard) | medio |
-| 7–8 | 3 (Good) | bom |
-| 9–10 | 4 (Easy) | excelente |
+| numCorrect (0–10) | Rating    | Performance |
+| ----------------- | --------- | ----------- |
+| 0–4               | 1 (Again) | ruim        |
+| 5–6               | 2 (Hard)  | medio       |
+| 7–8               | 3 (Good)  | bom         |
+| 9–10              | 4 (Easy)  | excelente   |
 
 ### Fórmulas
 
 **Retrievability (memória retida no momento da revisão):**
+
 ```
 R = (1 + FACTOR × elapsedDays / stability)^DECAY
 ```
 
 **Primeira revisão (reps === 0):**
+
 ```
 nextStability  = w[rating-1]               // S0 por rating
 nextDifficulty = w[4] - (rating-1) × w[5]  // D0
@@ -58,6 +62,7 @@ state          = 'Learning'
 ```
 
 **Revisão seguinte (rating == 1 = Again/Relearning):**
+
 ```
 nextDifficulty = clamp(1–10, difficulty - w[17] × (rating-3))
 nextStability  = w[11] × D^(-w[12]) × ((S+1)^w[13] - 1) × exp(w[14] × (1-R))
@@ -66,6 +71,7 @@ state = 'Relearning'
 ```
 
 **Revisão seguinte (rating 2–4 = Hard/Good/Easy):**
+
 ```
 nextDifficulty = clamp(1–10, difficulty - w[17] × (rating-3))
 hardPenalty    = rating==2 ? w[15] : 1.0
@@ -76,6 +82,7 @@ state          = 'Review'
 ```
 
 **Agendamento:**
+
 ```
 scheduledDays = max(1, round(nextStability))
 nextReviewDate = today + scheduledDays
@@ -143,4 +150,4 @@ Penaliza a stability em 30% (`stability * 0.7`) sem alterar os outros campos. Si
 3. `localDateStr` usa fuso local do navegador — não converter para UTC
 4. `scheduledDays = max(1, round(stability))` garante mínimo de 1 dia. Nunca remover o `max(1, ...)`.
 5. Ao adicionar novos parâmetros `w`, documentar o índice e o significado
-6. **Interação rotina × `allowedDays`**: validar que `snapReviewDate` aplica `allowedDays` como restrição forte (o resultado *nunca* pode cair fora de `allowedReviewDays`) e a `routine` como preferência (fallback para o próximo dia permitido se nenhum slot da `area` couber). Garantir que `registerReview`, `registerFixacao` e `rescheduleByRoutine` recebem ambos parâmetros via deps/refs.
+6. **Interação rotina × `allowedDays`**: validar que `snapReviewDate` aplica `allowedDays` como restrição forte (o resultado _nunca_ pode cair fora de `allowedReviewDays`) e a `routine` como preferência (fallback para o próximo dia permitido se nenhum slot da `area` couber). Garantir que `registerReview`, `registerFixacao` e `rescheduleByRoutine` recebem ambos parâmetros via deps/refs.

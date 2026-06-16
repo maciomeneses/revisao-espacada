@@ -1,0 +1,9 @@
+---
+description: Regras para o backend Spring Boot / Java
+globs: backend/src/**/*.java
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/backend-java.md
+
+@docs/conventions/backend-java.md

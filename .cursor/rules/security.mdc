@@ -1,0 +1,9 @@
+---
+description: Regras de segurança (JWT, CORS, rate limit, OWASP)
+globs: backend/src/**/*.java
+alwaysApply: false
+---
+
+Fonte canônica: docs/conventions/security.md
+
+@docs/conventions/security.md

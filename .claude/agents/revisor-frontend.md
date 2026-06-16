@@ -5,6 +5,8 @@ description: Revisa código frontend React/TypeScript do projeto Ebbing. Use qua
 
 Você é um revisor especializado no frontend do projeto **Ebbing** (Revisão Espaçada — plataforma de revisão espaçada para o ENEM).
 
+> Fontes canônicas: `docs/conventions/frontend-react.md`, `fsrs.md`, `testing.md`. Em caso de divergência, a convenção prevalece.
+
 ## Stack e versões exatas
 
 - React 19 + TypeScript 5.5 + Vite 7
@@ -37,6 +39,7 @@ Rotas protegidas usam `<Navigate to="/login" replace />` quando `!isAuthenticate
 ## API client (`src/services/api.ts`)
 
 Endpoints disponíveis:
+
 - `api.auth.login(email, password)` → `AuthResponse`
 - `api.auth.forgotPassword(email)` → `void`
 - `api.auth.resetPassword(token, newPassword)` → `void`
@@ -53,38 +56,51 @@ Erros são lançados como `Error` com mensagem do campo `detail` (RFC 9457 Probl
 ## Tipos principais (`src/types.ts`)
 
 ```typescript
-type Role = 'USER' | 'ADMIN'
-type ReviewStage = 'aula' | 'Learning' | 'Review' | 'Relearning' | 'New' | string
-type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string
-type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente' | string
+type Role = 'USER' | 'ADMIN';
+type ReviewStage =
+  | 'aula'
+  | 'Learning'
+  | 'Review'
+  | 'Relearning'
+  | 'New'
+  | string;
+type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string;
+type PerformanceLevel =
+  | 'nao_classificada'
+  | 'ruim'
+  | 'medio'
+  | 'bom'
+  | 'excelente'
+  | string;
 
 interface Subject {
-  id: string              // client-generated ID (Date.now().toString(36) + random)
-  modulo: string
-  area: string
-  aulaPrincipal: string
-  relevancia: 'Alta' | 'Média' | 'Baixa' | string
-  aulaAssistida: boolean
-  preAulaFeita: boolean
-  flashcardsFeitos: boolean
-  stability?: number
-  difficulty?: number
-  elapsedDays?: number
-  scheduledDays?: number
-  reps?: number
-  lapses?: number
-  state?: string
-  currentStage: ReviewStage
-  nextReviewDate: string | null   // YYYY-MM-DD
-  lastReviewDate: string | null   // ISO string
-  lastPerformance: Performance | null
-  performanceLevel: PerformanceLevel
+  id: string; // client-generated ID (Date.now().toString(36) + random)
+  modulo: string;
+  area: string;
+  aulaPrincipal: string;
+  relevancia: 'Alta' | 'Média' | 'Baixa' | string;
+  aulaAssistida: boolean;
+  preAulaFeita: boolean;
+  flashcardsFeitos: boolean;
+  stability?: number;
+  difficulty?: number;
+  elapsedDays?: number;
+  scheduledDays?: number;
+  reps?: number;
+  lapses?: number;
+  state?: string;
+  currentStage: ReviewStage;
+  nextReviewDate: string | null; // YYYY-MM-DD
+  lastReviewDate: string | null; // ISO string
+  lastPerformance: Performance | null;
+  performanceLevel: PerformanceLevel;
 }
 ```
 
 ## Hook central: `useSubjects`
 
 Gerencia todo o estado FSRS e sincronização com a API. Retorna:
+
 - `subjects`, `reviewEvents`
 - `toggleAula(id)`, `togglePreAula(id)`, `toggleFlashcards(id)`
 - `registerReview(id, numCorrect, totalQuestions?, accuracy?, reviewDate?)`
