@@ -23,6 +23,10 @@ Formato `tipo(escopo opcional): assunto`. Tipos: `feat`, `fix`, `test`, `chore`,
 ## Fluxo de trabalho
 
 - Após cada alteração concluída, fazer commit e push.
+- Antes de abrir PR: **code review local** no diff da branch (no Claude Code: `/code-review`),
+  corrigindo os achados críticos antes do push final. Os revisores especializados do repo
+  (`/review` → `revisor-backend`/`revisor-frontend`) continuam valendo como complemento.
+  O review roda na sessão — não consome GitHub Actions.
 - Toda mudança de feature dispara o **Roteiro de manutenção** — ver `AGENTS.md`. Docs, adaptadores e código andam na **mesma PR** (atomicidade).
 - `CHANGELOG.md` é gerado por git-cliff a partir dos Conventional Commits (`cliff.toml`).
 
