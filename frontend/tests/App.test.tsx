@@ -64,19 +64,23 @@ vi.mock('../src/components/GerenciarConteudo', () => ({
 // Removed ResetPasswordScreen mock to test natively
 
 // Mock all sub-components that have side-effects or heavy deps
+// Estado mutável para que testes individuais possam simular erro de persistência.
+const mockUseSubjectsState = {
+  subjects: [{ id: 's1', aulaPrincipal: 'Aula 1', currentStage: 'aula' }],
+  reviewEvents: [],
+  error: null as string | null,
+  clearError: vi.fn(),
+  addSubject: vi.fn(),
+  updateSubject: vi.fn(),
+  removeSubject: vi.fn(),
+  toggleAula: vi.fn(),
+  registerReview: vi.fn(),
+  registerFixacao: vi.fn(),
+  doResetCiclo: vi.fn(),
+  revertStage: vi.fn(),
+};
 vi.mock('../src/hooks/useSubjects', () => ({
-  useSubjects: () => ({
-    subjects: [{ id: 's1', aulaPrincipal: 'Aula 1', currentStage: 'aula' }],
-    reviewEvents: [],
-    addSubject: vi.fn(),
-    updateSubject: vi.fn(),
-    removeSubject: vi.fn(),
-    toggleAula: vi.fn(),
-    registerReview: vi.fn(),
-    registerFixacao: vi.fn(),
-    doResetCiclo: vi.fn(),
-    revertStage: vi.fn(),
-  }),
+  useSubjects: () => mockUseSubjectsState,
 }));
 
 vi.mock('../src/services/api', () => ({
@@ -137,6 +141,23 @@ describe('App — roteamento e edge cases de autenticação', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
+    mockUseSubjectsState.error = null;
+  });
+
+  it('exibe o erro de persistência do useSubjects e o dispensa via clearError', () => {
+    mockUseSubjectsState.error = 'Não foi possível criar o assunto. Verifique sua conexão.';
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppContent />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Não foi possível criar o assunto. Verifique sua conexão.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /fechar aviso de erro/i }));
+    expect(mockUseSubjectsState.clearError).toHaveBeenCalledTimes(1);
   });
 
   it('exibe LandingPage na rota raiz quando não autenticado', () => {
