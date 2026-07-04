@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { VerifyEmailScreen } from '../../src/components/Auth/VerifyEmailScreen';
@@ -64,6 +65,26 @@ describe('VerifyEmailScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Voltar para o login/i }));
     expect(onBackToLogin).toHaveBeenCalled();
+  });
+
+  it('StrictMode (efeito duplo) não chama a API duas vezes — token é de uso único', async () => {
+    vi.mocked(api.auth.verifyEmail).mockResolvedValue({
+      email: 'novo@test.com',
+      token: 'jwt-abc',
+      role: 'USER',
+      userId: 'u1',
+    } as never);
+
+    render(
+      <StrictMode>
+        <VerifyEmailScreen token="tok-5" onVerified={onVerified} onBackToLogin={onBackToLogin} />
+      </StrictMode>,
+    );
+
+    await waitFor(() => {
+      expect(onVerified).toHaveBeenCalled();
+    });
+    expect(api.auth.verifyEmail).toHaveBeenCalledTimes(1);
   });
 
   it('erro não-Error usa mensagem genérica', async () => {

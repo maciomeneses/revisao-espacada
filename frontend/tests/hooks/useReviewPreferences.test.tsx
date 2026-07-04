@@ -261,6 +261,96 @@ describe('useReviewPreferences', () => {
     expect(mockApi.preferences.save).not.toHaveBeenCalled();
   });
 
+  it('carrega maxReviewsPerDay do cache localStorage no mount', () => {
+    localStorage.setItem('ebbing_prefs_max_v1_alice@x.com', '4');
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    expect(result.current.maxReviewsPerDay).toBe(4);
+  });
+
+  it('cache de maxReviewsPerDay inválido (não inteiro, < 1 ou corrompido) vira null', () => {
+    localStorage.setItem('ebbing_prefs_max_v1_a@x.com', '"quatro"');
+    expect(
+      renderHook(() => useReviewPreferences('a@x.com')).result.current.maxReviewsPerDay,
+    ).toBeNull();
+
+    localStorage.setItem('ebbing_prefs_max_v1_b@x.com', '0');
+    expect(
+      renderHook(() => useReviewPreferences('b@x.com')).result.current.maxReviewsPerDay,
+    ).toBeNull();
+
+    localStorage.setItem('ebbing_prefs_max_v1_c@x.com', '2.5');
+    expect(
+      renderHook(() => useReviewPreferences('c@x.com')).result.current.maxReviewsPerDay,
+    ).toBeNull();
+
+    localStorage.setItem('ebbing_prefs_max_v1_d@x.com', '{not json');
+    expect(
+      renderHook(() => useReviewPreferences('d@x.com')).result.current.maxReviewsPerDay,
+    ).toBeNull();
+  });
+
+  it('re-hidrata maxReviewsPerDay ao trocar de email', () => {
+    localStorage.setItem('ebbing_prefs_max_v1_alice@x.com', '3');
+    localStorage.setItem('ebbing_prefs_max_v1_bob@x.com', '7');
+
+    const { result, rerender } = renderHook(
+      ({ email }: { email: string | null }) => useReviewPreferences(email),
+      { initialProps: { email: 'alice@x.com' as string | null } },
+    );
+
+    expect(result.current.maxReviewsPerDay).toBe(3);
+
+    rerender({ email: 'bob@x.com' });
+
+    expect(result.current.maxReviewsPerDay).toBe(7);
+  });
+
+  it('falha no GET de preferências mantém o cache local', async () => {
+    localStorage.setItem(prefsKey('alice@x.com'), JSON.stringify([1, 2]));
+    localStorage.setItem('ebbing_prefs_max_v1_alice@x.com', '5');
+    setSession('alice@x.com');
+    mockApi.preferences.get.mockRejectedValueOnce(new Error('rede fora'));
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(mockApi.preferences.get).toHaveBeenCalled());
+    expect(result.current.allowedDays).toEqual(new Set([1, 2]));
+    expect(result.current.maxReviewsPerDay).toBe(5);
+  });
+
+  it('unmount antes da resposta do GET não aplica o resultado (cancelled)', async () => {
+    setSession('alice@x.com');
+    let resolveGet: (v: unknown) => void = () => {};
+    mockApi.preferences.get.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      }),
+    );
+
+    const { unmount } = renderHook(() => useReviewPreferences('alice@x.com'));
+    unmount();
+
+    resolveGet({ allowedReviewDays: [1], maxReviewsPerDay: 9 });
+    await Promise.resolve();
+
+    // Estado não persiste no cache após unmount (branch `cancelled`)
+    expect(localStorage.getItem('ebbing_prefs_max_v1_alice@x.com')).toBeNull();
+  });
+
+  it('sem sessão, setMaxReviewsPerDay altera estado local sem chamar a API', async () => {
+    // email presente mas sem ebbing_session no localStorage
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    act(() => {
+      result.current.setMaxReviewsPerDay(6);
+    });
+
+    expect(result.current.maxReviewsPerDay).toBe(6);
+    expect(mockApi.preferences.save).not.toHaveBeenCalled();
+  });
+
   it('rollback do limite em falha de rede', async () => {
     setSession('alice@x.com');
     mockApi.preferences.get.mockResolvedValueOnce({
