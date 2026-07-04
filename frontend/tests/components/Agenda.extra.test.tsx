@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Agenda } from '../../src/components/Agenda';
 import type { Subject } from '../../src/types';
@@ -28,6 +28,21 @@ describe('Agenda (cobertura extra)', () => {
     window.scrollTo = vi.fn() as any;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /**
+   * Fixa o relógio no meio do mês para que "hoje ± 3 dias" nunca cruze a
+   * borda do mês — o calendário renderiza apenas o mês corrente, então uma
+   * data alvo em outro mês fazia o clique acertar a célula errada (flake nos
+   * 3 primeiros/últimos dias de cada mês; ver issue #61).
+   */
+  function pinMidMonth(): void {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-06-15T12:00:00'));
+  }
+
   it('navega semanas para frente e para trás', () => {
     render(<Agenda subjects={[]} />);
 
@@ -55,6 +70,7 @@ describe('Agenda (cobertura extra)', () => {
   });
 
   it('Mês: dia selecionado no passado mostra "Atrasado"', () => {
+    pinMidMonth();
     const past = new Date();
     past.setDate(past.getDate() - 3);
     const pastStr = localDateStr(past);
@@ -72,6 +88,7 @@ describe('Agenda (cobertura extra)', () => {
   });
 
   it('Mês: dia futuro mostra "Agendado"', () => {
+    pinMidMonth();
     const future = new Date();
     future.setDate(future.getDate() + 3);
     const futureStr = localDateStr(future);
