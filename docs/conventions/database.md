@@ -7,6 +7,16 @@
 - Migrations rodam **apenas no profile `prod`**. Em desenvolvimento, o schema é gerenciado por `spring.jpa.hibernate.ddl-auto`.
 - Nomenclatura: **`V{N}__descricao_em_snake_case.sql`** em `backend/src/main/resources/db/migration/`.
 
+### Baseline de produção (Railway) — V15
+
+O banco de produção foi historicamente gerenciado por `ddl-auto=update` (profile default); **as migrations V1..V15 nunca rodaram lá** — o schema equivalente foi criado pelo Hibernate. O profile `prod` usa `baseline-version: 15` (`application-prod.yml`): o Flyway registra o banco existente como "já na V15" e só aplica **V16+**.
+
+Consequências para autores de migrations:
+
+- **Não assumir efeitos colaterais de V1..V15 em produção** que o `ddl-auto` não replica: índices manuais (V4), CHECK constraints (V2, V11, V13) e backfills (V10) **não existem** no banco do Railway. Se algum for necessário, criar migration V16+ idempotente (`IF NOT EXISTS` / guards).
+- **Nunca reduzir o `baseline-version`**: reaplicar V1..V15 num schema populado quebraria.
+- Colunas `NOT NULL` novas em entidades precisam de `DEFAULT` no `columnDefinition` enquanto houver ambientes em `ddl-auto=update` (caso `email_verified`).
+
 ## Migrations existentes (NÃO modificar)
 
 Já mergeadas em `main` (rodaram ou rodarão em produção) — são **imutáveis**:
