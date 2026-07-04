@@ -36,9 +36,13 @@ public class UserPreferencesService {
         return repository.findById(userId).orElseGet(() -> createDefault(userId));
     }
 
-    /** Atualiza os dias permitidos para revisão. Valida 0..6 e conjunto não vazio. */
+    /**
+     * Atualiza as preferências de revisão (substituição completa do recurso).
+     * Valida dias 0..6 e conjunto não vazio; {@code maxReviewsPerDay} deve ser
+     * {@code null} (sem limite) ou estar em 1..{@value Short#MAX_VALUE}.
+     */
     @Transactional
-    public UserPreferences update(UUID userId, Set<Short> allowedDays) {
+    public UserPreferences update(UUID userId, Set<Short> allowedDays, Integer maxReviewsPerDay) {
         if (allowedDays == null || allowedDays.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "allowedReviewDays não pode ser vazio");
@@ -49,10 +53,15 @@ public class UserPreferencesService {
                         "Dia inválido em allowedReviewDays: " + day + " (esperado 0..6)");
             }
         }
+        if (maxReviewsPerDay != null && (maxReviewsPerDay < 1 || maxReviewsPerDay > Short.MAX_VALUE)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "maxReviewsPerDay inválido: " + maxReviewsPerDay + " (esperado null ou >= 1)");
+        }
         UserPreferences prefs = repository.findById(userId).orElseGet(() -> createDefault(userId));
         prefs.setAllowedReviewDays(allowedDays.stream().sorted().toArray(Short[]::new));
+        prefs.setMaxReviewsPerDay(maxReviewsPerDay == null ? null : maxReviewsPerDay.shortValue());
         UserPreferences saved = repository.save(prefs);
-        log.debug("update preferences: userId={}, days={}", userId, allowedDays);
+        log.debug("update preferences: userId={}, days={}, maxPerDay={}", userId, allowedDays, maxReviewsPerDay);
         return saved;
     }
 

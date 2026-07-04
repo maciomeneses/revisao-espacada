@@ -46,8 +46,9 @@ public class UserPreferencesController {
     @PutMapping
     public ResponseEntity<UserPreferencesDto> update(@AuthenticationPrincipal UserDetails principal,
                                                      @RequestBody UserPreferencesDto dto) {
-        log.debug("PUT /api/preferences — user={}, days={}", principal.getUsername(),
-                dto == null ? null : dto.allowedReviewDays());
+        log.debug("PUT /api/preferences — user={}, days={}, maxPerDay={}", principal.getUsername(),
+                dto == null ? null : dto.allowedReviewDays(),
+                dto == null ? null : dto.maxReviewsPerDay());
         if (dto == null || dto.allowedReviewDays() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "allowedReviewDays é obrigatório");
@@ -61,7 +62,7 @@ public class UserPreferencesController {
             days.add(d.shortValue());
         }
         User user = findUser(principal.getUsername());
-        UserPreferences prefs = preferencesService.update(user.getId(), days);
+        UserPreferences prefs = preferencesService.update(user.getId(), days, dto.maxReviewsPerDay());
         return ResponseEntity.ok(UserPreferencesDto.from(prefs));
     }
 

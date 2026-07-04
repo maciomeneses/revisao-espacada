@@ -95,6 +95,7 @@ describe('useReviewPreferences', () => {
     await waitFor(() => expect(mockApi.preferences.save).toHaveBeenCalled());
     expect(mockApi.preferences.save).toHaveBeenCalledWith({
       allowedReviewDays: [1, 2, 3, 4, 5],
+      maxReviewsPerDay: null,
     });
   });
 
@@ -174,5 +175,108 @@ describe('useReviewPreferences', () => {
     const { result } = renderHook(() => useReviewPreferences('x@x.com'));
 
     expect(result.current.allowedDays).toEqual(new Set([0, 1, 2, 3, 4, 5, 6]));
+  });
+
+  // ---- maxReviewsPerDay ----
+
+  it('maxReviewsPerDay default é null (sem limite)', () => {
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    expect(result.current.maxReviewsPerDay).toBeNull();
+  });
+
+  it('busca maxReviewsPerDay do backend junto com os dias', async () => {
+    setSession('alice@x.com');
+    mockApi.preferences.get.mockResolvedValueOnce({
+      allowedReviewDays: [1, 2, 3],
+      maxReviewsPerDay: 4,
+    });
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(result.current.maxReviewsPerDay).toBe(4));
+    expect(result.current.allowedDays).toEqual(new Set([1, 2, 3]));
+  });
+
+  it('setMaxReviewsPerDay persiste dias atuais + limite no mesmo PUT', async () => {
+    setSession('alice@x.com');
+    mockApi.preferences.get.mockResolvedValueOnce({ allowedReviewDays: [1, 3, 5] });
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(result.current.allowedDays).toEqual(new Set([1, 3, 5])));
+
+    act(() => {
+      result.current.setMaxReviewsPerDay(3);
+    });
+
+    expect(result.current.maxReviewsPerDay).toBe(3);
+    await waitFor(() =>
+      expect(mockApi.preferences.save).toHaveBeenCalledWith({
+        allowedReviewDays: [1, 3, 5],
+        maxReviewsPerDay: 3,
+      }),
+    );
+  });
+
+  it('setMaxReviewsPerDay(null) remove o limite', async () => {
+    setSession('alice@x.com');
+    mockApi.preferences.get.mockResolvedValueOnce({
+      allowedReviewDays: [1, 2],
+      maxReviewsPerDay: 5,
+    });
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(result.current.maxReviewsPerDay).toBe(5));
+
+    act(() => {
+      result.current.setMaxReviewsPerDay(null);
+    });
+
+    expect(result.current.maxReviewsPerDay).toBeNull();
+    await waitFor(() =>
+      expect(mockApi.preferences.save).toHaveBeenCalledWith({
+        allowedReviewDays: [1, 2],
+        maxReviewsPerDay: null,
+      }),
+    );
+  });
+
+  it('setMaxReviewsPerDay rejeita 0, negativos e não inteiros', async () => {
+    setSession('alice@x.com');
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(mockApi.preferences.get).toHaveBeenCalled());
+    mockApi.preferences.save.mockClear();
+
+    act(() => {
+      result.current.setMaxReviewsPerDay(0);
+      result.current.setMaxReviewsPerDay(-3);
+      result.current.setMaxReviewsPerDay(2.5);
+    });
+
+    expect(result.current.maxReviewsPerDay).toBeNull();
+    expect(mockApi.preferences.save).not.toHaveBeenCalled();
+  });
+
+  it('rollback do limite em falha de rede', async () => {
+    setSession('alice@x.com');
+    mockApi.preferences.get.mockResolvedValueOnce({
+      allowedReviewDays: [1, 2],
+      maxReviewsPerDay: 5,
+    });
+
+    const { result } = renderHook(() => useReviewPreferences('alice@x.com'));
+
+    await waitFor(() => expect(result.current.maxReviewsPerDay).toBe(5));
+    mockApi.preferences.save.mockRejectedValueOnce(new Error('boom'));
+
+    await act(async () => {
+      result.current.setMaxReviewsPerDay(2);
+    });
+
+    await waitFor(() => expect(result.current.maxReviewsPerDay).toBe(5));
   });
 });

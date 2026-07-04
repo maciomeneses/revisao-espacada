@@ -189,6 +189,61 @@ class UserPreferencesControllerIntegrationTest {
                 .andExpect(jsonPath("$.detail").exists());
     }
 
+    // ---- maxReviewsPerDay ----
+
+    @Test
+    @DisplayName("GET sem registro prévio retorna maxReviewsPerDay null (sem limite)")
+    void get_noRecord_maxPerDayNull() throws Exception {
+        mockMvc.perform(get("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.maxReviewsPerDay").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("PUT com maxReviewsPerDay persiste e GET reflete o limite")
+    void put_maxPerDay_thenGet_reflects() throws Exception {
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"allowedReviewDays\":[1,3,5],\"maxReviewsPerDay\":4}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.maxReviewsPerDay").value(4));
+
+        mockMvc.perform(get("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.maxReviewsPerDay").value(4));
+    }
+
+    @Test
+    @DisplayName("PUT sem maxReviewsPerDay limpa limite previamente definido")
+    void put_withoutMaxPerDay_clearsLimit() throws Exception {
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"allowedReviewDays\":[1,3,5],\"maxReviewsPerDay\":4}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"allowedReviewDays\":[1,3,5]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.maxReviewsPerDay").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("PUT com maxReviewsPerDay=0 retorna 400 ProblemDetail")
+    void put_maxPerDayZero_returns400() throws Exception {
+        mockMvc.perform(put("/api/preferences")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"allowedReviewDays\":[1],\"maxReviewsPerDay\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").exists());
+    }
+
     @Test
     @DisplayName("Usuários distintos têm preferências isoladas")
     void preferences_isolatedPerUser() throws Exception {

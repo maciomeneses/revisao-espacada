@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, X, Pencil } from 'lucide-react';
 import type { RoutineSlot, StudentRoutine } from '../types';
 
@@ -10,6 +10,8 @@ interface RoutineBoardProps {
   onRemove: (id: string) => void;
   allowedDays: Set<number>;
   onToggleDay: (day: number) => void;
+  maxReviewsPerDay: number | null;
+  onSetMaxReviewsPerDay: (max: number | null) => void;
 }
 
 const DAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
@@ -55,9 +57,32 @@ export function RoutineBoard({
   onRemove,
   allowedDays,
   onToggleDay,
+  maxReviewsPerDay,
+  onSetMaxReviewsPerDay,
 }: RoutineBoardProps) {
   const [modal, setModal] = useState<ModalMode>({ kind: 'closed' });
   const [form, setForm] = useState<SlotFormState>(emptyForm());
+  const [maxDraft, setMaxDraft] = useState<string>(maxReviewsPerDay?.toString() ?? '');
+
+  // Mantém o rascunho em sincronia quando o valor persistido muda (fetch do
+  // backend após o mount, rollback de falha de rede).
+  useEffect(() => {
+    setMaxDraft(maxReviewsPerDay?.toString() ?? '');
+  }, [maxReviewsPerDay]);
+
+  function commitMaxDraft() {
+    const trimmed = maxDraft.trim();
+    if (trimmed === '') {
+      if (maxReviewsPerDay !== null) onSetMaxReviewsPerDay(null);
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      setMaxDraft(maxReviewsPerDay?.toString() ?? '');
+      return;
+    }
+    if (parsed !== maxReviewsPerDay) onSetMaxReviewsPerDay(parsed);
+  }
 
   function openAdd(dayOfWeek: number) {
     setForm(emptyForm());
@@ -139,6 +164,32 @@ export function RoutineBoard({
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-navy/50 uppercase tracking-wide mb-2">
+            Limite de revisões por dia
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={maxDraft}
+              onChange={(e) => setMaxDraft(e.target.value)}
+              onBlur={commitMaxDraft}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
+              placeholder="Sem limite"
+              aria-label="Limite de revisões por dia"
+              className="w-28 bg-surface border border-border rounded-xl px-3 py-2 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-navy/20"
+            />
+            <span className="text-xs text-navy/50">
+              Deixe vazio para não limitar. Dias cheios empurram novas revisões para o próximo dia
+              permitido com vaga.
+            </span>
           </div>
         </div>
       </div>

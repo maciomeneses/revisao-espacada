@@ -7,24 +7,55 @@ import type { ReviewEventPayload } from '../services/api';
 
 export type { ReviewEventPayload };
 
+/** Opções de capacidade diária para `snapReviewDate`. */
+export interface SnapCapacityOptions {
+  /** Teto de revisões por dia. `null`/`undefined`/0 = sem limite. */
+  maxPerDay?: number | null;
+  /**
+   * Carga atual por data (`YYYY-MM-DD` → nº de revisões já agendadas),
+   * excluindo o próprio subject sendo agendado.
+   */
+  dayLoad?: ReadonlyMap<string, number>;
+}
+
 /**
- * Snaps `fsrsDate` to the first date (within 21 days) that satisfies both:
- *   - the student's `routine` (a study slot for the given area, or a generic slot), and
- *   - `allowedDays` (Set of dayOfWeek 0..6) if provided and non-empty.
+ * Conta quantos subjects têm `nextReviewDate` em cada data, excluindo
+ * `excludeId` (o subject que está sendo reagendado não conta contra si mesmo).
+ */
+export function buildDayLoad(subjects: Subject[], excludeId?: string): Map<string, number> {
+  const load = new Map<string, number>();
+  for (const s of subjects) {
+    if (s.id === excludeId || !s.nextReviewDate) continue;
+    load.set(s.nextReviewDate, (load.get(s.nextReviewDate) ?? 0) + 1);
+  }
+  return load;
+}
+
+/**
+ * Snaps `fsrsDate` to the first date (within 21 days) that satisfies:
+ *   - the student's `routine` (a study slot for the given area, or a generic slot),
+ *   - `allowedDays` (Set of dayOfWeek 0..6) if provided and non-empty, and
+ *   - daily capacity (`opts.maxPerDay` + `opts.dayLoad`) if provided.
  *
  * Fallback rules:
- *   1. If no date within 21 days satisfies both constraints, pick the first day
- *      within 21 days that lies in `allowedDays` (routine is a preference,
- *      allowedDays is a hard restriction).
- *   2. If even that fails (allowedDays empty / undefined), return `fsrsDate`.
+ *   1. If no date within 21 days satisfies all constraints, pick the first day
+ *      within 21 days that lies in `allowedDays` and has capacity (routine is a
+ *      preference; allowedDays is a hard restriction).
+ *   2. If every candidate day in the horizon is at capacity, pick the least
+ *      loaded day that respects `allowedDays` (earliest wins ties) — a date is
+ *      never dropped and `allowedDays` is never violated.
+ *   3. If even that fails (allowedDays empty / undefined and no capacity
+ *      constraint), return `fsrsDate`.
  *
- * `routine` is never modified — only the calendar date shifts.
+ * The date never moves earlier than `fsrsDate`. `routine` is never modified —
+ * only the calendar date shifts.
  */
 export function snapReviewDate(
   fsrsDate: string,
   area: string,
   routine: StudentRoutine,
   allowedDays?: Set<number>,
+  opts?: SnapCapacityOptions,
 ): string {
   const studyDays = new Set(
     routine
@@ -33,29 +64,56 @@ export function snapReviewDate(
   );
   const hasAllowed = allowedDays !== undefined && allowedDays.size > 0;
   const hasStudy = studyDays.size > 0;
+  const maxPerDay = opts?.maxPerDay ?? 0;
+  const hasCapacityLimit = maxPerDay > 0 && opts?.dayLoad !== undefined;
+  const loadOf = (dateStr: string) => opts?.dayLoad?.get(dateStr) ?? 0;
+  const capacityOk = (dateStr: string) => !hasCapacityLimit || loadOf(dateStr) < maxPerDay;
 
   const base = new Date(fsrsDate + 'T12:00:00');
-
-  // 1) tentar interseção: rotina (se houver) ∩ allowedDays (se houver)
-  for (let i = 0; i <= 21; i++) {
+  const dateAt = (i: number) => {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
+    return d;
+  };
+
+  // 1) tentar interseção: rotina (se houver) ∩ allowedDays (se houver) ∩ capacidade
+  for (let i = 0; i <= 21; i++) {
+    const d = dateAt(i);
     const dow = d.getDay();
+    const dateStr = localDateStr(d);
     const allowedOk = !hasAllowed || allowedDays!.has(dow);
     const studyOk = !hasStudy || studyDays.has(dow);
-    if (allowedOk && studyOk) return localDateStr(d);
+    if (allowedOk && studyOk && capacityOk(dateStr)) return dateStr;
   }
 
-  // 2) fallback: primeiro dia em allowedDays, ignorando rotina
+  // 2) fallback: primeiro dia em allowedDays com capacidade, ignorando rotina
   if (hasAllowed) {
     for (let i = 0; i <= 21; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      if (allowedDays!.has(d.getDay())) return localDateStr(d);
+      const d = dateAt(i);
+      const dateStr = localDateStr(d);
+      if (allowedDays!.has(d.getDay()) && capacityOk(dateStr)) return dateStr;
     }
   }
 
-  // 3) nada encontrado
+  // 3) horizonte inteiro lotado: dia permitido menos carregado (empate = mais cedo).
+  //    allowedDays continua restrição forte; nunca deixar o subject sem data.
+  if (hasCapacityLimit) {
+    let bestDate: string | null = null;
+    let bestLoad = Infinity;
+    for (let i = 0; i <= 21; i++) {
+      const d = dateAt(i);
+      if (hasAllowed && !allowedDays!.has(d.getDay())) continue;
+      const dateStr = localDateStr(d);
+      const load = loadOf(dateStr);
+      if (load < bestLoad) {
+        bestLoad = load;
+        bestDate = dateStr;
+      }
+    }
+    if (bestDate !== null) return bestDate;
+  }
+
+  // 4) nada encontrado
   return fsrsDate;
 }
 
@@ -94,6 +152,7 @@ export function useSubjects(
   routine: StudentRoutine = [],
   userEmail?: string,
   allowedDays?: Set<number>,
+  maxReviewsPerDay?: number | null,
 ) {
   const [subjects, setSubjects] = useState<Subject[]>(() => loadSubjects(userEmail));
   const [reviewEvents, setReviewEvents] = useState<ReviewEventPayload[]>([]);
@@ -178,14 +237,23 @@ export function useSubjects(
     if (!userEmail) return;
     if (!allowedDays || allowedDays.size === 0) return;
     const today = localDateStr(new Date());
+    // Mapa de carga incremental: cada subject é removido da própria data antes
+    // de snapar e recolocado na data resultante, para que a capacidade reflita
+    // as decisões já tomadas nesta passada (ordem determinística → convergência).
+    const load = buildDayLoad(subjects);
     for (const s of subjects) {
       if (!s.nextReviewDate || s.nextReviewDate < today) continue;
-      const snapped = snapReviewDate(s.nextReviewDate, s.area, routine, allowedDays);
+      load.set(s.nextReviewDate, Math.max(0, (load.get(s.nextReviewDate) ?? 1) - 1));
+      const snapped = snapReviewDate(s.nextReviewDate, s.area, routine, allowedDays, {
+        maxPerDay: maxReviewsPerDay,
+        dayLoad: load,
+      });
+      load.set(snapped, (load.get(snapped) ?? 0) + 1);
       if (snapped !== s.nextReviewDate) {
         updateSubject({ ...s, nextReviewDate: snapped });
       }
     }
-  }, [routine, allowedDays, subjects, userEmail, updateSubject]);
+  }, [routine, allowedDays, maxReviewsPerDay, subjects, userEmail, updateSubject]);
 
   /**
    * Usa subjectsRef para ler o estado atual sem declarar subjects como
@@ -239,7 +307,10 @@ export function useSubjects(
       if (!subject) return;
       const updates = calculateNextReview(subject, numCorrect);
       const snappedDate = updates.nextReviewDate
-        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays)
+        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays, {
+            maxPerDay: maxReviewsPerDay,
+            dayLoad: buildDayLoad(subjectsRef.current, subject.id),
+          })
         : updates.nextReviewDate;
       const updated = { ...subject, ...updates, nextReviewDate: snappedDate ?? null };
       updateSubject(updated);
@@ -260,7 +331,7 @@ export function useSubjects(
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject, routine, allowedDays],
+    [updateSubject, routine, allowedDays, maxReviewsPerDay],
   );
 
   const registerFixacao = useCallback(
@@ -278,7 +349,10 @@ export function useSubjects(
       const fresh = { ...subject, reps: 0, stability: 0, difficulty: 0 };
       const updates = calculateNextReview(fresh, numCorrect);
       const snappedDate = updates.nextReviewDate
-        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays)
+        ? snapReviewDate(updates.nextReviewDate, subject.area, routine, allowedDays, {
+            maxPerDay: maxReviewsPerDay,
+            dayLoad: buildDayLoad(subjectsRef.current, subject.id),
+          })
         : updates.nextReviewDate;
       const updated = {
         ...subject,
@@ -304,7 +378,7 @@ export function useSubjects(
         .then((saved) => setReviewEvents((prev) => [saved, ...prev]))
         .catch(console.error);
     },
-    [updateSubject, routine, allowedDays],
+    [updateSubject, routine, allowedDays, maxReviewsPerDay],
   );
 
   const doResetCiclo = useCallback(
@@ -404,15 +478,22 @@ export function useSubjects(
   const rescheduleByRoutine = useCallback(
     (updatedRoutine: StudentRoutine) => {
       const today = localDateStr(new Date());
+      // Mesmo padrão de carga incremental do efeito de re-snap acima.
+      const load = buildDayLoad(subjectsRef.current);
       for (const s of subjectsRef.current) {
         if (!s.nextReviewDate || s.nextReviewDate < today) continue;
-        const snapped = snapReviewDate(s.nextReviewDate, s.area, updatedRoutine, allowedDays);
+        load.set(s.nextReviewDate, Math.max(0, (load.get(s.nextReviewDate) ?? 1) - 1));
+        const snapped = snapReviewDate(s.nextReviewDate, s.area, updatedRoutine, allowedDays, {
+          maxPerDay: maxReviewsPerDay,
+          dayLoad: load,
+        });
+        load.set(snapped, (load.get(snapped) ?? 0) + 1);
         if (snapped !== s.nextReviewDate) {
           updateSubject({ ...s, nextReviewDate: snapped });
         }
       }
     },
-    [updateSubject, allowedDays],
+    [updateSubject, allowedDays, maxReviewsPerDay],
   );
 
   return {
