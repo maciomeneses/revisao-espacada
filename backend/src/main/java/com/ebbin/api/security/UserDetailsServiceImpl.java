@@ -24,9 +24,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
 
+        // enabled=false para contas de self-signup ainda não confirmadas: o
+        // DaoAuthenticationProvider lança DisabledException antes do password
+        // check → 403 "E-mail não confirmado" via GlobalExceptionHandler.
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
+                user.isEmailVerified(),
+                true,
+                true,
+                true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
     }

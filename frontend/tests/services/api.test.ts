@@ -214,6 +214,22 @@ describe('endpoints — URL, método e body', () => {
     expect(calls[0].init.body).toBe(JSON.stringify({ token: 'tok', newPassword: 'newpw' }));
   });
 
+  it('api.auth.signup: POST /api/auth/signup', async () => {
+    await api.auth.signup('novo@x.com', 'senhaForte1');
+    expect(calls[0].url).toBe(`${BASE_URL}/api/auth/signup`);
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].init.body).toBe(
+      JSON.stringify({ email: 'novo@x.com', password: 'senhaForte1' }),
+    );
+  });
+
+  it('api.auth.verifyEmail: POST /api/auth/verify-email', async () => {
+    await api.auth.verifyEmail('tok-123');
+    expect(calls[0].url).toBe(`${BASE_URL}/api/auth/verify-email`);
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].init.body).toBe(JSON.stringify({ token: 'tok-123' }));
+  });
+
   it('api.admin.users.list: GET /api/admin/users', async () => {
     await api.admin.users.list();
     expect(calls[0].url).toBe(`${BASE_URL}/api/admin/users`);

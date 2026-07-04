@@ -23,7 +23,7 @@ Detalhes em `docs/conventions/backend-java.md` e `frontend-react.md`.
 - **ReviewStage** (enum): `aula`, `Learning`, `Review`, `Relearning`, `New`.
 - **PerformanceLevel** (enum): `nao_classificada`, `ruim`, `medio`, `bom`, `excelente`.
 - **ReviewEvent** — histórico de revisões (acurácia/performance).
-- **User** + **PasswordResetToken** — auth.
+- **User** (+ `email_verified`, V14) + **PasswordResetToken** + **EmailVerificationToken** — auth e auto-cadastro.
 - **RoutineSlot** (`routine_slot`) — rotina semanal por usuário (`day` 0..6, `slot_type` study/other, `area`/`label`).
 - **UserPreferences** (`user_preferences`) — `allowed_review_days SMALLINT[]` (dias 0..6, não vazio).
 
@@ -50,6 +50,7 @@ Ver `docs/adr/`. Principais: monorepo desacoplado (0001), FSRS congelado (0002),
 - [x] Rotina semanal (`routine_slot`) + dias permitidos (`user_preferences`).
 - [x] Rate limit, cache, OWASP scan, cobertura agressiva.
 - [x] Limite diário de revisões (`user_preferences.max_reviews_per_day`) com balanceamento de carga no `snapReviewDate` (issue #54).
+- [x] Auto-cadastro público com verificação de e-mail (issue #59; kill switch `SIGNUP_ENABLED`).
 - [ ] Próximas features: backlog completo no Kanban board (issues #47–#60); registrar aqui ao iniciar cada uma.
 
 ## 8. Perguntas em aberto

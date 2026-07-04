@@ -2,6 +2,7 @@ package com.ebbin.api.controller;
 
 import com.ebbin.api.model.PasswordResetToken;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.EmailVerificationTokenRepository;
 import com.ebbin.api.repository.PasswordResetTokenRepository;
 import com.ebbin.api.repository.UserRepository;
 import com.ebbin.api.service.EmailService;
@@ -62,6 +63,9 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     PasswordResetTokenRepository resetTokenRepository;
+
+    @Autowired
+    EmailVerificationTokenRepository verificationTokenRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -395,6 +399,145 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.type").value("urn:problem:forbidden"))
                 .andExpect(jsonPath("$.status").value(403))
                 .andExpect(jsonPath("$.title").isNotEmpty())
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+    }
+
+    // ---- signup + verify-email (auto-cadastro, issue #59) ----
+
+    @Test
+    @DisplayName("POST /api/auth/signup cria conta não verificada e retorna 202 sem corpo")
+    void signup_newEmail_returns202AndCreatesUnverified() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"signup1@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        User created = userRepository.findByEmail("signup1@test.com").orElseThrow();
+        assertThat(created.isEmailVerified()).isFalse();
+        assertThat(created.getRole()).isEqualTo(User.Role.USER);
+        assertThat(verificationTokenRepository.findAll())
+                .anyMatch(t -> t.getUser().getId().equals(created.getId()));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/signup com e-mail já cadastrado retorna 202 idêntico (anti-user-enumeration)")
+    void signup_duplicateEmail_returns202Generic() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        // Conta ADMIN pré-existente permanece intacta e verificada
+        User admin = userRepository.findByEmail("admin@test.com").orElseThrow();
+        assertThat(admin.getRole()).isEqualTo(User.Role.ADMIN);
+        assertThat(admin.isEmailVerified()).isTrue();
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/signup com senha fraca retorna 400 ProblemDetail")
+    void signup_weakPassword_returns400() throws Exception {
+        // Sem número → falha o @Pattern
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"fraca@test.com","password":"somenteletras"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+
+        // Curta demais → falha o @Size
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"fraca@test.com","password":"a1"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        assertThat(userRepository.findByEmail("fraca@test.com")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("login antes da confirmação retorna 403 email-not-verified")
+    void login_beforeVerification_returns403() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.4")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"pendente@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.7.4")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"pendente@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.type").value("urn:problem:email-not-verified"))
+                .andExpect(jsonPath("$.detail").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-email confirma a conta, retorna sessão e libera o login")
+    void verifyEmail_happyPath_confirmsAndLogsIn() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .header("X-Forwarded-For", "192.168.7.5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"confirma@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isAccepted());
+
+        User created = userRepository.findByEmail("confirma@test.com").orElseThrow();
+        String rawToken = verificationTokenRepository.findAll().stream()
+                .filter(t -> t.getUser().getId().equals(created.getId()))
+                .findFirst().orElseThrow().getToken();
+
+        mockMvc.perform(post("/api/auth/verify-email")
+                        .header("X-Forwarded-For", "192.168.7.5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + rawToken + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.email").value("confirma@test.com"))
+                .andExpect(jsonPath("$.role").value("USER"));
+
+        // Login agora funciona
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "192.168.7.5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"confirma@test.com","password":"senhaForte1"}
+                                """))
+                .andExpect(status().isOk());
+
+        // Token é de uso único: segunda confirmação retorna 409
+        mockMvc.perform(post("/api/auth/verify-email")
+                        .header("X-Forwarded-For", "192.168.7.5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"" + rawToken + "\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/verify-email com token inválido retorna 409 ProblemDetail")
+    void verifyEmail_invalidToken_returns409() throws Exception {
+        mockMvc.perform(post("/api/auth/verify-email")
+                        .header("X-Forwarded-For", "192.168.7.6")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"token":"00000000-0000-0000-0000-000000000000"}
+                                """))
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").isNotEmpty());
     }
 }

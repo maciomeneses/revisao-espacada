@@ -5,18 +5,24 @@ import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
 import com.ebbin.api.dto.ResetPasswordRequest;
+import com.ebbin.api.dto.SignupRequest;
+import com.ebbin.api.dto.VerifyEmailRequest;
+import com.ebbin.api.model.EmailVerificationToken;
 import com.ebbin.api.model.PasswordResetToken;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.EmailVerificationTokenRepository;
 import com.ebbin.api.repository.PasswordResetTokenRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -30,32 +36,41 @@ public class AuthService {
     /** TTL do token de reset em minutos. */
     private static final int RESET_TOKEN_TTL_MINUTES = 15;
 
+    /** TTL do token de verificação de e-mail em minutos (24h). */
+    private static final int VERIFICATION_TOKEN_TTL_MINUTES = 24 * 60;
+
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository resetTokenRepository;
+    private final EmailVerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final Clock clock;
     private final String frontendUrl;
+    private final boolean signupEnabled;
     private final EmailService emailService;
     private final SubjectCatalogService subjectCatalogService;
 
     public AuthService(UserRepository userRepository,
                        PasswordResetTokenRepository resetTokenRepository,
+                       EmailVerificationTokenRepository verificationTokenRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        AuthenticationManager authenticationManager,
                        Clock clock,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl,
+                       @Value("${app.signup.enabled:true}") boolean signupEnabled,
                        EmailService emailService,
                        SubjectCatalogService subjectCatalogService) {
         this.userRepository = userRepository;
         this.resetTokenRepository = resetTokenRepository;
+        this.verificationTokenRepository = verificationTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
         this.clock = clock;
         this.frontendUrl = frontendUrl;
+        this.signupEnabled = signupEnabled;
         this.emailService = emailService;
         this.subjectCatalogService = subjectCatalogService;
     }
@@ -189,5 +204,117 @@ public class AuthService {
         log.info("Usuário criado com sucesso: email={}, role={}", user.getEmail(), user.getRole());
         String token = jwtService.generateToken(user.getEmail());
         return LoginResponse.of(token, user);
+    }
+
+    /**
+     * Auto-cadastro público com verificação de e-mail obrigatória (issue #59).
+     *
+     * <p><b>Segurança (OWASP A07 — anti user-enumeration):</b> a resposta é sempre
+     * idêntica (202 genérico no controller), exista ou não o e-mail:
+     * <ul>
+     *   <li>e-mail novo → cria conta {@code USER} não verificada + envia link;</li>
+     *   <li>e-mail de conta não verificada → reenvia link (novo token);</li>
+     *   <li>e-mail de conta já verificada → nenhuma ação (apenas log de auditoria).</li>
+     * </ul>
+     *
+     * <p>O papel é sempre {@code USER} — nunca vem do payload (OWASP A01). A conta
+     * não verificada não autentica ({@code UserDetails.enabled=false}) e é purgada
+     * pelo {@code TokenCleanupService} se nunca confirmada.</p>
+     *
+     * @throws ResponseStatusException 403 quando {@code app.signup.enabled=false}
+     */
+    @Transactional
+    public void signup(SignupRequest req) {
+        if (!signupEnabled) {
+            log.warn("AUDIT: signup rejeitado — cadastro público desabilitado: email={}", req.email());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Cadastro público desabilitado");
+        }
+        log.info("AUDIT: signup solicitado: email={}", req.email());
+
+        User existing = userRepository.findByEmail(req.email()).orElse(null);
+        if (existing != null) {
+            if (!existing.isEmailVerified()) {
+                // Reenvio: usuário se cadastrou mas perdeu/expirou o link
+                issueVerificationToken(existing);
+                log.info("AUDIT: signup — reenvio de verificação para conta não confirmada: email={}",
+                        req.email());
+            } else {
+                log.warn("AUDIT: signup — e-mail já cadastrado e verificado (resposta genérica): email={}",
+                        req.email());
+            }
+            return;
+        }
+
+        User user = new User();
+        user.setEmail(req.email());
+        user.setPassword(passwordEncoder.encode(req.password()));
+        user.setRole(User.Role.USER);
+        user.setEmailVerified(false);
+        user = userRepository.save(user);
+
+        // Mesmo seed do register (catálogo ENEM); a purga de contas nunca
+        // confirmadas remove tudo via cascade.
+        subjectCatalogService.seedDefaults(user);
+
+        issueVerificationToken(user);
+        log.info("AUDIT: signup — conta não verificada criada: userId={}, email={}",
+                user.getId(), user.getEmail());
+    }
+
+    /**
+     * Confirma o e-mail a partir do token e autentica o usuário (auto-login).
+     *
+     * <p>Mesmas garantias do reset de senha: token de uso único, expirável,
+     * mensagem de erro genérica sem revelar qual condição falhou (OWASP A07).
+     * Token inválido → {@link IllegalArgumentException} → HTTP 409 via
+     * {@link com.ebbin.api.exception.GlobalExceptionHandler}.</p>
+     */
+    @Transactional
+    public LoginResponse verifyEmail(VerifyEmailRequest req) {
+        log.info("AUDIT: verify-email tentativa com tokenPrefix={}", maskToken(req.token()));
+
+        EmailVerificationToken verificationToken = verificationTokenRepository.findByToken(req.token())
+                .orElseThrow(() -> {
+                    log.warn("AUDIT: verify-email — token não encontrado: tokenPrefix={}",
+                            maskToken(req.token()));
+                    return new IllegalArgumentException("Token de verificação inválido ou expirado");
+                });
+
+        if (verificationToken.isUsed()) {
+            log.warn("AUDIT: verify-email — token já utilizado: tokenPrefix={}, userId={}",
+                    maskToken(req.token()), verificationToken.getUser().getId());
+            throw new IllegalArgumentException("Token de verificação inválido ou expirado");
+        }
+
+        if (LocalDateTime.now(clock).isAfter(verificationToken.getExpiresAt())) {
+            log.warn("AUDIT: verify-email — token expirado: tokenPrefix={}, expiresAt={}, userId={}",
+                    maskToken(req.token()), verificationToken.getExpiresAt(),
+                    verificationToken.getUser().getId());
+            throw new IllegalArgumentException("Token de verificação inválido ou expirado");
+        }
+
+        User user = verificationToken.getUser();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        verificationToken.setUsed(true);
+        verificationTokenRepository.save(verificationToken);
+
+        log.info("AUDIT: verify-email bem-sucedido: userId={}, email={}", user.getId(), user.getEmail());
+        String token = jwtService.generateToken(user.getEmail());
+        return LoginResponse.of(token, user);
+    }
+
+    /** Gera, persiste e envia por e-mail um novo token de verificação. */
+    private void issueVerificationToken(User user) {
+        String rawToken = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now(clock).plusMinutes(VERIFICATION_TOKEN_TTL_MINUTES);
+        verificationTokenRepository.save(new EmailVerificationToken(user, rawToken, expiresAt));
+
+        String verifyLink = frontendUrl + "/?verify=" + rawToken;
+        log.info("AUDIT: verify-email token gerado: email={}, tokenPrefix={}",
+                user.getEmail(), maskToken(rawToken));
+        emailService.sendEmailVerification(user.getEmail(), verifyLink);
     }
 }

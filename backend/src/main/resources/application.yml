@@ -26,6 +26,12 @@ server:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  signup:
+    # Auto-cadastro público (issue #59). Defina SIGNUP_ENABLED=false para voltar
+    # ao modo fechado (contas criadas apenas por ADMIN via /api/auth/register).
+    enabled: ${SIGNUP_ENABLED:true}
+    # Contas de self-signup nunca confirmadas são purgadas após este TTL (horas).
+    unverified-ttl-hours: ${SIGNUP_UNVERIFIED_TTL_HOURS:48}
   mail:
     from: ${MAIL_FROM:noreply@revisao-espacada.com}
     brevo-api-key: ${BREVO_API_KEY:}
@@ -62,6 +68,16 @@ app:
         capacity: ${RATE_LIMIT_RESET_PASSWORD_CAPACITY:5}
         refill-tokens: ${RATE_LIMIT_RESET_PASSWORD_REFILL_TOKENS:5}
         refill-minutes: ${RATE_LIMIT_RESET_PASSWORD_REFILL_MINUTES:15}
+        ttl-minutes: 60
+      signup:
+        capacity: ${RATE_LIMIT_SIGNUP_CAPACITY:3}
+        refill-tokens: ${RATE_LIMIT_SIGNUP_REFILL_TOKENS:3}
+        refill-minutes: ${RATE_LIMIT_SIGNUP_REFILL_MINUTES:10}
+        ttl-minutes: 120
+      verify-email:
+        capacity: ${RATE_LIMIT_VERIFY_EMAIL_CAPACITY:5}
+        refill-tokens: ${RATE_LIMIT_VERIFY_EMAIL_REFILL_TOKENS:5}
+        refill-minutes: ${RATE_LIMIT_VERIFY_EMAIL_REFILL_MINUTES:15}
         ttl-minutes: 60
 
 management:

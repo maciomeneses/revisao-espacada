@@ -20,8 +20,9 @@ Já mergeadas em `main` (rodaram ou rodarão em produção) — são **imutávei
 - `V11__user_preferences.sql` (`user_preferences` com `allowed_review_days SMALLINT[]`)
 - `V12__routine_slot.sql` (`routine_slot` para rotina semanal por usuário)
 - `V13__user_preferences_max_reviews_per_day.sql` (`max_reviews_per_day SMALLINT NULL`, CHECK ≥ 1)
+- `V14__signup_email_verification.sql` (`users.email_verified` + `email_verification_tokens`)
 
-**Próxima migration: `V14__...`.**
+**Próxima migration: `V15__...`.**
 
 ## Regras
 

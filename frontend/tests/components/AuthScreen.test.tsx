@@ -10,6 +10,7 @@ vi.mock('../../src/services/api', () => ({
     auth: {
       login: vi.fn(),
       forgotPassword: vi.fn(),
+      signup: vi.fn(),
     },
   },
 }));
@@ -100,5 +101,86 @@ describe('AuthScreen', () => {
       );
     });
     expect(errorMsg).toBeInTheDocument();
+  });
+
+  // ---- auto-cadastro (issue #59) ----
+
+  describe('cadastro (signup)', () => {
+    function openSignup() {
+      renderWithRouter(<AuthScreen onLogin={onLoginMock} />);
+      fireEvent.click(screen.getByRole('button', { name: /Criar conta grátis/i }));
+    }
+
+    function fillSignup(email: string, password: string, confirm: string) {
+      fireEvent.change(screen.getByLabelText(/^E-mail$/i), { target: { value: email } });
+      fireEvent.change(screen.getByLabelText(/^Senha$/i), { target: { value: password } });
+      fireEvent.change(screen.getByLabelText(/Confirmar senha/i), { target: { value: confirm } });
+    }
+
+    it('link "Criar conta grátis" abre o formulário de cadastro', () => {
+      openSignup();
+      expect(screen.getByRole('heading', { name: /Criar conta/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/Confirmar senha/i)).toBeInTheDocument();
+    });
+
+    it('cadastro válido chama api.auth.signup e mostra mensagem genérica', async () => {
+      vi.mocked(api.auth.signup).mockResolvedValue(undefined);
+      openSignup();
+      fillSignup('novo@test.com', 'senhaForte1', 'senhaForte1');
+      fireEvent.click(screen.getByRole('button', { name: /^Criar conta$/i }));
+
+      await waitFor(() => {
+        expect(api.auth.signup).toHaveBeenCalledWith('novo@test.com', 'senhaForte1');
+      });
+      expect(screen.getByText(/Cadastro recebido/i)).toBeInTheDocument();
+      expect(onLoginMock).not.toHaveBeenCalled();
+    });
+
+    it('senha curta é rejeitada no client sem chamar a API', () => {
+      openSignup();
+      fillSignup('novo@test.com', 'a1', 'a1');
+      fireEvent.click(screen.getByRole('button', { name: /^Criar conta$/i }));
+
+      expect(screen.getByText(/mínimo 8 caracteres/i)).toBeInTheDocument();
+      expect(api.auth.signup).not.toHaveBeenCalled();
+    });
+
+    it('senha sem número é rejeitada no client', () => {
+      openSignup();
+      fillSignup('novo@test.com', 'somenteletras', 'somenteletras');
+      fireEvent.click(screen.getByRole('button', { name: /^Criar conta$/i }));
+
+      expect(screen.getByText(/uma letra e um número/i)).toBeInTheDocument();
+      expect(api.auth.signup).not.toHaveBeenCalled();
+    });
+
+    it('senhas diferentes são rejeitadas no client', () => {
+      openSignup();
+      fillSignup('novo@test.com', 'senhaForte1', 'senhaForte2');
+      fireEvent.click(screen.getByRole('button', { name: /^Criar conta$/i }));
+
+      expect(screen.getByText(/não coincidem/i)).toBeInTheDocument();
+      expect(api.auth.signup).not.toHaveBeenCalled();
+    });
+
+    it('erro da API é exibido (ex.: cadastro desabilitado)', async () => {
+      vi.mocked(api.auth.signup).mockRejectedValue(new Error('Cadastro público desabilitado'));
+      openSignup();
+      fillSignup('novo@test.com', 'senhaForte1', 'senhaForte1');
+      fireEvent.click(screen.getByRole('button', { name: /^Criar conta$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Cadastro público desabilitado/i)).toBeInTheDocument();
+      });
+    });
+
+    it('"Voltar para o login" limpa o formulário e volta ao modo login', () => {
+      openSignup();
+      fillSignup('novo@test.com', 'senhaForte1', 'senhaForte1');
+      fireEvent.click(screen.getByRole('button', { name: /Voltar para o login/i }));
+
+      expect(screen.getByText('Acesse sua conta')).toBeInTheDocument();
+      expect((screen.getByLabelText(/^Senha$/i) as HTMLInputElement).value).toBe('');
+    });
   });
 });

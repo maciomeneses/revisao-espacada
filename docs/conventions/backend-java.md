@@ -53,6 +53,8 @@ O backend retorna **ProblemDetail** (RFC 9457). O campo de mensagem é **`detail
 ## Modelo de dados (resumo)
 
 - `Subject`: PK `Long id` (auto); chave de sync `String clientId` (gerado no frontend). Unique `(user_id, client_id)`. `currentStage`/`performanceLevel`/`lastPerformance` persistidos como STRING. `@CreationTimestamp`/`@UpdateTimestamp`. Cascade delete em `user`.
+- `User`: `email_verified BOOLEAN NOT NULL DEFAULT TRUE` (V14) — contas ADMIN-criadas nascem verificadas; self-signup nasce `false` e não autentica até confirmar (ver `security.md`).
+- `EmailVerificationToken` (`email_verification_tokens`, V14): token de uso único com TTL, mesmo padrão de `PasswordResetToken`. Cascade delete em `user`.
 - `ReviewStage` (enum): `aula`, `Learning`, `Review`, `Relearning`, `New`.
 - `PerformanceLevel` (enum): `nao_classificada`, `ruim`, `medio`, `bom`, `excelente`.
 - `RoutineSlot` (`routine_slot`): `user_id`, `day` 0..6, `slot_type` ∈ {`study`, `other`}, `area`/`label`. Validar `day` ∈ 0..6 e `slot_type` no enum.
@@ -67,6 +69,8 @@ ADMIN_EMAIL, ADMIN_PASSWORD
 CORS_ALLOWED_ORIGINS, FRONTEND_URL
 PORT
 RATE_LIMIT_* (parâmetros de rate limit)
+SIGNUP_ENABLED, SIGNUP_UNVERIFIED_TTL_HOURS (auto-cadastro; ver security.md)
+BREVO_API_KEY, MAIL_FROM (e-mails transacionais)
 ```
 
 `ProductionConfigValidator` garante que as vars obrigatórias existem no profile `prod`.

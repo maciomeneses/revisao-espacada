@@ -71,4 +71,49 @@ public class EmailService {
             log.error("Falha ao enviar e-mail de reset de senha para {}: {}", to, e.getMessage());
         }
     }
+
+    /**
+     * Envia o e-mail de confirmação de cadastro via API REST do Brevo.
+     *
+     * <p>Mesmo contrato de {@link #sendPasswordReset}: sem {@code BREVO_API_KEY}
+     * o envio é ignorado com aviso em log; falhas de API são logadas sem
+     * propagar exceção — o token já foi salvo e o endpoint responde 202.</p>
+     *
+     * @param to         endereço de e-mail do destinatário
+     * @param verifyLink URL completa de confirmação com o token
+     */
+    public void sendEmailVerification(String to, String verifyLink) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("BREVO_API_KEY não configurada — e-mail de verificação não enviado para: {}", to);
+            return;
+        }
+        try {
+            Map<String, Object> body = Map.of(
+                "sender", Map.of("email", fromAddress, "name", "Revisão Espaçada"),
+                "to", List.of(Map.of("email", to)),
+                "subject", "Confirme seu e-mail — Revisão Espaçada",
+                "textContent", """
+                        Bem-vindo(a) à Revisão Espaçada!
+
+                        Clique no link abaixo para confirmar seu e-mail e ativar sua conta (válido por 24 horas):
+
+                        %s
+
+                        Se você não criou esta conta, ignore este e-mail.
+                        """.formatted(verifyLink)
+            );
+
+            restClient.post()
+                .uri(BREVO_SEND_URL)
+                .header("api-key", apiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity();
+
+            log.info("E-mail de verificação enviado para: {}", to);
+        } catch (Exception e) {
+            log.error("Falha ao enviar e-mail de verificação para {}: {}", to, e.getMessage());
+        }
+    }
 }

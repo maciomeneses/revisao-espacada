@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Mail, Lock, ArrowLeft, AlertCircle, Home } from 'lucide-react';
+import { LogIn, Mail, Lock, ArrowLeft, AlertCircle, Home, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 
@@ -7,16 +7,34 @@ interface AuthScreenProps {
   onLogin: (email: string, token: string, role: string) => void;
 }
 
-type AuthMode = 'login' | 'forgot-password';
+type AuthMode = 'login' | 'forgot-password' | 'signup';
+
+/** Mesma regra do backend (SignupRequest): 8–100 chars, ao menos 1 letra e 1 número. */
+function validatePassword(password: string): string | null {
+  if (password.length < 8) return 'A senha deve ter no mínimo 8 caracteres.';
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    return 'A senha deve conter ao menos uma letra e um número.';
+  }
+  return null;
+}
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const switchMode = (next: AuthMode) => {
+    setMode(next);
+    setError(null);
+    setSuccessMessage(null);
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +47,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       onLogin(res.email, res.token, res.role);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Credenciais inválidas. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await api.auth.signup(email, password);
+      // Mensagem genérica intencional — não revela se o e-mail já existe (anti-user-enumeration)
+      setSuccessMessage(
+        'Cadastro recebido! Enviamos um link de confirmação para o seu e-mail — ele vale por 24 horas.',
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao processar cadastro. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -166,9 +211,128 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
               <div className="mt-8 pt-6 border-t border-[#e2e8f0] text-center">
                 <p className="text-muted text-sm">
-                  O cadastro de novos usuários é realizado apenas por administradores.
+                  Ainda não tem conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchMode('signup')}
+                    className="text-sky hover:text-sky-dark font-semibold transition-colors"
+                  >
+                    Criar conta grátis
+                  </button>
                 </p>
               </div>
+            </>
+          ) : mode === 'signup' ? (
+            <>
+              <button
+                onClick={() => switchMode('login')}
+                className="flex items-center gap-2 text-muted hover:text-navy transition-colors mb-6 text-sm"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar para o login
+              </button>
+
+              <h2 className="text-xl font-bold text-navy mb-2 flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Criar conta
+              </h2>
+              <p className="text-muted text-sm mb-6">
+                Cadastre-se com seu e-mail. Você receberá um link de confirmação para ativar a
+                conta.
+              </p>
+
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="signup-email"
+                    className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5"
+                  >
+                    E-mail
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
+                    <input
+                      id="signup-email"
+                      type="email"
+                      required
+                      name="email"
+                      autoComplete="username"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="signup-password"
+                    className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5"
+                  >
+                    Senha
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
+                    <input
+                      id="signup-password"
+                      type="password"
+                      required
+                      name="new-password"
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
+                      placeholder="Mínimo 8 caracteres, letras e números"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="signup-confirm"
+                    className="block text-xs font-semibold text-navy uppercase tracking-wide mb-1.5"
+                  >
+                    Confirmar senha
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-light" />
+                    <input
+                      id="signup-confirm"
+                      type="password"
+                      required
+                      name="confirm-password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full bg-surface-alt border border-[#e2e8f0] rounded-xl py-2.5 pl-11 pr-4 text-navy placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-sky/40 transition-all"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2 text-sm text-red-600">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700">
+                    {successMessage}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading || !!successMessage}
+                  className="w-full font-bold py-3 rounded-full transition-all shadow-md flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: '#FFC72C', color: '#1F3A5F' }}
+                >
+                  {isLoading ? 'Enviando...' : 'Criar conta'}
+                </button>
+              </form>
             </>
           ) : (
             <>

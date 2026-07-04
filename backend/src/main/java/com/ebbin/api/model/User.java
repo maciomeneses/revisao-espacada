@@ -25,6 +25,14 @@ public class User {
     @Column(nullable = false, columnDefinition = "varchar(255)")
     private Role role = Role.USER;
 
+    /**
+     * {@code true} quando o e-mail foi confirmado. Contas criadas por ADMIN
+     * nascem verificadas (default); contas de self-signup nascem com
+     * {@code false} e só podem autenticar após confirmar o e-mail (V14).
+     */
+    @Column(nullable = false)
+    private boolean emailVerified = true;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -46,6 +54,9 @@ public class User {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

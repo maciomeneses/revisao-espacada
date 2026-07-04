@@ -7,6 +7,7 @@ import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
 import { AuthScreen } from './components/Auth/AuthScreen';
 import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
+import { VerifyEmailScreen } from './components/Auth/VerifyEmailScreen';
 import { LandingPage } from './components/LandingPage';
 import { AdminArea } from './components/Admin/AdminArea';
 import { Provas } from './components/Provas';
@@ -23,6 +24,12 @@ function getResetTokenFromUrl(): string | null {
   return params.get('token');
 }
 
+/** Extrai o valor do query param ?verify= (link de confirmação de e-mail do signup). */
+function getVerifyTokenFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('verify');
+}
+
 export function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<Role | undefined>();
@@ -36,6 +43,7 @@ export function AppContent() {
   });
   const [showGerenciar, setShowGerenciar] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(() => getResetTokenFromUrl());
+  const [verifyToken, setVerifyToken] = useState<string | null>(() => getVerifyTokenFromUrl());
   const [highlightedSubjectId, setHighlightedSubjectId] = useState<string | undefined>();
 
   const location = useLocation();
@@ -124,6 +132,24 @@ export function AppContent() {
 
   if (resetToken) {
     return <ResetPasswordScreen token={resetToken} onSuccess={handleResetSuccess} />;
+  }
+
+  if (verifyToken) {
+    return (
+      <VerifyEmailScreen
+        token={verifyToken}
+        onVerified={(email, token, role) => {
+          setVerifyToken(null);
+          window.history.replaceState({}, '', window.location.pathname);
+          handleLogin(email, token, role);
+        }}
+        onBackToLogin={() => {
+          setVerifyToken(null);
+          window.history.replaceState({}, '', window.location.pathname);
+          navigate('/login');
+        }}
+      />
+    );
   }
 
   const isLogin = location.pathname === '/login';
