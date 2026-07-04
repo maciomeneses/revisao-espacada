@@ -53,7 +53,7 @@ class UserPreferencesControllerUnitTest {
     @Test
     @DisplayName("update com allowedReviewDays null lança 400")
     void update_nullField_throws400() {
-        UserPreferencesDto dto = new UserPreferencesDto(null);
+        UserPreferencesDto dto = new UserPreferencesDto(null, null);
 
         assertThatThrownBy(() -> controller.update(principal, dto))
                 .isInstanceOf(ResponseStatusException.class);

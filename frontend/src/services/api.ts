@@ -205,13 +205,19 @@ export const api = {
   },
 
   preferences: {
-    get: () => request<{ allowedReviewDays: number[] }>('/api/preferences'),
+    get: () =>
+      request<{ allowedReviewDays: number[]; maxReviewsPerDay?: number | null }>(
+        '/api/preferences',
+      ),
 
-    save: (payload: { allowedReviewDays: number[] }) =>
-      request<{ allowedReviewDays: number[] }>('/api/preferences', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      }),
+    save: (payload: { allowedReviewDays: number[]; maxReviewsPerDay?: number | null }) =>
+      request<{ allowedReviewDays: number[]; maxReviewsPerDay?: number | null }>(
+        '/api/preferences',
+        {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        },
+      ),
   },
 
   examEntries: {

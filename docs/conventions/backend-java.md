@@ -56,7 +56,7 @@ O backend retorna **ProblemDetail** (RFC 9457). O campo de mensagem é **`detail
 - `ReviewStage` (enum): `aula`, `Learning`, `Review`, `Relearning`, `New`.
 - `PerformanceLevel` (enum): `nao_classificada`, `ruim`, `medio`, `bom`, `excelente`.
 - `RoutineSlot` (`routine_slot`): `user_id`, `day` 0..6, `slot_type` ∈ {`study`, `other`}, `area`/`label`. Validar `day` ∈ 0..6 e `slot_type` no enum.
-- `UserPreferences` (`user_preferences`): `allowed_review_days SMALLINT[]` — cada dia ∈ 0..6 e o array **não pode ser vazio**.
+- `UserPreferences` (`user_preferences`): `allowed_review_days SMALLINT[]` — cada dia ∈ 0..6 e o array **não pode ser vazio**; `max_reviews_per_day SMALLINT NULL` — teto de revisões agendáveis por dia (`null` = sem limite; quando definido, ≥ 1). O `PUT /api/preferences` substitui o recurso completo (dias + limite no mesmo payload).
 
 ## Variáveis de ambiente
 

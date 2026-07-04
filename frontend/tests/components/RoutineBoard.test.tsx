@@ -32,6 +32,7 @@ interface RenderOpts {
   routine?: StudentRoutine;
   availableAreas?: string[];
   allowedDays?: Set<number>;
+  maxReviewsPerDay?: number | null;
 }
 
 function setup(opts: RenderOpts = {}) {
@@ -39,18 +40,25 @@ function setup(opts: RenderOpts = {}) {
   const onUpdate = vi.fn();
   const onRemove = vi.fn();
   const onToggleDay = vi.fn();
+  const onSetMaxReviewsPerDay = vi.fn();
   const utils = render(
     <RoutineBoard
       routine={opts.routine ?? []}
       availableAreas={opts.availableAreas ?? ['Álgebra', 'Geometria']}
       allowedDays={opts.allowedDays ?? new Set([0, 1, 2, 3, 4, 5, 6])}
+      maxReviewsPerDay={opts.maxReviewsPerDay ?? null}
       onAdd={onAdd}
       onUpdate={onUpdate}
       onRemove={onRemove}
       onToggleDay={onToggleDay}
+      onSetMaxReviewsPerDay={onSetMaxReviewsPerDay}
     />,
   );
-  return { ...utils, onAdd, onUpdate, onRemove, onToggleDay };
+  return { ...utils, onAdd, onUpdate, onRemove, onToggleDay, onSetMaxReviewsPerDay };
+}
+
+function getMaxInput(): HTMLInputElement {
+  return screen.getByLabelText('Limite de revisões por dia') as HTMLInputElement;
 }
 
 describe('RoutineBoard', () => {
@@ -245,5 +253,64 @@ describe('RoutineBoard', () => {
     expect(submit).toBeDisabled();
     fireEvent.click(submit);
     expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  describe('limite diário de revisões', () => {
+    it('input vazio quando maxReviewsPerDay é null (sem limite)', () => {
+      setup({ maxReviewsPerDay: null });
+      expect(getMaxInput().value).toBe('');
+      expect(getMaxInput().placeholder).toBe('Sem limite');
+    });
+
+    it('exibe o limite persistido', () => {
+      setup({ maxReviewsPerDay: 4 });
+      expect(getMaxInput().value).toBe('4');
+    });
+
+    it('commit no blur com valor válido chama onSetMaxReviewsPerDay', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: null });
+      fireEvent.change(getMaxInput(), { target: { value: '5' } });
+      fireEvent.blur(getMaxInput());
+      expect(onSetMaxReviewsPerDay).toHaveBeenCalledWith(5);
+    });
+
+    it('limpar o campo remove o limite (null)', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: 3 });
+      fireEvent.change(getMaxInput(), { target: { value: '' } });
+      fireEvent.blur(getMaxInput());
+      expect(onSetMaxReviewsPerDay).toHaveBeenCalledWith(null);
+    });
+
+    it('valor inválido (0) é revertido no blur sem chamar callback', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: 3 });
+      fireEvent.change(getMaxInput(), { target: { value: '0' } });
+      fireEvent.blur(getMaxInput());
+      expect(onSetMaxReviewsPerDay).not.toHaveBeenCalled();
+      expect(getMaxInput().value).toBe('3');
+    });
+
+    it('valor igual ao atual não dispara callback', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: 3 });
+      fireEvent.change(getMaxInput(), { target: { value: '3' } });
+      fireEvent.blur(getMaxInput());
+      expect(onSetMaxReviewsPerDay).not.toHaveBeenCalled();
+    });
+
+    it('campo vazio com limite já null não dispara callback', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: null });
+      fireEvent.change(getMaxInput(), { target: { value: '' } });
+      fireEvent.blur(getMaxInput());
+      expect(onSetMaxReviewsPerDay).not.toHaveBeenCalled();
+    });
+
+    it('Enter comita o valor (via blur)', () => {
+      const { onSetMaxReviewsPerDay } = setup({ maxReviewsPerDay: null });
+      const input = getMaxInput();
+      input.focus();
+      fireEvent.change(input, { target: { value: '7' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(onSetMaxReviewsPerDay).toHaveBeenCalledTimes(1);
+      expect(onSetMaxReviewsPerDay).toHaveBeenCalledWith(7);
+    });
   });
 });

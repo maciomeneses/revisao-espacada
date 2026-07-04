@@ -49,7 +49,8 @@ Ver `docs/adr/`. Principais: monorepo desacoplado (0001), FSRS congelado (0002),
 - [x] FSRS v6, fixação, revisões, reagendamento.
 - [x] Rotina semanal (`routine_slot`) + dias permitidos (`user_preferences`).
 - [x] Rate limit, cache, OWASP scan, cobertura agressiva.
-- [ ] Próximas features: registrar aqui ao planejar.
+- [x] Limite diário de revisões (`user_preferences.max_reviews_per_day`) com balanceamento de carga no `snapReviewDate` (issue #54).
+- [ ] Próximas features: backlog completo no Kanban board (issues #47–#60); registrar aqui ao iniciar cada uma.
 
 ## 8. Perguntas em aberto
 

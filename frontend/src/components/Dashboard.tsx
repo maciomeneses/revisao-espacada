@@ -30,6 +30,8 @@ interface DashboardProps {
   onRemoveSlot: (id: string) => void;
   allowedDays: Set<number>;
   onToggleDay: (day: number) => void;
+  maxReviewsPerDay: number | null;
+  onSetMaxReviewsPerDay: (max: number | null) => void;
 }
 
 function shiftDate(dateStr: string, n: number): string {
@@ -86,6 +88,8 @@ export function Dashboard({
   onRemoveSlot,
   allowedDays,
   onToggleDay,
+  maxReviewsPerDay,
+  onSetMaxReviewsPerDay,
 }: DashboardProps) {
   const todayStr = localDateStr(new Date());
   const [selectedDay, setSelectedDay] = useState<string>(todayStr);
@@ -330,6 +334,8 @@ export function Dashboard({
         onRemove={onRemoveSlot}
         allowedDays={allowedDays}
         onToggleDay={onToggleDay}
+        maxReviewsPerDay={maxReviewsPerDay}
+        onSetMaxReviewsPerDay={onSetMaxReviewsPerDay}
       />
 
       {/* ── FSRS card (fim da página) ─────────────────────────────── */}

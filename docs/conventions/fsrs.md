@@ -40,10 +40,11 @@ Mudar esse mapeamento afeta a taxa de retenção de todos os usuários.
 
 ## Agendamento com rotina e preferências
 
-A data crua do FSRS é ajustada por **`snapReviewDate(fsrsDate, area, routine, allowedDays?)`** (em `useSubjects.ts`):
+A data crua do FSRS é ajustada por **`snapReviewDate(fsrsDate, area, routine, allowedDays?, opts?)`** (em `useSubjects.ts`):
 
 1. **`allowedDays`** (`useReviewPreferences` ← `user_preferences.allowed_review_days`) é **restrição forte**: a data final **nunca** pode cair fora de `allowedReviewDays`.
 2. **`routine`** (`useRoutine` ← `routine_slot`) é **preferência**: tenta um dia em que o usuário estuda a `area`; sem dia compatível no horizonte, faz fallback para o próximo dia permitido.
+3. **Capacidade diária** (`opts.maxPerDay` ← `user_preferences.max_reviews_per_day`, `opts.dayLoad` construído por `buildDayLoad`) é **restrição branda com garantia de data**: dia lotado é pulado para o próximo dia permitido com vaga; se **todo** o horizonte de 21 dias estiver lotado, escolhe o dia permitido **menos carregado** (empate = mais cedo). `null`/ausente = sem limite (comportamento legado). A capacidade **nunca** antecipa a data para antes da data FSRS e **nunca** viola `allowedDays`. Callers que reagendam em lote (efeito de re-snap, `rescheduleByRoutine`) usam mapa de carga **incremental**: removem o subject da própria data antes de snapar e o recolocam na data resultante — ordem determinística garante convergência.
 
 `findNextRoutineDate` é **alias retrocompatível** — código novo usa `snapReviewDate`. `registerReview`, `registerFixacao` e `rescheduleByRoutine` precisam receber `routine` e `allowedDays` via deps/refs (ver `frontend-react.md`, bug #21).
 
@@ -61,3 +62,4 @@ A data crua do FSRS é ajustada por **`snapReviewDate(fsrsDate, area, routine, a
 4. Não remover `max(1, ...)` em `scheduledDays`.
 5. Novo parâmetro `w` → documentar índice e significado.
 6. `snapReviewDate` deve manter `allowedDays` como restrição forte e `routine` como preferência (fallback). Garantir deps/refs corretas.
+7. Mudança na capacidade diária: garantir que sem limite (`maxPerDay` null/0) o comportamento é byte-a-byte o legado, que nenhum subject fica sem data e que `allowedDays` continua inviolável no desempate.
