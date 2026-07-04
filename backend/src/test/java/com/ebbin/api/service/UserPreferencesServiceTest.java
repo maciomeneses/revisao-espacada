@@ -89,7 +89,7 @@ class UserPreferencesServiceTest {
         when(repository.findById(userId)).thenReturn(Optional.of(existing));
         when(repository.save(any(UserPreferences.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UserPreferences result = service.update(userId, Set.of((short) 1, (short) 3, (short) 5));
+        UserPreferences result = service.update(userId, Set.of((short) 1, (short) 3, (short) 5), null);
 
         assertThat(result.getAllowedReviewDays()).containsExactlyInAnyOrder((short) 1, (short) 3, (short) 5);
     }
@@ -101,7 +101,7 @@ class UserPreferencesServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(repository.save(any(UserPreferences.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UserPreferences result = service.update(userId, Set.of((short) 2, (short) 4));
+        UserPreferences result = service.update(userId, Set.of((short) 2, (short) 4), null);
 
         assertThat(result.getAllowedReviewDays()).containsExactlyInAnyOrder((short) 2, (short) 4);
     }
@@ -109,7 +109,7 @@ class UserPreferencesServiceTest {
     @Test
     @DisplayName("update com conjunto vazio lança BAD_REQUEST")
     void update_emptySet_badRequest() {
-        assertThatThrownBy(() -> service.update(userId, Set.of()))
+        assertThatThrownBy(() -> service.update(userId, Set.of(), null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("vazio");
     }
@@ -117,14 +117,14 @@ class UserPreferencesServiceTest {
     @Test
     @DisplayName("update com conjunto nulo lança BAD_REQUEST")
     void update_nullSet_badRequest() {
-        assertThatThrownBy(() -> service.update(userId, null))
+        assertThatThrownBy(() -> service.update(userId, null, null))
                 .isInstanceOf(ResponseStatusException.class);
     }
 
     @Test
     @DisplayName("update com dia=7 lança BAD_REQUEST")
     void update_daySevenInvalid() {
-        assertThatThrownBy(() -> service.update(userId, Set.of((short) 7)))
+        assertThatThrownBy(() -> service.update(userId, Set.of((short) 7), null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Dia inválido");
     }
@@ -132,8 +132,59 @@ class UserPreferencesServiceTest {
     @Test
     @DisplayName("update com dia=-1 lança BAD_REQUEST")
     void update_dayNegativeInvalid() {
-        assertThatThrownBy(() -> service.update(userId, Set.of((short) -1)))
+        assertThatThrownBy(() -> service.update(userId, Set.of((short) -1), null))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Dia inválido");
+    }
+
+    @Test
+    @DisplayName("update com maxReviewsPerDay válido persiste o limite")
+    void update_maxPerDay_persists() {
+        UserPreferences existing = new UserPreferences();
+        existing.setUser(user);
+        when(repository.findById(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any(UserPreferences.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UserPreferences result = service.update(userId, Set.of((short) 1), 5);
+
+        assertThat(result.getMaxReviewsPerDay()).isEqualTo((short) 5);
+    }
+
+    @Test
+    @DisplayName("update com maxReviewsPerDay null limpa o limite")
+    void update_maxPerDayNull_clearsLimit() {
+        UserPreferences existing = new UserPreferences();
+        existing.setUser(user);
+        existing.setMaxReviewsPerDay((short) 3);
+        when(repository.findById(userId)).thenReturn(Optional.of(existing));
+        when(repository.save(any(UserPreferences.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UserPreferences result = service.update(userId, Set.of((short) 1), null);
+
+        assertThat(result.getMaxReviewsPerDay()).isNull();
+    }
+
+    @Test
+    @DisplayName("update com maxReviewsPerDay=0 lança BAD_REQUEST")
+    void update_maxPerDayZero_badRequest() {
+        assertThatThrownBy(() -> service.update(userId, Set.of((short) 1), 0))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("maxReviewsPerDay");
+    }
+
+    @Test
+    @DisplayName("update com maxReviewsPerDay negativo lança BAD_REQUEST")
+    void update_maxPerDayNegative_badRequest() {
+        assertThatThrownBy(() -> service.update(userId, Set.of((short) 1), -2))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("maxReviewsPerDay");
+    }
+
+    @Test
+    @DisplayName("update com maxReviewsPerDay acima de SMALLINT lança BAD_REQUEST")
+    void update_maxPerDayOverflow_badRequest() {
+        assertThatThrownBy(() -> service.update(userId, Set.of((short) 1), 40000))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("maxReviewsPerDay");
     }
 }

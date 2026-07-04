@@ -74,7 +74,9 @@ describe('Dashboard (cobertura extra)', () => {
     render(<Dashboard {...defaultProps} subjects={subjects} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
-    const numberInputs = document.querySelectorAll('input[type="number"]');
+    const numberInputs = document.querySelectorAll(
+      'input[type="number"]:not([aria-label="Limite de revisões por dia"])',
+    );
     fireEvent.change(numberInputs[0]!, { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
 
@@ -86,7 +88,9 @@ describe('Dashboard (cobertura extra)', () => {
     render(<Dashboard {...defaultProps} subjects={subjects} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
-    const numberInputs = document.querySelectorAll('input[type="number"]');
+    const numberInputs = document.querySelectorAll(
+      'input[type="number"]:not([aria-label="Limite de revisões por dia"])',
+    );
     fireEvent.change(numberInputs[0]!, { target: { value: '5' } });
     fireEvent.change(numberInputs[1]!, { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
@@ -121,7 +125,9 @@ describe('Dashboard (cobertura extra)', () => {
     render(<Dashboard {...defaultProps} subjects={subjects} />);
     fireEvent.click(screen.getByRole('button', { name: /^Revisar$/i }));
 
-    const numberInputs = document.querySelectorAll('input[type="number"]');
+    const numberInputs = document.querySelectorAll(
+      'input[type="number"]:not([aria-label="Limite de revisões por dia"])',
+    );
     fireEvent.change(numberInputs[0]!, { target: { value: '20' } });
     fireEvent.change(numberInputs[1]!, { target: { value: '15' } });
 

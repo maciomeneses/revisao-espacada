@@ -19,15 +19,16 @@ Já mergeadas em `main` (rodaram ou rodarão em produção) — são **imutávei
 - `V6__review_events_accuracy.sql`
 - `V11__user_preferences.sql` (`user_preferences` com `allowed_review_days SMALLINT[]`)
 - `V12__routine_slot.sql` (`routine_slot` para rotina semanal por usuário)
+- `V13__user_preferences_max_reviews_per_day.sql` (`max_reviews_per_day SMALLINT NULL`, CHECK ≥ 1)
 
-**Próxima migration: `V13__...`.**
+**Próxima migration: `V14__...`.**
 
 ## Regras
 
 - **Nunca** modificar uma migration já mergeada em `main`. Toda mudança de schema = **nova** migration `V{N+1}__...`.
 - Qualquer mudança em `backend/src/main/java/com/ebbin/api/model/` que altere o schema **exige** migration correspondente na mesma PR.
 - Avaliar se a migration é reversível ou se haverá downtime; preferir mudanças backward-compatible (expand → migrate → contract) quando aplicável.
-- Tipos/constraints documentados no modelo (ver `backend-java.md`): `routine_slot` (`day` 0..6, `slot_type` ∈ {study, other}), `user_preferences.allowed_review_days` (cada dia 0..6, array não vazio).
+- Tipos/constraints documentados no modelo (ver `backend-java.md`): `routine_slot` (`day` 0..6, `slot_type` ∈ {study, other}), `user_preferences.allowed_review_days` (cada dia 0..6, array não vazio), `user_preferences.max_reviews_per_day` (NULL = sem limite; quando definido, ≥ 1).
 
 ## Restrições absolutas (NUNCA)
 

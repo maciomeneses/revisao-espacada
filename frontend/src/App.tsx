@@ -42,7 +42,8 @@ export function AppContent() {
   const navigate = useNavigate();
 
   const { routine, addSlot, updateSlot, removeSlot } = useRoutine(userEmail);
-  const { allowedDays, toggleDay } = useReviewPreferences(userEmail);
+  const { allowedDays, toggleDay, maxReviewsPerDay, setMaxReviewsPerDay } =
+    useReviewPreferences(userEmail);
 
   const {
     subjects,
@@ -55,7 +56,7 @@ export function AppContent() {
     removeSubject,
     revertStage,
     rescheduleByRoutine,
-  } = useSubjects(routine, userEmail ?? undefined, allowedDays);
+  } = useSubjects(routine, userEmail ?? undefined, allowedDays, maxReviewsPerDay);
 
   const handleAddSlot = useCallback(
     (slot: Parameters<typeof addSlot>[0]) => {
@@ -192,6 +193,8 @@ export function AppContent() {
                       onRemoveSlot={removeSlot}
                       allowedDays={allowedDays}
                       onToggleDay={toggleDay}
+                      maxReviewsPerDay={maxReviewsPerDay}
+                      onSetMaxReviewsPerDay={setMaxReviewsPerDay}
                     />
                   </div>
                 </div>
