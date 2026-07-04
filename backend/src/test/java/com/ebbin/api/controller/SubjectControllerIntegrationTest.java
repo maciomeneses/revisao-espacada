@@ -253,6 +253,40 @@ class SubjectControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("PUT /api/subjects/{id} sem os flags legados de estágio deve criar subject com flags false")
+    void upsert_payloadWithoutLegacyStageFlags_createsWithFalseFlags() throws Exception {
+        // Payload idêntico ao enviado pelo addSubject do frontend ao registrar um
+        // estudo novo: omite fixacao24hFeita, estudoReversoFeito e rev*Feita.
+        // Regressão: com os flags como boolean primitivo no record, o Jackson 3
+        // rejeitava o campo ausente (FAIL_ON_NULL_FOR_PRIMITIVES) e o registro
+        // falhava com 500.
+        String frontendJson = """
+                {"id":"subj-front","modulo":"Física","area":"Ciências da Natureza",
+                "aulaPrincipal":"movimento uniforme","relevancia":"Alta",
+                "aulaAssistida":false,"preAulaFeita":false,"flashcardsFeitos":false,
+                "currentStage":"aula","nextReviewDate":null,"lastReviewDate":null,
+                "lastPerformance":null,"performanceLevel":"nao_classificada"}
+                """;
+
+        mockMvc.perform(put("/api/subjects/subj-front")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(frontendJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("subj-front"))
+                .andExpect(jsonPath("$.area").value("Ciências da Natureza"))
+                .andExpect(jsonPath("$.fixacao24hFeita").value(false))
+                .andExpect(jsonPath("$.rev90dFeita").value(false));
+
+        assertThat(subjectRepository.findByUserAndClientId(regularUser, "subj-front"))
+                .hasValueSatisfying(saved -> {
+                    assertThat(saved.isFixacao24hFeita()).isFalse();
+                    assertThat(saved.isEstudoReversoFeito()).isFalse();
+                    assertThat(saved.isRev7dFeita()).isFalse();
+                });
+    }
+
+    @Test
     @DisplayName("PUT /api/subjects/{id} deve atualizar subject existente")
     void upsert_existingSubject_updatesAndReturns200() throws Exception {
         // Persiste subject existente

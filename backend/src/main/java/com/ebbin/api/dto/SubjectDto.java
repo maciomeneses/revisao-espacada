@@ -18,15 +18,19 @@ public record SubjectDto(
     @NotBlank String area,
     @NotBlank String aulaPrincipal,
     @NotBlank String relevancia,
-    boolean aulaAssistida,
-    boolean preAulaFeita,
-    boolean flashcardsFeitos,
-    boolean fixacao24hFeita,
-    boolean estudoReversoFeito,
-    boolean rev7dFeita,
-    boolean rev30dFeita,
-    boolean rev60dFeita,
-    boolean rev90dFeita,
+    // Flags como Boolean (wrapper), não boolean: o frontend omite os flags legados
+    // ao criar um subject novo, e o Jackson 3 rejeita null/ausente em primitivo
+    // (FAIL_ON_NULL_FOR_PRIMITIVES) — quebrava o "Registrar Estudo" com 500.
+    // Flag ausente = false (ver applyTo).
+    Boolean aulaAssistida,
+    Boolean preAulaFeita,
+    Boolean flashcardsFeitos,
+    Boolean fixacao24hFeita,
+    Boolean estudoReversoFeito,
+    Boolean rev7dFeita,
+    Boolean rev30dFeita,
+    Boolean rev60dFeita,
+    Boolean rev90dFeita,
     @NotBlank String currentStage,
     LocalDate nextReviewDate,
     LocalDate lastReviewDate,
@@ -65,15 +69,15 @@ public record SubjectDto(
         s.setArea(this.area());
         s.setAulaPrincipal(this.aulaPrincipal());
         s.setRelevancia(this.relevancia());
-        s.setAulaAssistida(this.aulaAssistida());
-        s.setPreAulaFeita(this.preAulaFeita());
-        s.setFlashcardsFeitos(this.flashcardsFeitos());
-        s.setFixacao24hFeita(this.fixacao24hFeita());
-        s.setEstudoReversoFeito(this.estudoReversoFeito());
-        s.setRev7dFeita(this.rev7dFeita());
-        s.setRev30dFeita(this.rev30dFeita());
-        s.setRev60dFeita(this.rev60dFeita());
-        s.setRev90dFeita(this.rev90dFeita());
+        s.setAulaAssistida(flag(this.aulaAssistida()));
+        s.setPreAulaFeita(flag(this.preAulaFeita()));
+        s.setFlashcardsFeitos(flag(this.flashcardsFeitos()));
+        s.setFixacao24hFeita(flag(this.fixacao24hFeita()));
+        s.setEstudoReversoFeito(flag(this.estudoReversoFeito()));
+        s.setRev7dFeita(flag(this.rev7dFeita()));
+        s.setRev30dFeita(flag(this.rev30dFeita()));
+        s.setRev60dFeita(flag(this.rev60dFeita()));
+        s.setRev90dFeita(flag(this.rev90dFeita()));
         s.setCurrentStage(ReviewStage.fromValue(this.currentStage()));
         s.setNextReviewDate(this.nextReviewDate());
         s.setLastReviewDate(this.lastReviewDate());
@@ -88,5 +92,10 @@ public record SubjectDto(
         s.setLapses(this.lapses());
         s.setState(this.state());
         s.setScheduledDays(this.scheduledDays());
+    }
+
+    /** Flag ausente ou null no JSON equivale a false. */
+    private static boolean flag(Boolean value) {
+        return Boolean.TRUE.equals(value);
     }
 }
