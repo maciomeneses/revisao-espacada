@@ -5,8 +5,12 @@ import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
 import com.ebbin.api.dto.ResetPasswordRequest;
+import com.ebbin.api.dto.SignupRequest;
+import com.ebbin.api.dto.VerifyEmailRequest;
+import com.ebbin.api.model.EmailVerificationToken;
 import com.ebbin.api.model.PasswordResetToken;
 import com.ebbin.api.model.User;
+import com.ebbin.api.repository.EmailVerificationTokenRepository;
 import com.ebbin.api.repository.PasswordResetTokenRepository;
 import com.ebbin.api.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +48,7 @@ class AuthServiceTest {
 
     @Mock UserRepository userRepository;
     @Mock PasswordResetTokenRepository resetTokenRepository;
+    @Mock EmailVerificationTokenRepository verificationTokenRepository;
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtService jwtService;
     @Mock AuthenticationManager authenticationManager;
@@ -60,22 +65,28 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(
-                userRepository,
-                resetTokenRepository,
-                passwordEncoder,
-                jwtService,
-                authenticationManager,
-                fixedClock,
-                "http://localhost:5173",
-                emailService,
-                subjectCatalogService
-        );
+        authService = newAuthService(true);
 
         user = new User();
         user.setEmail("user@test.com");
         user.setPassword("encodedPassword");
         user.setRole(User.Role.USER);
+    }
+
+    private AuthService newAuthService(boolean signupEnabled) {
+        return new AuthService(
+                userRepository,
+                resetTokenRepository,
+                verificationTokenRepository,
+                passwordEncoder,
+                jwtService,
+                authenticationManager,
+                fixedClock,
+                "http://localhost:5173",
+                signupEnabled,
+                emailService,
+                subjectCatalogService
+        );
     }
 
     // ---- login ----
@@ -338,5 +349,139 @@ class AuthServiceTest {
     @DisplayName("maskToken com token nulo deve retornar '***'")
     void maskToken_nullToken_returnsMasked() {
         assertThat(AuthService.maskToken(null)).isEqualTo("***");
+    }
+
+    // ---- signup (auto-cadastro público, issue #59) ----
+
+    @Test
+    @DisplayName("signup com cadastro desabilitado lança 403")
+    void signup_disabled_throws403() {
+        AuthService disabledService = newAuthService(false);
+
+        assertThatThrownBy(() -> disabledService.signup(new SignupRequest("novo@test.com", "senha123x")))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("desabilitado");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("signup com e-mail novo cria conta USER não verificada, semeia catálogo e envia link")
+    void signup_newEmail_createsUnverifiedUser() {
+        when(userRepository.findByEmail("novo@test.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("senha123x")).thenReturn("encodedSenha");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(verificationTokenRepository.save(any(EmailVerificationToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        authService.signup(new SignupRequest("novo@test.com", "senha123x"));
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User saved = userCaptor.getValue();
+        assertThat(saved.getEmail()).isEqualTo("novo@test.com");
+        assertThat(saved.getPassword()).isEqualTo("encodedSenha");
+        assertThat(saved.getRole()).isEqualTo(User.Role.USER);
+        assertThat(saved.isEmailVerified()).isFalse();
+
+        verify(subjectCatalogService).seedDefaults(saved);
+
+        ArgumentCaptor<EmailVerificationToken> tokenCaptor =
+                ArgumentCaptor.forClass(EmailVerificationToken.class);
+        verify(verificationTokenRepository).save(tokenCaptor.capture());
+        EmailVerificationToken token = tokenCaptor.getValue();
+        assertThat(token.getToken()).isNotBlank();
+        assertThat(token.isUsed()).isFalse();
+        assertThat(token.getExpiresAt())
+                .isEqualTo(LocalDateTime.now(fixedClock).plusMinutes(24 * 60));
+
+        verify(emailService).sendEmailVerification(eq("novo@test.com"),
+                contains("/?verify=" + token.getToken()));
+    }
+
+    @Test
+    @DisplayName("signup com conta existente não verificada reenvia o link sem criar usuário")
+    void signup_existingUnverified_resendsToken() {
+        user.setEmailVerified(false);
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(verificationTokenRepository.save(any(EmailVerificationToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        authService.signup(new SignupRequest("user@test.com", "senha123x"));
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(subjectCatalogService, never()).seedDefaults(any());
+        verify(verificationTokenRepository).save(any(EmailVerificationToken.class));
+        verify(emailService).sendEmailVerification(eq("user@test.com"), anyString());
+    }
+
+    @Test
+    @DisplayName("signup com conta já verificada não cria usuário nem envia e-mail (anti-user-enumeration)")
+    void signup_existingVerified_silentNoop() {
+        user.setEmailVerified(true);
+        when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+
+        authService.signup(new SignupRequest("user@test.com", "senha123x"));
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(verificationTokenRepository, never()).save(any(EmailVerificationToken.class));
+        verify(emailService, never()).sendEmailVerification(anyString(), anyString());
+    }
+
+    // ---- verifyEmail ----
+
+    @Test
+    @DisplayName("verifyEmail com token válido confirma o e-mail, consome o token e retorna sessão")
+    void verifyEmail_validToken_verifiesAndLogsIn() {
+        user.setEmailVerified(false);
+        EmailVerificationToken token = new EmailVerificationToken(
+                user, "valid-token", LocalDateTime.now(fixedClock).plusHours(1));
+        when(verificationTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(verificationTokenRepository.save(any(EmailVerificationToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+        when(jwtService.generateToken("user@test.com")).thenReturn("jwt-token");
+
+        LoginResponse response = authService.verifyEmail(new VerifyEmailRequest("valid-token"));
+
+        assertThat(response.token()).isEqualTo("jwt-token");
+        assertThat(response.email()).isEqualTo("user@test.com");
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(token.isUsed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("verifyEmail com token inexistente lança IllegalArgumentException")
+    void verifyEmail_unknownToken_throws() {
+        when(verificationTokenRepository.findByToken("nope")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.verifyEmail(new VerifyEmailRequest("nope")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("inválido ou expirado");
+    }
+
+    @Test
+    @DisplayName("verifyEmail com token já utilizado lança IllegalArgumentException")
+    void verifyEmail_usedToken_throws() {
+        EmailVerificationToken token = new EmailVerificationToken(
+                user, "used-token", LocalDateTime.now(fixedClock).plusHours(1));
+        token.setUsed(true);
+        when(verificationTokenRepository.findByToken("used-token")).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> authService.verifyEmail(new VerifyEmailRequest("used-token")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("inválido ou expirado");
+    }
+
+    @Test
+    @DisplayName("verifyEmail com token expirado lança IllegalArgumentException")
+    void verifyEmail_expiredToken_throws() {
+        EmailVerificationToken token = new EmailVerificationToken(
+                user, "expired-token", LocalDateTime.now(fixedClock).minusMinutes(1));
+        when(verificationTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(token));
+
+        assertThatThrownBy(() -> authService.verifyEmail(new VerifyEmailRequest("expired-token")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("inválido ou expirado");
+        assertThat(user.isEmailVerified()).isTrue(); // default de conta pré-existente não muda
     }
 }

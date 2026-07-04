@@ -19,8 +19,9 @@ Já mergeadas em `main` (rodaram ou rodarão em produção) — são **imutávei
 - `V6__review_events_accuracy.sql`
 - `V11__user_preferences.sql` (`user_preferences` com `allowed_review_days SMALLINT[]`)
 - `V12__routine_slot.sql` (`routine_slot` para rotina semanal por usuário)
+- `V14__signup_email_verification.sql` (`users.email_verified` + `email_verification_tokens`; V13 reservada pela PR #62 — limite diário de revisões)
 
-**Próxima migration: `V13__...`.**
+**Próxima migration: `V15__...`.**
 
 ## Regras
 

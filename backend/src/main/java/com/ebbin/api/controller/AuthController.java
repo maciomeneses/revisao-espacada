@@ -5,6 +5,8 @@ import com.ebbin.api.dto.LoginResponse;
 import com.ebbin.api.dto.PasswordResetRequest;
 import com.ebbin.api.dto.RegisterRequest;
 import com.ebbin.api.dto.ResetPasswordRequest;
+import com.ebbin.api.dto.SignupRequest;
+import com.ebbin.api.dto.VerifyEmailRequest;
 import com.ebbin.api.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -62,5 +64,35 @@ public class AuthController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest req) {
         return ResponseEntity.ok(authService.register(req));
+    }
+
+    /**
+     * Auto-cadastro público com verificação de e-mail (issue #59).
+     *
+     * <p>Retorna sempre HTTP 202 (Accepted) com corpo vazio, exista ou não o
+     * e-mail — anti user-enumeration (OWASP A07). Retorna 403 quando o cadastro
+     * público está desabilitado ({@code app.signup.enabled=false}).</p>
+     *
+     * <p>Rate limiting: {@code EndpointRateLimitFilter}, chave {@code signup}
+     * (3 requisições a cada 10 minutos por IP).</p>
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<Void> signup(@Valid @RequestBody SignupRequest req) {
+        authService.signup(req);
+        return ResponseEntity.accepted().build();
+    }
+
+    /**
+     * Confirma o e-mail via token e retorna a sessão autenticada (auto-login).
+     *
+     * <p>Token inválido (inexistente, expirado, já usado) → HTTP 409 via
+     * GlobalExceptionHandler, com mensagem genérica.</p>
+     *
+     * <p>Rate limiting: {@code EndpointRateLimitFilter}, chave
+     * {@code verify-email} (5 requisições a cada 15 minutos por IP).</p>
+     */
+    @PostMapping("/verify-email")
+    public ResponseEntity<LoginResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
+        return ResponseEntity.ok(authService.verifyEmail(req));
     }
 }

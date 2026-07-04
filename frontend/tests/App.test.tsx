@@ -85,6 +85,8 @@ vi.mock('../src/services/api', () => ({
       login: vi.fn(),
       forgotPassword: vi.fn(),
       resetPassword: vi.fn(),
+      signup: vi.fn(),
+      verifyEmail: vi.fn(),
     },
     subjects: {
       list: vi.fn().mockResolvedValue([]),
@@ -327,6 +329,58 @@ describe('App — roteamento e edge cases de autenticação', () => {
     });
 
     fireEvent.click(screen.getByText('Ir para o login'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
+    });
+  });
+
+  it('renderiza VerifyEmailScreen com ?verify= na URL e faz auto-login após confirmação', async () => {
+    delete (window as any).location;
+    (window as any).location = new URL('http://localhost/?verify=verify-tkn-1');
+
+    vi.mocked((await import('../src/services/api')).api.auth.verifyEmail).mockResolvedValueOnce({
+      email: 'novo@test.com',
+      token: 'jwt-verified',
+      role: 'USER',
+      userId: 'u1',
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <AppContent />
+      </MemoryRouter>,
+    );
+
+    // Auto-login: após confirmar, navega para o dashboard autenticado
+    await waitFor(() => {
+      expect(screen.getByText('MOCKED_DASHBOARD')).toBeInTheDocument();
+    });
+
+    const session = JSON.parse(localStorageMock.getItem('ebbing_session')!);
+    expect(session.email).toBe('novo@test.com');
+    expect(session.token).toBe('jwt-verified');
+  });
+
+  it('VerifyEmailScreen com token inválido mostra erro e volta ao login', async () => {
+    delete (window as any).location;
+    (window as any).location = new URL('http://localhost/?verify=verify-tkn-bad');
+
+    vi.mocked((await import('../src/services/api')).api.auth.verifyEmail).mockRejectedValueOnce(
+      new Error('Token de verificação inválido ou expirado'),
+    );
+
+    render(
+      <MemoryRouter>
+        <AppContent />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/inválido ou expirado/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Voltar para o login/i }));
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();

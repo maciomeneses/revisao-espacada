@@ -322,7 +322,9 @@ class EndpointRateLimitFilterUnitTest {
         assertThat(paths).containsExactlyInAnyOrder(
                 "/api/auth/login",
                 "/api/auth/forgot-password",
-                "/api/auth/reset-password"
+                "/api/auth/reset-password",
+                "/api/auth/signup",
+                "/api/auth/verify-email"
         );
     }
 }

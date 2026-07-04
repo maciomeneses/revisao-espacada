@@ -53,6 +53,26 @@ class UserDetailsServiceImplTest {
         assertThat(details.getPassword()).isEqualTo("encodedHash");
         assertThat(details.getAuthorities()).hasSize(1);
         assertThat(details.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+        assertThat(details.isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("loadUserByUsername para conta não verificada deve retornar enabled=false")
+    void loadUserByUsername_unverifiedUser_returnsDisabled() {
+        User unverified = new User();
+        unverified.setEmail("novo@test.com");
+        unverified.setPassword("hash");
+        unverified.setRole(User.Role.USER);
+        unverified.setEmailVerified(false);
+
+        when(userRepository.findByEmail("novo@test.com")).thenReturn(Optional.of(unverified));
+
+        UserDetails details = service.loadUserByUsername("novo@test.com");
+
+        assertThat(details.isEnabled()).isFalse();
+        assertThat(details.isAccountNonLocked()).isTrue();
+        assertThat(details.isAccountNonExpired()).isTrue();
+        assertThat(details.isCredentialsNonExpired()).isTrue();
     }
 
     @Test

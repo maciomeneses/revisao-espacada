@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,6 +64,21 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         pd.setType(URI.create("urn:problem:conflict"));
         pd.setTitle("Conflito de dados");
+        return pd;
+    }
+
+    /**
+     * Conta existente mas com e-mail ainda não confirmado (self-signup).
+     * O {@code DaoAuthenticationProvider} lança {@link DisabledException} no
+     * pre-check quando {@code UserDetails.enabled=false}.
+     */
+    @ExceptionHandler(DisabledException.class)
+    public ProblemDetail handleDisabled(DisabledException ex) {
+        log.warn("Tentativa de login com e-mail não confirmado");
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+                "E-mail não confirmado. Verifique sua caixa de entrada ou cadastre-se novamente para reenviar o link.");
+        pd.setType(URI.create("urn:problem:email-not-verified"));
+        pd.setTitle("E-mail não confirmado");
         return pd;
     }
 

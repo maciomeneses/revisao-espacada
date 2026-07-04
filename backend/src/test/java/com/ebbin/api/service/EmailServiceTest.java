@@ -141,4 +141,59 @@ class EmailServiceTest {
         assertThat(internalClient).isNotNull().isInstanceOf(RestClient.class);
     }
 
+    // ---- sendEmailVerification ----
+
+    @Test
+    @DisplayName("sendEmailVerification envia e-mail com payload correto quando API key configurada")
+    @SuppressWarnings("unchecked")
+    void sendEmailVerification_sucesso() {
+        EmailService service = newServiceWithMockedClient("brevo-key-123", "noreply@ebbin.com");
+        String to = "novo@test.com";
+        String verifyLink = "https://ebbin.app/?verify=abc123";
+
+        service.sendEmailVerification(to, verifyLink);
+
+        verify(bodySpec).header("api-key", "brevo-key-123");
+
+        ArgumentCaptor<Object> bodyCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(bodySpec).body(bodyCaptor.capture());
+
+        Map<String, Object> body = (Map<String, Object>) bodyCaptor.getValue();
+        assertThat(body.get("subject")).isEqualTo("Confirme seu e-mail — Revisão Espaçada");
+
+        List<Map<String, Object>> recipients = (List<Map<String, Object>>) body.get("to");
+        assertThat(recipients).hasSize(1);
+        assertThat(recipients.get(0)).containsEntry("email", to);
+
+        String text = (String) body.get("textContent");
+        assertThat(text)
+                .contains(verifyLink)
+                .contains("confirmar seu e-mail")
+                .contains("24 horas");
+
+        verify(responseSpec).toBodilessEntity();
+    }
+
+    @Test
+    @DisplayName("sendEmailVerification não envia quando API key está vazia")
+    void sendEmailVerification_apiKeyVazia_naoEnvia() {
+        EmailService service = newServiceWithMockedClient("", "noreply@ebbin.com");
+
+        service.sendEmailVerification("novo@test.com", "https://x/?verify=1");
+
+        verify(restClient, never()).post();
+    }
+
+    @Test
+    @DisplayName("sendEmailVerification trata exceção do RestClient sem propagar")
+    void sendEmailVerification_exceptionDoRestClient_naoPropaga() {
+        EmailService service = newServiceWithMockedClient("brevo-key", "noreply@ebbin.com");
+        when(responseSpec.toBodilessEntity())
+                .thenThrow(new RestClientException("Brevo indisponível"));
+
+        assertThatCode(() -> service.sendEmailVerification("novo@test.com", "https://x/?verify=1"))
+                .doesNotThrowAnyException();
+
+        verify(responseSpec).toBodilessEntity();
+    }
 }

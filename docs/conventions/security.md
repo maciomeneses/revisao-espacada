@@ -7,6 +7,16 @@
 - JWT **stateless** via JJWT 0.12.6. `JwtAuthenticationFilter` valida `Authorization: Bearer {token}` em cada request.
 - Segredo em `JWT_SECRET`; expiração em `JWT_EXPIRATION_MS`. **Nunca** hardcodar — só via env.
 
+## Auto-cadastro e verificação de e-mail (issue #59)
+
+- `POST /api/auth/signup` (público, rate limited): cria conta `USER` com `email_verified=false` e envia link de confirmação (`FRONTEND_URL/?verify=<token>`, TTL 24h, uso único — tabela `email_verification_tokens`, V14). O papel **nunca** vem do payload.
+- **Anti user-enumeration (OWASP A07)**: resposta sempre 202 idêntica — e-mail novo cria conta; não verificado reenvia link; já verificado não faz nada. Mensagens de erro de token são genéricas (não revelam se inexistente/expirado/usado).
+- Conta não verificada **não autentica**: `UserDetails.enabled=false` → `DisabledException` → 403 `urn:problem:email-not-verified`. Contas criadas por ADMIN nascem verificadas.
+- `POST /api/auth/verify-email` confirma o token e retorna sessão (auto-login). Token inválido → 409.
+- Senha de signup: mínimo 8 caracteres com letra e número (`SignupRequest`); o client replica a regra.
+- Kill switch: `SIGNUP_ENABLED=false` volta ao modo fechado (403 no signup; `/register` ADMIN inalterado).
+- Higiene: `TokenCleanupService` purga tokens expirados/usados e contas nunca confirmadas após `SIGNUP_UNVERIFIED_TTL_HOURS` (padrão 48h).
+
 ## Autorização
 
 - Endpoints públicos: `/api/auth/**`. Resto exige autenticação.
@@ -21,7 +31,7 @@
 ## Rate limiting
 
 - `EndpointRateLimitFilter` (Bucket4j) aplica limites **por IP** via `RateLimitProperties` (env `RATE_LIMIT_*`). Buckets em cache Caffeine.
-- Endpoints públicos (especialmente `/api/auth/**`) devem estar cobertos pelo rate limiter.
+- Endpoints públicos (especialmente `/api/auth/**`) devem estar cobertos pelo rate limiter. Cobertos hoje: `login`, `forgot-password`, `reset-password`, `signup` (3/10min), `verify-email` (5/15min).
 
 ## Dependências (OWASP)
 

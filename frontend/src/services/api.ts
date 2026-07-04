@@ -103,6 +103,18 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ token, newPassword }),
       }),
+
+    signup: (email: string, password: string) =>
+      request<void>('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
+
+    verifyEmail: (token: string) =>
+      request<AuthResponse>('/api/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      }),
   },
 
   admin: {
