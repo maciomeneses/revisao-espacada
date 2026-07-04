@@ -66,7 +66,8 @@ class SubjectServiceTest {
         subjectDto = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
     }
 
@@ -199,7 +200,8 @@ class SubjectServiceTest {
         SubjectDto newDto = new SubjectDto(
                 "client-new", "M", "A", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         SubjectDto result = subjectService.upsertSubject("user@test.com", newDto);
@@ -218,12 +220,20 @@ class SubjectServiceTest {
         SubjectDto updated = new SubjectDto(
                 "client-1", "Módulo Atualizado", "Área 1", "Aula Principal 1", "Alta",
                 true, false, false, false, false, false, false, false, false,
-                "Learning", LocalDate.now().plusDays(3), null, "3", "bom"
+                "Learning", LocalDate.now().plusDays(3), null, "3", "bom",
+                2.1812, 3.34, 1, 0, "Learning", 2
         );
 
         SubjectDto result = subjectService.upsertSubject("user@test.com", updated);
         assertThat(result.aulaAssistida()).isTrue();
         assertThat(result.currentStage()).isEqualTo("Learning");
+        // Estado FSRS deve sobreviver ao round-trip (V15)
+        assertThat(result.stability()).isEqualTo(2.1812);
+        assertThat(result.difficulty()).isEqualTo(3.34);
+        assertThat(result.reps()).isEqualTo(1);
+        assertThat(result.lapses()).isEqualTo(0);
+        assertThat(result.state()).isEqualTo("Learning");
+        assertThat(result.scheduledDays()).isEqualTo(2);
     }
 
     // --- deleteSubject ---
@@ -251,7 +261,8 @@ class SubjectServiceTest {
         SubjectDto withPerformance = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
                 true, false, false, false, false, false, false, false, false,
-                "Review", LocalDate.now(), LocalDate.now().minusDays(7), "bom", "bom"
+                "Review", LocalDate.now(), LocalDate.now().minusDays(7), "bom", "bom",
+                null, null, null, null, null, null
         );
 
         SubjectDto result = subjectService.upsertSubject("user@test.com", withPerformance);
@@ -270,7 +281,8 @@ class SubjectServiceTest {
         SubjectDto withNullPerformance = new SubjectDto(
                 "client-1", "Módulo 1", "Área 1", "Aula Principal 1", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         SubjectDto result = subjectService.upsertSubject("user@test.com", withNullPerformance);
@@ -289,7 +301,8 @@ class SubjectServiceTest {
         SubjectDto dto = new SubjectDto(
                 "client-blank", "  ", "   ", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         subjectService.upsertSubject("user@test.com", dto);
@@ -309,7 +322,8 @@ class SubjectServiceTest {
         SubjectDto dto = new SubjectDto(
                 "client-null", null, null, "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         subjectService.upsertSubject("user@test.com", dto);
@@ -323,12 +337,14 @@ class SubjectServiceTest {
         SubjectDto a = new SubjectDto(
                 "client-A", "Módulo X", "Área X", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
         SubjectDto b = new SubjectDto(
                 "client-B", "Módulo X", "Área X", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));

@@ -105,7 +105,8 @@ class SubjectServiceCacheTest {
         SubjectDto dto = new SubjectDto(
                 "client-cache-1", "M", "A", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         subjectService.upsertSubject(EMAIL, dto);
@@ -144,7 +145,8 @@ class SubjectServiceCacheTest {
         SubjectDto dto = new SubjectDto(
                 "client-sync-1", "M", "A", "AP", "Alta",
                 false, false, false, false, false, false, false, false, false,
-                "aula", null, null, null, "nao_classificada"
+                "aula", null, null, null, "nao_classificada",
+                null, null, null, null, null, null
         );
 
         subjectService.syncSubjects(EMAIL, List.of(dto), false);

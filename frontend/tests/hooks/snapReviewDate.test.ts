@@ -93,6 +93,69 @@ describe('snapReviewDate', () => {
   });
 });
 
+describe('snapReviewDate — prioridade do slot da área sobre slots genéricos', () => {
+  const allDays = new Set([0, 1, 2, 3, 4, 5, 6]);
+
+  it('prefere o dia do slot da área mesmo com slot genérico mais cedo', () => {
+    // 2026-05-18 = segunda; genéricos seg(1)/qua(3); Física só na terça(2).
+    // Sem a prioridade, a revisão de Física cairia já na segunda (genérico).
+    const routine: StudentRoutine = [
+      slot({ dayOfWeek: 1, area: undefined, title: 'Estudos' }),
+      slot({ dayOfWeek: 3, area: undefined, title: 'Estudos' }),
+      slot({ dayOfWeek: 2, area: 'Física', title: 'Física' }),
+    ];
+    const result = snapReviewDate('2026-05-18', 'Física', routine, allDays);
+    expect(result).toBe('2026-05-19'); // terça, dia em que estuda Física
+  });
+
+  it('área sem slot dedicado continua usando os dias genéricos (comportamento antigo)', () => {
+    const routine: StudentRoutine = [
+      slot({ dayOfWeek: 1, area: undefined, title: 'Estudos' }),
+      slot({ dayOfWeek: 2, area: 'Física', title: 'Física' }),
+    ];
+    // Química não tem slot próprio → cai no genérico de segunda (o slot de
+    // Física não conta para Química).
+    const result = snapReviewDate('2026-05-18', 'Química', routine, allDays);
+    expect(result).toBe('2026-05-18');
+  });
+
+  it('dia da área bloqueado por allowedDays cai para dia genérico permitido', () => {
+    // Física na terça(2), genérico na quarta(3); allowed sem terça.
+    const routine: StudentRoutine = [
+      slot({ dayOfWeek: 2, area: 'Física', title: 'Física' }),
+      slot({ dayOfWeek: 3, area: undefined, title: 'Estudos' }),
+    ];
+    const semTerca = new Set([0, 1, 3, 4, 5, 6]);
+    const result = snapReviewDate('2026-05-18', 'Física', routine, semTerca);
+    expect(result).toBe('2026-05-20'); // quarta (genérico), nunca a terça proibida
+  });
+
+  it('dia da área lotado (capacidade) tenta a próxima ocorrência da área antes do genérico', () => {
+    // Física na terça(2); genérico quinta(4); terça 2026-05-19 lotada →
+    // próxima terça 2026-05-26 tem vaga e vence o genérico de quinta.
+    const routine: StudentRoutine = [
+      slot({ dayOfWeek: 2, area: 'Física', title: 'Física' }),
+      slot({ dayOfWeek: 4, area: undefined, title: 'Estudos' }),
+    ];
+    const dayLoad = new Map([['2026-05-19', 2]]);
+    const result = snapReviewDate('2026-05-18', 'Física', routine, allDays, {
+      maxPerDay: 2,
+      dayLoad,
+    });
+    expect(result).toBe('2026-05-26');
+  });
+
+  it('fsrsDate já num dia da área permanece inalterada', () => {
+    // 2026-05-19 = terça, dia de Física
+    const routine: StudentRoutine = [
+      slot({ dayOfWeek: 2, area: 'Física', title: 'Física' }),
+      slot({ dayOfWeek: 1, area: undefined, title: 'Estudos' }),
+    ];
+    const result = snapReviewDate('2026-05-19', 'Física', routine, allDays);
+    expect(result).toBe('2026-05-19');
+  });
+});
+
 describe('snapReviewDate — limite diário (capacidade)', () => {
   const allDays = new Set([0, 1, 2, 3, 4, 5, 6]);
 

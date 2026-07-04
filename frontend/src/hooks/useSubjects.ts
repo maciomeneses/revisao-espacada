@@ -37,14 +37,22 @@ export function buildDayLoad(subjects: Subject[], excludeId?: string): Map<strin
  *   - `allowedDays` (Set of dayOfWeek 0..6) if provided and non-empty, and
  *   - daily capacity (`opts.maxPerDay` + `opts.dayLoad`) if provided.
  *
+ * Routine priority: days with a slot dedicated to the subject's `area` are
+ * tried FIRST; generic study slots (no area) are only a fallback. Without
+ * this, a generic "Estudos" slot earlier in the week would swallow the
+ * review before it could reach the day the student actually studies the
+ * subject.
+ *
  * Fallback rules:
- *   1. If no date within 21 days satisfies all constraints, pick the first day
- *      within 21 days that lies in `allowedDays` and has capacity (routine is a
- *      preference; allowedDays is a hard restriction).
- *   2. If every candidate day in the horizon is at capacity, pick the least
+ *   1. If no area-specific day works within 21 days, try any study day
+ *      (generic or area-specific).
+ *   2. If no study day works, pick the first day within 21 days that lies in
+ *      `allowedDays` and has capacity (routine is a preference; allowedDays
+ *      is a hard restriction).
+ *   3. If every candidate day in the horizon is at capacity, pick the least
  *      loaded day that respects `allowedDays` (earliest wins ties) — a date is
  *      never dropped and `allowedDays` is never violated.
- *   3. If even that fails (allowedDays empty / undefined and no capacity
+ *   4. If even that fails (allowedDays empty / undefined and no capacity
  *      constraint), return `fsrsDate`.
  *
  * The date never moves earlier than `fsrsDate`. `routine` is never modified —
@@ -57,6 +65,11 @@ export function snapReviewDate(
   allowedDays?: Set<number>,
   opts?: SnapCapacityOptions,
 ): string {
+  // Dias com slot dedicado à área do subject (prioridade máxima).
+  const areaDays = new Set(
+    routine.filter((s) => s.type === 'study' && s.area === area).map((s) => s.dayOfWeek),
+  );
+  // Qualquer dia de estudo aplicável: slot da área ou slot genérico (sem área).
   const studyDays = new Set(
     routine
       .filter((s) => s.type === 'study' && (!s.area || s.area === area))
@@ -76,7 +89,18 @@ export function snapReviewDate(
     return d;
   };
 
-  // 1) tentar interseção: rotina (se houver) ∩ allowedDays (se houver) ∩ capacidade
+  // 0) prioridade: dia com slot dedicado à área ∩ allowedDays ∩ capacidade
+  if (areaDays.size > 0) {
+    for (let i = 0; i <= 21; i++) {
+      const d = dateAt(i);
+      const dow = d.getDay();
+      const dateStr = localDateStr(d);
+      const allowedOk = !hasAllowed || allowedDays!.has(dow);
+      if (allowedOk && areaDays.has(dow) && capacityOk(dateStr)) return dateStr;
+    }
+  }
+
+  // 1) qualquer dia de estudo (genérico ou da área) ∩ allowedDays ∩ capacidade
   for (let i = 0; i <= 21; i++) {
     const d = dateAt(i);
     const dow = d.getDay();

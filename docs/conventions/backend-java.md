@@ -52,7 +52,7 @@ O backend retorna **ProblemDetail** (RFC 9457). O campo de mensagem é **`detail
 
 ## Modelo de dados (resumo)
 
-- `Subject`: PK `Long id` (auto); chave de sync `String clientId` (gerado no frontend). Unique `(user_id, client_id)`. `currentStage`/`performanceLevel`/`lastPerformance` persistidos como STRING. `@CreationTimestamp`/`@UpdateTimestamp`. Cascade delete em `user`.
+- `Subject`: PK `Long id` (auto); chave de sync `String clientId` (gerado no frontend). Unique `(user_id, client_id)`. `currentStage`/`performanceLevel`/`lastPerformance` persistidos como STRING. Estado FSRS (`stability`, `difficulty`, `reps`, `lapses`, `state`, `scheduledDays` — V15) nullable e sempre exposto no `SubjectDto` (sem ele o algoritmo reseta a cada reload). `@CreationTimestamp`/`@UpdateTimestamp`. Cascade delete em `user`.
 - `User`: `email_verified BOOLEAN NOT NULL DEFAULT TRUE` (V14) — contas ADMIN-criadas nascem verificadas; self-signup nasce `false` e não autentica até confirmar (ver `security.md`).
 - `EmailVerificationToken` (`email_verification_tokens`, V14): token de uso único com TTL, mesmo padrão de `PasswordResetToken`. Cascade delete em `user`.
 - `ReviewStage` (enum): `aula`, `Learning`, `Review`, `Relearning`, `New`.

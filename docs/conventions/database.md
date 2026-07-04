@@ -21,8 +21,9 @@ Já mergeadas em `main` (rodaram ou rodarão em produção) — são **imutávei
 - `V12__routine_slot.sql` (`routine_slot` para rotina semanal por usuário)
 - `V13__user_preferences_max_reviews_per_day.sql` (`max_reviews_per_day SMALLINT NULL`, CHECK ≥ 1)
 - `V14__signup_email_verification.sql` (`users.email_verified` + `email_verification_tokens`)
+- `V15__subjects_fsrs_state.sql` (colunas FSRS em `subjects`: `stability`, `difficulty`, `reps`, `lapses`, `state`, `scheduled_days` — todas nullable)
 
-**Próxima migration: `V15__...`.**
+**Próxima migration: `V16__...`.**
 
 ## Regras
 

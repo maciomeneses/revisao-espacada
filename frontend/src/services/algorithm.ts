@@ -55,7 +55,7 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     state = 'Learning';
   } else {
     // Subsequent reviews
-    const lastReview = subject.lastReviewDate ? new Date(subject.lastReviewDate) : new Date();
+    const lastReview = subject.lastReviewDate ? parseLocalDate(subject.lastReviewDate) : new Date();
     const elapsedDays = Math.max(
       0,
       Math.floor((now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24)),
@@ -106,7 +106,9 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     lapses,
     state,
     scheduledDays,
-    lastReviewDate: now.toISOString(),
+    // Data local (YYYY-MM-DD): o backend persiste como LocalDate; enviar ISO
+    // datetime UTC deslocava a data em +1 dia para revisões feitas à noite.
+    lastReviewDate: localDateStr(now),
     nextReviewDate: localDateStr(nextReviewDate),
     lastPerformance: rating.toString(),
     performanceLevel:
@@ -117,6 +119,17 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
 
 export function localDateStr(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Interpreta uma data serializada no fuso LOCAL. Strings date-only
+ * (`YYYY-MM-DD`, como o backend devolve para LocalDate) são ancoradas ao
+ * meio-dia local — `new Date('YYYY-MM-DD')` interpretaria como meia-noite
+ * UTC e recuaria um dia em fusos negativos. Strings com horário (ISO legado)
+ * são parseadas normalmente.
+ */
+export function parseLocalDate(iso: string): Date {
+  return new Date(iso.length > 10 ? iso : iso + 'T12:00:00');
 }
 
 export function addDays(date: Date, days: number): string {

@@ -32,7 +32,14 @@ public record SubjectDto(
     LocalDate lastReviewDate,
     /** Valor serializado do {@link PerformanceLevel} da última revisão, ou null se ainda não avaliado. */
     String lastPerformance,
-    @NotBlank String performanceLevel
+    @NotBlank String performanceLevel,
+    /** Estado FSRS (nullable: subject nunca revisado não tem estado). */
+    Double stability,
+    Double difficulty,
+    Integer reps,
+    Integer lapses,
+    String state,
+    Integer scheduledDays
 ) {
     /** Constrói um DTO a partir de uma entidade, serializando os enums para seus valores de String. */
     public static SubjectDto from(Subject s) {
@@ -45,7 +52,9 @@ public record SubjectDto(
             s.getCurrentStage().getValue(),
             s.getNextReviewDate(), s.getLastReviewDate(),
             lp != null ? lp.getValue() : null,
-            s.getPerformanceLevel().getValue()
+            s.getPerformanceLevel().getValue(),
+            s.getStability(), s.getDifficulty(), s.getReps(), s.getLapses(),
+            s.getState(), s.getScheduledDays()
         );
     }
 
@@ -73,5 +82,11 @@ public record SubjectDto(
                 ? PerformanceLevel.fromValue(this.lastPerformance())
                 : null);
         s.setPerformanceLevel(PerformanceLevel.fromValue(this.performanceLevel()));
+        s.setStability(this.stability());
+        s.setDifficulty(this.difficulty());
+        s.setReps(this.reps());
+        s.setLapses(this.lapses());
+        s.setState(this.state());
+        s.setScheduledDays(this.scheduledDays());
     }
 }

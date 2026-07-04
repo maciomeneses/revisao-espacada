@@ -71,6 +71,18 @@ public class Subject {
     private LocalDate nextReviewDate;
     private LocalDate lastReviewDate;
 
+    // Estado FSRS (V15). Nullable: subject nunca revisado não tem estado.
+    // Sem essas colunas o estado vivia só no cliente e era perdido a cada
+    // recarga, fazendo o algoritmo tratar toda revisão como a primeira.
+    private Double stability;
+    private Double difficulty;
+    private Integer reps;
+    private Integer lapses;
+    @Column(name = "state", length = 20)
+    private String state;
+    @Column(name = "scheduled_days")
+    private Integer scheduledDays;
+
     /**
      * Desempenho registrado na última revisão.
      * Armazenado como STRING no banco (mesmo padrão de {@link PerformanceLevel}).
@@ -129,6 +141,18 @@ public class Subject {
     public void setNextReviewDate(LocalDate v) { this.nextReviewDate = v; }
     public LocalDate getLastReviewDate() { return lastReviewDate; }
     public void setLastReviewDate(LocalDate v) { this.lastReviewDate = v; }
+    public Double getStability() { return stability; }
+    public void setStability(Double v) { this.stability = v; }
+    public Double getDifficulty() { return difficulty; }
+    public void setDifficulty(Double v) { this.difficulty = v; }
+    public Integer getReps() { return reps; }
+    public void setReps(Integer v) { this.reps = v; }
+    public Integer getLapses() { return lapses; }
+    public void setLapses(Integer v) { this.lapses = v; }
+    public String getState() { return state; }
+    public void setState(String v) { this.state = v; }
+    public Integer getScheduledDays() { return scheduledDays; }
+    public void setScheduledDays(Integer v) { this.scheduledDays = v; }
     public PerformanceLevel getLastPerformance() { return lastPerformance == null ? null : PerformanceLevel.fromValue(lastPerformance); }
     public void setLastPerformance(PerformanceLevel v) { this.lastPerformance = v != null ? v.getValue() : null; }
     public PerformanceLevel getPerformanceLevel() { return PerformanceLevel.fromValue(performanceLevel); }

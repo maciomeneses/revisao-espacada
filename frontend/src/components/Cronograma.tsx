@@ -1,6 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Subject } from '../types';
-import { getProximaTarefa, getFormulaStatus, localDateStr } from '../services/algorithm';
+import {
+  getProximaTarefa,
+  getFormulaStatus,
+  localDateStr,
+  parseLocalDate,
+} from '../services/algorithm';
 import { useCatalog } from '../hooks/useCatalog';
 
 interface CronogramaProps {
@@ -281,8 +286,9 @@ export function Cronograma({
                     Última Revisão
                   </span>
                   <span className="text-navy text-xs font-bold">
-                    {fmtDate(s.lastReviewDate ? localDateStr(new Date(s.lastReviewDate)) : null) ||
-                      'Nunca'}
+                    {fmtDate(
+                      s.lastReviewDate ? localDateStr(parseLocalDate(s.lastReviewDate)) : null,
+                    ) || 'Nunca'}
                   </span>
                 </div>
                 <div className="flex flex-col">
