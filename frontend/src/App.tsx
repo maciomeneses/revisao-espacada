@@ -5,6 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { Cronograma } from './components/Cronograma';
 import { EspiaoEstrategico } from './components/EspiaoEstrategico';
 import { GerenciarConteudo } from './components/GerenciarConteudo';
+import { ErrorToast } from './components/ErrorToast';
 import { AuthScreen } from './components/Auth/AuthScreen';
 import { ResetPasswordScreen } from './components/Auth/ResetPasswordScreen';
 import { VerifyEmailScreen } from './components/Auth/VerifyEmailScreen';
@@ -56,6 +57,8 @@ export function AppContent() {
   const {
     subjects,
     reviewEvents,
+    error: subjectsError,
+    clearError: clearSubjectsError,
     toggleAula,
     registerReview,
     registerFixacao,
@@ -311,6 +314,8 @@ export function AppContent() {
           onClose={() => setShowGerenciar(false)}
         />
       )}
+
+      <ErrorToast message={subjectsError} onDismiss={clearSubjectsError} />
     </div>
   );
 }

@@ -122,6 +122,20 @@ describe('useSubjects hook', () => {
 
     expect(mockApi.subjects.upsert).toHaveBeenCalled();
     expect(mockApi.subjects.sync).not.toHaveBeenCalled();
+
+    // Flags legados sempre presentes no payload: backends com boolean primitivo
+    // no SubjectDto rejeitam o subject sem eles (500 no Registrar Estudo).
+    expect(mockApi.subjects.upsert).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        fixacao24hFeita: false,
+        estudoReversoFeito: false,
+        rev7dFeita: false,
+        rev30dFeita: false,
+        rev60dFeita: false,
+        rev90dFeita: false,
+      }),
+    );
   });
 
   it('não reenvia subjects apenas locais ao backend ao montar (não ressuscita deletados)', async () => {

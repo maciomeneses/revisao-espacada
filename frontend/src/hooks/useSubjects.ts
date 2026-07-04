@@ -426,6 +426,15 @@ export function useSubjects(
         aulaAssistida: false,
         preAulaFeita: false,
         flashcardsFeitos: false,
+        // Flags legados explícitos: o contrato do backend os aceita ausentes,
+        // mas versões anteriores (boolean primitivo no SubjectDto) rejeitam o
+        // payload sem eles — enviar sempre evita 500 durante janelas de deploy.
+        fixacao24hFeita: false,
+        estudoReversoFeito: false,
+        rev7dFeita: false,
+        rev30dFeita: false,
+        rev60dFeita: false,
+        rev90dFeita: false,
         currentStage: 'aula',
         nextReviewDate: null,
         lastReviewDate: null,
