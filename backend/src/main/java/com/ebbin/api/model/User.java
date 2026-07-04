@@ -29,8 +29,14 @@ public class User {
      * {@code true} quando o e-mail foi confirmado. Contas criadas por ADMIN
      * nascem verificadas (default); contas de self-signup nascem com
      * {@code false} e só podem autenticar após confirmar o e-mail (V14).
+     *
+     * <p>O {@code DEFAULT TRUE} na definição da coluna é obrigatório: em
+     * ambientes onde o schema é gerenciado por {@code ddl-auto=update}
+     * (Railway roda o profile default, sem Flyway), um {@code ADD COLUMN
+     * ... NOT NULL} sem default falha na tabela {@code users} populada e
+     * derruba o login em produção.
      */
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BOOLEAN NOT NULL DEFAULT TRUE")
     private boolean emailVerified = true;
 
     @CreationTimestamp
