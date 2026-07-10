@@ -60,6 +60,15 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + id));
 
+        if (!user.getEmail().equals(dto.email()) && userRepository.existsByEmail(dto.email())) {
+            log.warn("Tentativa de atualizar usuário {} para e-mail já cadastrado", id);
+            throw new IllegalArgumentException("E-mail já cadastrado");
+        }
+        if (user.getRole() == User.Role.ADMIN && dto.role() == User.Role.USER && isLastAdmin()) {
+            log.warn("Tentativa de rebaixar o único ADMIN: id={}", id);
+            throw new IllegalArgumentException("Não é possível rebaixar o único ADMIN do sistema");
+        }
+
         user.setEmail(dto.email());
         if (dto.password() != null && !dto.password().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.password()));
@@ -75,10 +84,18 @@ public class UserService {
     @Transactional
     public void deleteUser(UUID id) {
         log.warn("Removendo usuário: id={}", id);
-        if (!userRepository.existsById(id)) {
-            throw new UsernameNotFoundException("Usuário não encontrado: " + id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + id));
+        if (user.getRole() == User.Role.ADMIN && isLastAdmin()) {
+            log.warn("Tentativa de remover o único ADMIN: id={}", id);
+            throw new IllegalArgumentException("Não é possível remover o único ADMIN do sistema");
         }
-        userRepository.deleteById(id);
+        userRepository.delete(user);
         log.info("Usuário removido: id={}", id);
+    }
+
+    /** {@code true} quando existe exatamente um usuário com papel ADMIN. */
+    private boolean isLastAdmin() {
+        return userRepository.countByRole(User.Role.ADMIN) == 1;
     }
 }

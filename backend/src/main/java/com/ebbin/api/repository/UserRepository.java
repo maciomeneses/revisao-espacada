@@ -15,6 +15,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     /**
+     * Quantidade de usuários com o papel informado. Usado pelas guardas de
+     * "último ADMIN" do {@code UserService} (bloqueio de rebaixamento/remoção).
+     */
+    long countByRole(User.Role role);
+
+    /**
      * Contas de self-signup nunca confirmadas criadas antes do instante de corte.
      * Usado pela purga periódica ({@code TokenCleanupService}); a exclusão em si
      * usa {@code deleteAll} entidade a entidade para respeitar os cascades.

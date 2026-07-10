@@ -51,7 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                if (jwtService.isTokenValid(token, email)) {
+                // Token válido não basta: conta desabilitada (e-mail não confirmado,
+                // ver UserDetailsServiceImpl) não pode autenticar com um JWT antigo.
+                if (jwtService.isTokenValid(token, email) && userDetails.isEnabled()) {
                     var authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

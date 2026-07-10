@@ -33,7 +33,9 @@ class UserServiceTest {
     @InjectMocks UserService userService;
 
     private User existingUser;
+    private User adminUser;
     private UUID userId;
+    private UUID adminId;
 
     @BeforeEach
     void setUp() {
@@ -42,6 +44,12 @@ class UserServiceTest {
         existingUser.setEmail("user@test.com");
         existingUser.setPassword("encodedPassword");
         existingUser.setRole(User.Role.USER);
+
+        adminId = UUID.randomUUID();
+        adminUser = new User();
+        adminUser.setEmail("admin@test.com");
+        adminUser.setPassword("encodedPassword");
+        adminUser.setRole(User.Role.ADMIN);
     }
 
     // --- findAll ---
@@ -189,22 +197,113 @@ class UserServiceTest {
                 .isInstanceOf(UsernameNotFoundException.class);
     }
 
+    @Test
+    @DisplayName("updateUser com e-mail já pertencente a outro usuário deve lançar IllegalArgumentException")
+    void updateUser_emailDeOutroUsuario_throws() {
+        // given: o novo e-mail difere do atual e já existe no banco (pertence a outro usuário)
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.existsByEmail("ocupado@test.com")).thenReturn(true);
+        UserDto dto = new UserDto(null, "ocupado@test.com", null, User.Role.USER);
+
+        // when / then
+        assertThatThrownBy(() -> userService.updateUser(userId, dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("E-mail já cadastrado");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateUser que rebaixaria o único ADMIN para USER deve lançar IllegalArgumentException")
+    void updateUser_rebaixarUnicoAdmin_throws() {
+        // given: usuário ADMIN, rebaixamento para USER e apenas um ADMIN no sistema
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
+        when(userRepository.countByRole(User.Role.ADMIN)).thenReturn(1L);
+        UserDto dto = new UserDto(null, "admin@test.com", null, User.Role.USER);
+
+        // when / then
+        assertThatThrownBy(() -> userService.updateUser(adminId, dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("único ADMIN");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateUser deve rebaixar ADMIN para USER quando existe outro ADMIN")
+    void updateUser_rebaixarAdminComOutroAdmin_sucesso() {
+        // given: dois ADMINs no sistema — rebaixar um deles é permitido
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
+        when(userRepository.countByRole(User.Role.ADMIN)).thenReturn(2L);
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // when
+        UserDto result = userService.updateUser(adminId,
+                new UserDto(null, "admin@test.com", null, User.Role.USER));
+
+        // then
+        assertThat(result.role()).isEqualTo(User.Role.USER);
+        verify(userRepository).save(adminUser);
+    }
+
+    @Test
+    @DisplayName("updateUser de ADMIN mantendo o role ADMIN não deve consultar a contagem de admins")
+    void updateUser_adminMantendoRole_naoConsultaContagem() {
+        // given: ADMIN atualizado sem rebaixamento (role continua ADMIN)
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // when
+        UserDto result = userService.updateUser(adminId,
+                new UserDto(null, "admin@test.com", null, User.Role.ADMIN));
+
+        // then: guarda não dispara e a contagem nem é consultada (short-circuit)
+        assertThat(result.role()).isEqualTo(User.Role.ADMIN);
+        verify(userRepository, never()).countByRole(any());
+    }
+
     // --- deleteUser ---
 
     @Test
     @DisplayName("deleteUser deve remover usuário existente")
     void deleteUser_success() {
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         userService.deleteUser(userId);
-        verify(userRepository).deleteById(userId);
+        verify(userRepository).delete(existingUser);
     }
 
     @Test
     @DisplayName("deleteUser com ID inexistente deve lançar UsernameNotFoundException")
     void deleteUser_notFound_throws() {
-        when(userRepository.existsById(userId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.deleteUser(userId))
                 .isInstanceOf(UsernameNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("deleteUser do único ADMIN deve lançar IllegalArgumentException")
+    void deleteUser_unicoAdmin_throws() {
+        // given: o usuário a remover é o único ADMIN do sistema
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
+        when(userRepository.countByRole(User.Role.ADMIN)).thenReturn(1L);
+
+        // when / then
+        assertThatThrownBy(() -> userService.deleteUser(adminId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("único ADMIN");
+        verify(userRepository, never()).delete(any(User.class));
+    }
+
+    @Test
+    @DisplayName("deleteUser de ADMIN deve remover quando existe outro ADMIN")
+    void deleteUser_adminComOutroAdmin_sucesso() {
+        // given: dois ADMINs — remover um deles é permitido
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(adminUser));
+        when(userRepository.countByRole(User.Role.ADMIN)).thenReturn(2L);
+
+        // when
+        userService.deleteUser(adminId);
+
+        // then
+        verify(userRepository).delete(adminUser);
     }
 }
