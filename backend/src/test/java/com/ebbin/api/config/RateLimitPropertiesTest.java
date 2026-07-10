@@ -180,4 +180,20 @@ class RateLimitPropertiesTest {
 
         assertThat(props.getTrustedProxies()).containsExactlyInAnyOrder("10.0.0.1", "172.16.0.1");
     }
+
+    // ---- forwardedForTrustedHops getter/setter ----
+
+    @Test
+    @DisplayName("getForwardedForTrustedHops deve ser 0 por padrão (mecanismo desligado)")
+    void getForwardedForTrustedHops_default_isZero() {
+        assertThat(props.getForwardedForTrustedHops()).isZero();
+    }
+
+    @Test
+    @DisplayName("setForwardedForTrustedHops deve armazenar e retornar o valor configurado")
+    void setForwardedForTrustedHops_storesAndReturnsValue() {
+        props.setForwardedForTrustedHops(1);
+
+        assertThat(props.getForwardedForTrustedHops()).isEqualTo(1);
+    }
 }

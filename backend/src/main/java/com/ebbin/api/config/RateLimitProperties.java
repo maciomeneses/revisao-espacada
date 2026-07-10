@@ -59,6 +59,24 @@ public class RateLimitProperties {
      */
     private List<String> trustedProxies = new ArrayList<>();
 
+    /**
+     * Número de proxies reversos confiáveis entre o app e a internet.
+     *
+     * <p>Caminho recomendado para PaaS (ex.: Railway), onde o IP do proxy de borda
+     * não é fixo/conhecido. Em vez de casar o IP do proxy, confia-se numa
+     * <em>quantidade</em> de saltos: o cliente real é o IP que o proxy de borda
+     * anexou ao {@code X-Forwarded-For} — o {@code hops}-ésimo a contar da direita.
+     * Esse valor <strong>não é forjável</strong> pelo cliente (qualquer {@code XFF}
+     * enviado por ele fica à esquerda do IP anexado pela borda).</p>
+     *
+     * <p>Railway expõe exatamente um proxy → {@code 1}. O padrão {@code 0} desliga o
+     * mecanismo (ignora {@code X-Forwarded-For}, usa o {@code remoteAddr} — comportamento
+     * legado). Quando {@code > 0}, tem precedência sobre {@code trustedProxies}.</p>
+     *
+     * <p>Env: {@code RATE_LIMIT_FORWARDED_FOR_TRUSTED_HOPS}.</p>
+     */
+    private int forwardedForTrustedHops = 0;
+
     // --- Propriedades legadas (prefixo app.rate-limit.login.*) ---
     // Mantidas para não quebrar configurações existentes via variáveis de ambiente.
 
@@ -87,6 +105,9 @@ public class RateLimitProperties {
 
     public List<String> getTrustedProxies() { return trustedProxies; }
     public void setTrustedProxies(List<String> trustedProxies) { this.trustedProxies = trustedProxies; }
+
+    public int getForwardedForTrustedHops() { return forwardedForTrustedHops; }
+    public void setForwardedForTrustedHops(int v) { this.forwardedForTrustedHops = v; }
 
     /**
      * Retorna a configuração do endpoint pelo identificador, usando os valores legados do

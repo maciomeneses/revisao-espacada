@@ -32,6 +32,7 @@
 
 - `EndpointRateLimitFilter` (Bucket4j) aplica limites **por IP** via `RateLimitProperties` (env `RATE_LIMIT_*`). Buckets em cache Caffeine.
 - Endpoints públicos (especialmente `/api/auth/**`) devem estar cobertos pelo rate limiter. Cobertos hoje: `login`, `forgot-password`, `reset-password`, `signup` (3/10min), `verify-email` (5/15min).
+- **Resolução do IP atrás de proxy (PaaS/Railway):** defina `RATE_LIMIT_FORWARDED_FOR_TRUSTED_HOPS` = nº de proxies de borda confiáveis (Railway = 1). O filtro usa o IP que o proxy **anexou** ao `X-Forwarded-For` (o `hops`-ésimo a contar da **direita**) — não forjável pelo cliente. Padrão `0` = desligado (usa `remoteAddr`). O caminho legado `RATE_LIMIT_TRUSTED_PROXIES` (casamento de IP exato, lê o IP mais à **esquerda**) é forjável e só deve ser usado em topologia de IP fixo conhecido — **nunca com curinga**. Ver `docs/runbooks/deploy-backend-railway.md`.
 
 ## Dependências (OWASP)
 

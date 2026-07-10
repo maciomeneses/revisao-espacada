@@ -10,7 +10,7 @@
 - Variáveis de ambiente de produção no Railway: ver `docs/conventions/backend-java.md` (`PG*`, `JWT_*`, `ADMIN_*`, `CORS_ALLOWED_ORIGINS`, `FRONTEND_URL`, `PORT`, `RATE_LIMIT_*`).
 - `ProductionConfigValidator` falha o boot se faltar var obrigatória.
 
-## Rate limit atrás do proxy do Railway (AÇÃO PENDENTE)
+## Rate limit atrás do proxy do Railway
 
 O tráfego HTTP chega ao container via **proxy de borda do Railway**. Sem configuração,
 `EndpointRateLimitFilter` usa `request.getRemoteAddr()` — que aponta para o **proxy**, não
@@ -18,24 +18,39 @@ o cliente. Consequência: **todos os usuários compartilham o mesmo bucket** por
 (ex.: login 5/min global). Um único ator satura o limite e nega login a todos; e o
 brute-force fica limitado globalmente em vez de por origem.
 
-O filtro só respeita `X-Forwarded-For` quando `remoteAddr` está em
-`RATE_LIMIT_TRUSTED_PROXIES` (postura segura por padrão — ver `docs/conventions/security.md`).
-Hoje essa variável **não está definida** no Railway.
+**Solução (1 variável): `RATE_LIMIT_FORWARDED_FOR_TRUSTED_HOPS=1`.**
 
-Remediação (decisão pendente — requer o IP/faixa do proxy interno do Railway):
+O filtro passa a pegar o IP que o proxy de borda **anexou** ao `X-Forwarded-For` (o
+`hops`-ésimo a contar da direita). Como o Railway expõe exatamente 1 proxy, `hops=1`.
+Esse IP **não é forjável** pelo cliente — qualquer `X-Forwarded-For` que ele envie fica à
+esquerda do IP real anexado pela borda (ver `docs/conventions/security.md`).
 
-1. Descobrir o `remoteAddr` que o app enxerga (logar `request.getRemoteAddr()` uma vez,
-   ou inspecionar o range da rede privada do Railway).
-2. Definir `RATE_LIMIT_TRUSTED_PROXIES` com esse IP/faixa. Só então o XFF passa a valer e o
-   rate limit volta a ser por cliente.
+Passo a passo:
 
-> **Nunca** usar curinga/`0.0.0.0` em `RATE_LIMIT_TRUSTED_PROXIES`: confiar em qualquer origem
-> permite forjar o `X-Forwarded-For` e burlar o rate limit por completo.
+```bash
+# na dashboard do Railway (serviço backend) OU via CLI:
+railway variables --set RATE_LIMIT_FORWARDED_FOR_TRUSTED_HOPS=1
+# isso dispara um redeploy. O padrão é 0 (desligado) — nada muda até definir.
+```
 
-Observação: o serviço roda hoje **sem** `SPRING_PROFILES_ACTIVE=prod` (perfil default,
-`ddl-auto=update`, Flyway desligado) — consistente com a estratégia de baseline V15
-documentada em `docs/conventions/database.md`. Ativar o profile `prod` é pré-requisito para
-o Flyway assumir as migrations V16+.
+Verificação (opcional, recomendada uma vez): com o serviço em perfil default (logs
+`com.ebbin` em DEBUG), faça **uma** tentativa de login e confira nos `railway logs` a linha
+`Rate limit — IP do cliente via 1 hop(s) confiável(is): <IP> (XFF=...)`. Se `<IP>` for o seu
+IP público externo (não um IP interno `10.x`/`100.x`), está correto. Se aparecer um IP
+interno, aumente `hops` (raro — só se houver mais de um proxy na frente).
+
+> **Nunca** usar o caminho legado `RATE_LIMIT_TRUSTED_PROXIES` com curinga: ele lê o IP mais
+> à **esquerda** do `X-Forwarded-For`, que o cliente forja. Prefira sempre `*_TRUSTED_HOPS`.
+
+## Profile de produção (`prod`) — ainda inativo
+
+O serviço roda hoje **sem** `SPRING_PROFILES_ACTIVE=prod` (perfil default, `ddl-auto=update`,
+Flyway desligado) — consistente com a estratégia de baseline V15 documentada em
+`docs/conventions/database.md`. Ativar o profile `prod` faz o Hibernate passar a **validar**
+o schema (em vez de atualizar) e o Flyway assumir as migrations **V16+**. Pré-requisito: o
+schema atual já precisa conter as colunas de V14 (`email_verified`) e V15 (estado FSRS) — o
+que já é verdade, pois o `ddl-auto=update` as criou. Mudança de deploy a fazer com cuidado
+(ver `docs/conventions/database.md`).
 
 ## Migrations
 
