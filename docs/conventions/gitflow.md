@@ -33,7 +33,7 @@ Formato `tipo(escopo opcional): assunto`. Tipos: `feat`, `fix`, `test`, `chore`,
 ## CI/CD (resumo)
 
 - **Backend CI** (`.github/workflows/ci-backend.yml`): push/PR tocando `backend/**`, **Java 21** (Java 25 só local). `./gradlew build` inclui JaCoCo — falha se cobertura abaixo.
-- **Frontend Deploy** (`.github/workflows/deploy-frontend.yml`): push em `main` tocando `frontend/**`; injeta `VITE_API_URL` do secret; `npm run test:coverage`; deploy via `gh-pages`.
+- **Frontend CI** (`.github/workflows/ci-frontend.yml`): push em `main` tocando `frontend/**`; roda `npm ci` + `npm run test:coverage`. **Sem etapa de deploy** — o Pages foi desativado (ADR-0004 obsoleto); a produção do Ebbing é servida em `https://my.ebbin.app`, fora deste repositório.
 
 ## Restrições absolutas (NUNCA)
 

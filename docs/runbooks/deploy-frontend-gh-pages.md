@@ -1,5 +1,11 @@
 # Runbook — Deploy do frontend (GitHub Pages)
 
+> ⚠️ **Obsoleto (2026-07-09).** O GitHub Pages deste repositório foi desativado, a
+> branch `gh-pages` não existe no remote e o workflow descrito abaixo virou CI puro
+> (`ci-frontend.yml`, sem etapa de deploy). A produção do Ebbing é servida em
+> `https://my.ebbin.app` (host próprio, fora deste repositório). Mantido apenas como
+> registro histórico — ver nota no ADR-0004.
+
 ## Automático (recomendado)
 
 Push em `main` tocando `frontend/**` dispara `.github/workflows/deploy-frontend.yml`:

@@ -30,7 +30,7 @@ Leia isto antes de qualquer mudança no código. Cobre os "tropeços" que não s
 
 ## 6. Frontend — armadilhas
 
-- Tailwind 4 sem `tailwind.config.js`. `vite.config.ts` sem `base` (deploy GitHub Pages).
+- Tailwind 4 sem `tailwind.config.js`. `vite.config.ts` sem `base` (herança do deploy via GitHub Pages, hoje desativado — ADR-0004 obsoleto).
 - Estado de subjects via `useSubjects` (não Context API). Callbacks que dependem de `routine`/`allowedDays` precisam incluí-los nas dep arrays (bug #21). Ver `docs/conventions/frontend-react.md` e `fsrs.md`.
 
 ## 7. Commits
