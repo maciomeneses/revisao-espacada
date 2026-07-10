@@ -47,7 +47,7 @@ npm run ci backend       # só o job de backend
 npm run ci frontend      # só o job de frontend
 ```
 
-Para o conjunto completo de comandos, variáveis de ambiente e particularidades de deploy, consulte [`CLAUDE.md`](./CLAUDE.md).
+Para comandos, variáveis de ambiente e particularidades de deploy, consulte [`AGENTS.md`](./AGENTS.md), [`docs/conventions/`](./docs/conventions/) e [`docs/runbooks/`](./docs/runbooks/).
 
 ## Documentação e harness de IA
 
@@ -66,12 +66,12 @@ Toda a documentação vive em [`docs/`](./docs/) e é a **fonte de verdade**:
 - `backend/` — API Spring Boot (Gradle, Java 25 local / Java 21 no CI).
 - `.github/workflows/` — CI do backend e deploy do frontend para GitHub Pages.
 - `.claude/agents/` — agentes especializados de revisão (backend, frontend, testes, FSRS, deploy).
-- `CLAUDE.md` — guia operacional detalhado (arquitetura, contratos de API, regras).
+- `CLAUDE.md`, `GEMINI.md` — adaptadores finos por ferramenta (apontam para `AGENTS.md` e `docs/conventions/`).
 
 ## Contribuição
 
 - **Conventional Commits**: `feat:`, `fix:`, `test:`, `chore:`, `refactor:`, `docs:`.
 - **Cobertura mínima por arquivo/classe**: **90% instruction, 85% branch, 90% line** — JaCoCo no backend (regra agregada e per-class) e Vitest no frontend (`perFile: true`). `npm run test:coverage` no frontend e `./gradlew build` no backend falham se algum arquivo/classe ficar abaixo.
-- **Migrations Flyway** nunca modificam o passado — próxima é `V13__...`. Mudança em `backend/src/main/java/com/ebbin/api/model/` exige nova migration.
+- **Migrations Flyway** nunca modificam o passado — a próxima é o maior número em `backend/src/main/resources/db/migration/` + 1 (ver `docs/conventions/database.md`). Mudança em `backend/src/main/java/com/ebbin/api/model/` exige nova migration.
 - **Erros de API** seguem RFC 9457 ProblemDetail (campo `detail`, não `message`).
 - **Frontend** usa `clientId` (gerado no cliente) para subjects; o `id` (PK do banco) não é exposto.

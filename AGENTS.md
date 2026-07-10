@@ -89,7 +89,7 @@ npm run dev / build / test / test:watch / test:coverage
 - Sem `@Autowired` em field — injeção por construtor.
 - Sem expor entidade JPA em controller — sempre DTO.
 - Sem retornar `message` em vez de `detail` nos erros (RFC 9457 ProblemDetail).
-- Sem modificar migration Flyway já mergeada em `main` — nova migration `V13+`.
+- Sem modificar migration Flyway já mergeada em `main` — criar **nova** migration (próximo número via `docs/conventions/database.md`).
 - Sem mexer em `model/` (mudança de schema) sem migration na mesma PR.
 - Sem criar `tailwind.config.js`.
 - Sem adicionar `base` ao `vite.config.ts` sem ajustar o workflow de deploy.

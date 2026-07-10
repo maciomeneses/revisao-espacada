@@ -9,9 +9,9 @@ Skill neutra (qualquer ferramenta). Fonte canônica: `docs/conventions/database.
 
 ## Passos
 
-1. Confirme o próximo número: última é `V12` → próxima **`V13`**.
-2. Crie `backend/src/main/resources/db/migration/V13__descricao_em_snake_case.sql`.
+1. Confirme o próximo número: rode `ls backend/src/main/resources/db/migration/`, pegue o maior `V{n}` e use `V{n+1}`.
+2. Crie `backend/src/main/resources/db/migration/V{n+1}__descricao_em_snake_case.sql`.
 3. DDL idempotente quando possível; prefira backward-compatible (expand → migrate → contract).
-4. **Nunca** edite migrations já mergeadas (`V1`–`V12`).
+4. **Nunca** edite migrations já mergeadas em `main`.
 5. Se a mudança vem de `model/`, ajuste/adicione testes do modelo/repository (cobertura — `docs/conventions/testing.md`).
 6. Rode `cd backend && ./gradlew build` e siga o Roteiro de manutenção (`AGENTS.md`).

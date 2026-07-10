@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-tests.sh\"",
+            "command": "bash .claude/hooks/run-tests.sh",
             "timeout": 120,
             "statusMessage": "Rodando testes relacionados..."
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-doc-update.sh\"",
+            "command": "bash .claude/hooks/check-doc-update.sh",
             "timeout": 15
           }
         ]

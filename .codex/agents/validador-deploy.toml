@@ -14,7 +14,7 @@ Frontend:
 
 Backend:
 - `cd backend && ./gradlew build` (Java 25 local; CI em Java 21 — evitar features Java 22+).
-- Mexeu em `model/`? Verificar migration `V13+` correspondente (migrations V1–V12 imutáveis).
+- Mexeu em `model/`? Verificar a migration nova correspondente (migrations já em `main` imutáveis; próximo número via `docs/conventions/database.md`).
 - Endpoint novo sem regra no `SecurityConfig` é red flag. OWASP: `./gradlew dependencyCheckAnalyze`.
 
 Red flags: `any` novo, `VITE_*` inexistente, versão de migration repetida, endpoint sem auth, dependência com CVE crítica.

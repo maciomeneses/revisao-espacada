@@ -12,7 +12,7 @@
 
 ## Migrations
 
-- Flyway roda no profile `prod`. Confirme que a nova migration (`V13+`) está presente e é imutável. Ver `docs/runbooks/nova-migration-flyway.md`.
+- Flyway roda no profile `prod`. Confirme que a nova migration está presente e é imutável. Ver `docs/runbooks/nova-migration-flyway.md`.
 
 ## Validação pós-deploy
 
