@@ -5,22 +5,30 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+  pull_request:
+    paths:
+      - "frontend/**"
   workflow_dispatch:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Executor selecionável pela variável de repositório CI_RUNNER (fallback de billing):
+    # CI_RUNNER=self-hosted → roda no runner local (não consome minutos do Actions).
+    # Reversão: gh variable set CI_RUNNER --body ubuntu-latest
+    # Runbook: docs/runbooks/ci-runner-self-hosted.md
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: "npm"
+          # Cache de rede só em runner do GitHub; no self-hosted o cache do npm local já persiste
+          cache: ${{ runner.environment == 'github-hosted' && 'npm' || '' }}
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
