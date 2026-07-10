@@ -6,11 +6,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -65,6 +67,10 @@ public class SubjectController {
             @PathVariable String id,
             @Valid @RequestBody SubjectDto dto) {
         log.debug("PUT /api/subjects/{} — user={}", id, user.getUsername());
+        if (!id.equals(dto.id())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "O id do path (%s) não corresponde ao id do corpo (%s)".formatted(id, dto.id()));
+        }
         return ResponseEntity.ok(subjectService.upsertSubject(user.getUsername(), dto));
     }
 

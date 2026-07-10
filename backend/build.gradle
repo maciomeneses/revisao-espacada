@@ -144,6 +144,10 @@ jacocoTestCoverageVerification {
     }
 }
 
+// Liga a verificação de cobertura ao ciclo padrão: ./gradlew build (via check)
+// falha se o agregado ou qualquer classe ficar abaixo dos thresholds acima.
+check.dependsOn jacocoTestCoverageVerification
+
 // OWASP Dependency-Check: varredura de CVEs nas dependências (OWASP A06:2021 — Vulnerable Components)
 // Executar manualmente: ./gradlew dependencyCheckAnalyze
 // O relatório é gerado em build/reports/dependency-check-report.html
@@ -154,8 +158,9 @@ dependencyCheck {
     outputDirectory = layout.buildDirectory.dir('reports').get().asFile
     // Formatos de relatório gerados
     formats = ['HTML', 'JSON']
-    // Suprimido durante CI off-line: remover esta linha se a NVD API key estiver configurada
-    // nvd.apiKey = System.getenv('NVD_API_KEY') ?: ''
+    // NVD API key lida da env NVD_API_KEY; sem a env definida (string vazia),
+    // o comportamento é o mesmo de antes (consulta anônima, sujeita a throttling).
+    nvd.apiKey = System.getenv('NVD_API_KEY') ?: ''
     // Exclui dependências de escopo de teste da varredura de produção
     scanConfigurations = ['runtimeClasspath', 'compileClasspath']
 }

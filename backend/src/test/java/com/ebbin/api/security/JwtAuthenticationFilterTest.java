@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
  *   <li>Header sem prefixo Bearer — passa direto</li>
  *   <li>Token válido — autentica e passa</li>
  *   <li>Token válido mas token inválido ({@code isTokenValid} retorna false)</li>
+ *   <li>Token válido mas conta desabilitada ({@code isEnabled} retorna false)</li>
  *   <li>email null extraído — não autentica</li>
  *   <li>{@link ExpiredJwtException} — loga e passa</li>
  *   <li>{@link JwtException} — loga e passa</li>
@@ -110,6 +111,36 @@ class JwtAuthenticationFilterTest {
         verify(chain).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo(email);
+    }
+
+    // ---- Token válido mas conta desabilitada ----
+
+    @Test
+    @DisplayName("Usuário desabilitado (e-mail não confirmado) com token válido não deve autenticar")
+    void validTokenDisabledUser_doesNotAuthenticate() throws Exception {
+        // given: conta com enabled=false (e-mail de self-signup ainda não confirmado)
+        String token = "valid.jwt.token";
+        String email = "disabled@test.com";
+        org.springframework.security.core.userdetails.UserDetails userDetails =
+                new org.springframework.security.core.userdetails.User(
+                        email, "hash", false, true, true, true,
+                        List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+        when(jwtService.extractEmail(token)).thenReturn(email);
+        when(userDetailsService.loadUserByUsername(email)).thenReturn(userDetails);
+        when(jwtService.isTokenValid(token, email)).thenReturn(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/subjects");
+        request.addHeader("Authorization", "Bearer " + token);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        // when
+        filter.doFilter(request, response, chain);
+
+        // then: chain continua, mas o SecurityContext permanece sem autenticação
+        verify(chain).doFilter(request, response);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
     // ---- Token presente mas isTokenValid retorna false ----

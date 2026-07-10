@@ -4,9 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +19,14 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private static final String BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
 
+    /**
+     * Timeouts do cliente HTTP. O envio de e-mail é chamado dentro de métodos
+     * {@code @Transactional} do {@code AuthService} — sem timeout, uma travada
+     * na API do Brevo seguraria a conexão de banco indefinidamente.
+     */
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
+
     private final String apiKey;
     private final String fromAddress;
     private final RestClient restClient;
@@ -24,7 +35,10 @@ public class EmailService {
                         @Value("${app.mail.from}") String fromAddress) {
         this.apiKey = apiKey;
         this.fromAddress = fromAddress;
-        this.restClient = RestClient.create();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
+                HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build());
+        requestFactory.setReadTimeout(READ_TIMEOUT);
+        this.restClient = RestClient.builder().requestFactory(requestFactory).build();
     }
 
     /**

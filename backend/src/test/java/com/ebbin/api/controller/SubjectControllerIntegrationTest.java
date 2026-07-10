@@ -243,13 +243,29 @@ class SubjectControllerIntegrationTest {
     @Test
     @DisplayName("PUT /api/subjects/{id} deve criar subject quando não existe (upsert)")
     void upsert_newSubject_createsAndReturns200() throws Exception {
-        mockMvc.perform(put("/api/subjects/subj-new")
+        mockMvc.perform(put("/api/subjects/subj-1")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SUBJECT_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("subj-1"))
                 .andExpect(jsonPath("$.modulo").value("Módulo A"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/subjects/{id} com id do path divergente do id do corpo deve retornar 400")
+    void upsert_pathIdMismatch_returns400() throws Exception {
+        // Path "subj-outro" != body "subj-1" — a validação de consistência rejeita antes do upsert
+        mockMvc.perform(put("/api/subjects/subj-outro")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(SUBJECT_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        "O id do path (subj-outro) não corresponde ao id do corpo (subj-1)"));
+
+        // Nada foi persistido
+        assertThat(subjectRepository.findByUserAndClientId(regularUser, "subj-1")).isEmpty();
     }
 
     @Test

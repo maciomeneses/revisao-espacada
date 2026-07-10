@@ -172,6 +172,39 @@ class AdminUserControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @DisplayName("PUT /api/admin/users/{id} com e-mail de outro usuário deve retornar 409")
+    void updateUser_duplicateEmail_returns409() throws Exception {
+        // Tenta atualizar o usuário comum para o e-mail do admin (já cadastrado)
+        mockMvc.perform(put("/api/admin/users/" + regularUser.getId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@admintest.com","role":"USER"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("E-mail já cadastrado"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/admin/users/{id} que rebaixaria o único ADMIN deve retornar 409")
+    void updateUser_demoteLastAdmin_returns409() throws Exception {
+        // O AdminInitializer cria admin@admintest.com como único ADMIN deste contexto
+        User admin = userRepository.findByEmail("admin@admintest.com").orElseThrow();
+        mockMvc.perform(put("/api/admin/users/" + admin.getId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin@admintest.com","role":"USER"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Não é possível rebaixar o único ADMIN do sistema"));
+
+        // Papel permanece ADMIN no banco
+        assertThat(userRepository.findByEmail("admin@admintest.com"))
+                .hasValueSatisfying(u -> assertThat(u.getRole()).isEqualTo(User.Role.ADMIN));
+    }
+
     // --- DELETE /api/admin/users/{id} ---
 
     @Test
@@ -192,6 +225,20 @@ class AdminUserControllerIntegrationTest {
         mockMvc.perform(delete("/api/admin/users/" + nonExistentId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/admin/users/{id} do único ADMIN deve retornar 409")
+    void deleteUser_lastAdmin_returns409() throws Exception {
+        // O AdminInitializer cria admin@admintest.com como único ADMIN deste contexto
+        User admin = userRepository.findByEmail("admin@admintest.com").orElseThrow();
+        mockMvc.perform(delete("/api/admin/users/" + admin.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Não é possível remover o único ADMIN do sistema"));
+
+        // Admin continua existindo no banco
+        assertThat(userRepository.findByEmail("admin@admintest.com")).isPresent();
     }
 
 }
