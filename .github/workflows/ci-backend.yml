@@ -12,7 +12,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Executor selecionável pela variável de repositório CI_RUNNER (fallback de billing):
+    # CI_RUNNER=self-hosted → roda no runner local (não consome minutos do Actions).
+    # Reversão: gh variable set CI_RUNNER --body ubuntu-latest
+    # Runbook: docs/runbooks/ci-runner-self-hosted.md
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: backend
@@ -22,9 +26,10 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          java-version: "21" # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI
+          java-version: "21" # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI (no self-hosted a toolchain do Gradle resolve o JDK 25 local)
           distribution: "temurin"
-          cache: "gradle"
+          # Cache de rede só em runner do GitHub; no self-hosted o ~/.gradle local já persiste
+          cache: ${{ runner.environment == 'github-hosted' && 'gradle' || '' }}
 
       - name: Build & Test
         run: ./gradlew build --no-daemon
