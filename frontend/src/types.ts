@@ -35,11 +35,27 @@ export interface Discipline {
 
 /** Nome de área como string — usado em Subject.area (campo legado preservado por compat). */
 export type AreaName = string;
-export type Relevance = 'Alta' | 'Média' | 'Baixa' | string;
-export type Performance = 'ruim' | 'medio' | 'bom' | 'excelente' | string;
-export type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente' | string;
+export type Relevance = 'Alta' | 'Média' | 'Baixa';
+export type Performance = 'ruim' | 'medio' | 'bom' | 'excelente';
+export type PerformanceLevel = 'nao_classificada' | 'ruim' | 'medio' | 'bom' | 'excelente';
 
-export type ReviewStage = 'aula' | 'Learning' | 'Review' | 'Relearning' | 'New' | string;
+/**
+ * Estágios FSRS atuais + estágios legados ainda presentes em dados antigos
+ * (localStorage/backend) e tratados por `getProximaTarefa`/`getFormulaStatus`.
+ */
+export type ReviewStage =
+  | 'aula'
+  | 'Learning'
+  | 'Review'
+  | 'Relearning'
+  | 'New'
+  | 'fixacao'
+  | 'estudo_reverso'
+  | 'rev7d'
+  | 'rev30d'
+  | 'rev60d'
+  | 'rev90d'
+  | 'concluido';
 
 export interface Subject {
   id: string;
