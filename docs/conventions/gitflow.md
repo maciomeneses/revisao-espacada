@@ -32,8 +32,9 @@ Formato `tipo(escopo opcional): assunto`. Tipos: `feat`, `fix`, `test`, `chore`,
 
 ## CI/CD (resumo)
 
-- **Backend CI** (`.github/workflows/ci-backend.yml`): push/PR tocando `backend/**`, **Java 21** (Java 25 só local). `./gradlew build` inclui JaCoCo — falha se cobertura abaixo.
-- **Frontend CI** (`.github/workflows/ci-frontend.yml`): push em `main` tocando `frontend/**`; roda `npm ci` + `npm run test:coverage`. O deploy é **automático via Vercel** (produção em `main` → `https://www.ebbing.com.br`; preview por branch) e não consome GitHub Actions. O fluxo antigo via Pages está desativado (ADR-0004 obsoleto).
+- **Executor selecionável:** os workflows usam `runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}`. Com billing do Actions indisponível, a variável de repositório `CI_RUNNER=self-hosted` roda o CI num runner local (custo zero) — ver `docs/runbooks/ci-runner-self-hosted.md`.
+- **Backend CI** (`.github/workflows/ci-backend.yml`): push/PR tocando `backend/**`, **Java 21** (Java 25 só local/self-hosted). `./gradlew build` inclui JaCoCo — falha se cobertura abaixo.
+- **Frontend CI** (`.github/workflows/ci-frontend.yml`): push em `main` e **PR** tocando `frontend/**`; roda `npm ci` + `npm run test:coverage`. O deploy é **automático via Vercel** (produção em `main` → `https://www.ebbing.com.br`; preview por branch) e não consome GitHub Actions. O fluxo antigo via Pages está desativado (ADR-0004 obsoleto).
 
 ## Restrições absolutas (NUNCA)
 

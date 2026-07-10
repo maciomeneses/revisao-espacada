@@ -12,25 +12,33 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Executor selecionável pela variável de repositório CI_RUNNER (fallback de billing):
+    # CI_RUNNER=self-hosted → roda no runner local (não consome minutos do Actions).
+    # Reversão: gh variable set CI_RUNNER --body ubuntu-latest
+    # Runbook: docs/runbooks/ci-runner-self-hosted.md
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
-          java-version: "21" # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI
+          java-version: "21" # Java 25 ainda não disponível em ubuntu-latest; use 21 no CI (no self-hosted a toolchain do Gradle resolve o JDK 25 local)
           distribution: "temurin"
-          cache: "gradle"
+          # Cache de rede só em runner do GitHub; no self-hosted o ~/.gradle local já persiste
+          cache: ${{ runner.environment == 'github-hosted' && 'gradle' || '' }}
 
       - name: Build & Test
         run: ./gradlew build --no-daemon
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        # Publicação de conveniência (nenhum job consome o jar; deploy é via Railway).
+        # No self-hosted o upload falharia: armazenamento de artifact também é billing.
+        if: runner.environment == 'github-hosted'
+        uses: actions/upload-artifact@v7
         with:
           name: ebbin-api
           path: backend/build/libs/*.jar

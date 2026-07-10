@@ -63,3 +63,5 @@ Ver `docs/adr/`. Principais: monorepo desacoplado (0001), FSRS congelado (0002),
 Runbooks em `docs/runbooks/`: desenvolvimento local, deploy frontend/backend, nova migration, rollback.
 
 **Validação local equivalente ao CI:** `npm run ci` (raiz) roda `scripts/ci-local.sh`, que espelha os dois jobs do GitHub Actions — backend (`./gradlew build --no-daemon`) e frontend (`npm ci && npm run test:coverage`), com os mesmos thresholds de cobertura. Útil quando os minutos do GitHub Actions estão esgotados. Aceita alvo (`backend`/`frontend`) e `FAST=1` para `npm install` em vez de `npm ci`.
+
+**CI automático sem billing (runner self-hosted):** os workflows selecionam o executor pela variável de repositório `CI_RUNNER` (`self-hosted` → runner local no Mac, gerido por `scripts/ci-runner.sh`; ausente/`ubuntu-latest` → runner do GitHub). Setup, operação e reversão em `docs/runbooks/ci-runner-self-hosted.md`.
