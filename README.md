@@ -11,7 +11,7 @@ Aplicação web para estudantes do ENEM organizarem seus estudos com **revisões
 
 ## Stack
 
-- **Frontend**: React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + React Router 7 + Recharts 3 + Vitest. **Sem deploy automatizado neste repositório** (o GitHub Pages foi desativado — ver ADR-0004, obsoleto). A produção do Ebbing é servida em `https://my.ebbin.app`, hospedada fora deste repositório.
+- **Frontend**: React 19 + TypeScript + Vite 7 + Tailwind CSS 4 + React Router 7 + Recharts 3 + Vitest. Deploy automático via **Vercel** (produção em `https://www.ebbing.com.br` a cada push em `main`; preview por branch). O antigo fluxo via GitHub Pages está desativado — ver ADR-0004, obsoleto.
 - **Backend**: Spring Boot 4.0.3 + Java 25 + PostgreSQL + Flyway + JWT (JJWT 0.12.6) + Bucket4j (rate limiting) + Caffeine (cache) + JaCoCo. Deploy via **Railway**.
 
 ## Como rodar
@@ -64,7 +64,7 @@ Toda a documentação vive em [`docs/`](./docs/) e é a **fonte de verdade**:
 
 - `frontend/` — app React (Vite + TypeScript). Testes em `frontend/tests/` (não co-localizados).
 - `backend/` — API Spring Boot (Gradle, Java 25 local / Java 21 no CI).
-- `.github/workflows/` — CI do backend e do frontend (sem etapa de deploy do frontend).
+- `.github/workflows/` — CI do backend e do frontend. Os deploys são automáticos e fora do Actions: Vercel (frontend) e Railway (backend).
 - `.claude/agents/` — agentes especializados de revisão (backend, frontend, testes, FSRS, deploy).
 - `CLAUDE.md`, `GEMINI.md` — adaptadores finos por ferramenta (apontam para `AGENTS.md` e `docs/conventions/`).
 

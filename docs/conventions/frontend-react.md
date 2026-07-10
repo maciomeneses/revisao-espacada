@@ -12,7 +12,7 @@
 
 ## Build e deploy
 
-- `vite.config.ts` **sem `base`** (usa `/`) — herança do deploy via `gh-pages`, hoje desativado (ADR-0004 obsoleto). Manter sem `base`.
+- `vite.config.ts` **sem `base`** (usa `/`) — a Vercel serve o app na raiz do domínio. Manter sem `base`.
 - Build: `tsc -b && vite build`. Erro de `tsc` quebra o build.
 
 ## Rotas

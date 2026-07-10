@@ -2,7 +2,8 @@
 
 - Status: **obsoleto na parte do frontend** (2026-07-09) — o site do GitHub Pages foi
   desativado e a branch `gh-pages` não existe mais no remote; a produção do Ebbing é
-  servida em `https://my.ebbin.app` (host próprio, fora deste repositório). O workflow
+  servida em `https://www.ebbing.com.br` pela **Vercel** (deploy automático em `main`,
+  preview por branch — mesmo padrão dos demais produtos). O workflow
   virou CI puro (`ci-frontend.yml`) e o tooling `gh-pages` foi removido. A parte do
   **backend (Railway) segue valendo**. Formalizar o novo deploy do frontend em ADR
   futuro quando a decisão for documentada.
