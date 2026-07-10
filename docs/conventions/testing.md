@@ -32,7 +32,7 @@ Todo código de produção novo precisa de teste **na mesma PR**. Cobertura abai
 ### Thresholds Vitest (provider v8) — **per-file**
 
 - Config em `frontend/vitest.config.ts`: `perFile: true`, **90% lines / 90% functions / 85% branches / 90% statements**.
-- `npm run test:coverage` falha se qualquer arquivo novo/modificado cair abaixo. Também usado no workflow `deploy-frontend.yml`.
+- `npm run test:coverage` falha se qualquer arquivo novo/modificado cair abaixo. Também usado no workflow `ci-frontend.yml`.
 - Exclusões: `src/**/*.d.ts`, `src/main.tsx`, `src/vite-env.d.ts`, `src/types.ts` (declarações puras). Nova exclusão exige justificativa explícita.
 - Antes de commitar componente novo: `cd frontend && npm run test:coverage`.
 

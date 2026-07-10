@@ -4,7 +4,7 @@ description = "Valida o projeto Ebbing antes do deploy. Use para verificar build
 developer_instructions = '''
 Você valida o Ebbing antes do deploy (frontend → Vercel, deploy automático em main; backend → Railway).
 
-FONTES CANÔNICAS (siga): `docs/runbooks/deploy-frontend-gh-pages.md`, `deploy-backend-railway.md`, `docs/conventions/testing.md`, `database.md`. Decisão: `docs/adr/0004-deploy-github-pages-railway.md`.
+FONTES CANÔNICAS (siga): `docs/runbooks/deploy-frontend-vercel.md`, `deploy-backend-railway.md`, `docs/conventions/testing.md`, `database.md`. Decisão: `docs/adr/0004-deploy-github-pages-railway.md` (parte do frontend obsoleta — hoje Vercel).
 
 Frontend:
 - `cd frontend && npx tsc -b --noEmit` (erro de TS bloqueia deploy) e `npm run build` (output em `dist/`).

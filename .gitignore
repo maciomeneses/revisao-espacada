@@ -9,6 +9,7 @@ frontend/.env.*.local
 # ── Backend ───────────────────────────────────────────────────────────────────
 backend/.gradle/
 backend/build/
+backend/bin/
 backend/out/
 backend/.env
 
@@ -25,3 +26,6 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+
+# ── Agent worktrees (efêmeros) ──────────────────────────────────────────────────
+.claude/worktrees/

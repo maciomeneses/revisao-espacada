@@ -3,8 +3,8 @@
 # ci-local.sh — Roda localmente o equivalente ao CI do GitHub Actions.
 #
 # Espelha os dois jobs definidos em .github/workflows/:
-#   - ci-backend.yml      → backend:  ./gradlew build --no-daemon
-#   - deploy-frontend.yml → frontend: npm ci && npm run test:coverage
+#   - ci-backend.yml  → backend:  ./gradlew build --no-daemon
+#   - ci-frontend.yml → frontend: npm ci && npm run test:coverage
 #
 # Útil quando os minutos do GitHub Actions acabaram: aqui não há GitHub nem
 # Docker envolvido, roda offline e usa as mesmas validações (testes + thresholds
