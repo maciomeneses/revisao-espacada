@@ -10,10 +10,10 @@ Plataforma de **revisão espaçada** para estudantes do ENEM, baseada no algorit
 
 Monorepo com dois apps independentes (sem código compartilhado):
 
-| App         | Stack                                                                                         | Deploy                    |
-| ----------- | --------------------------------------------------------------------------------------------- | ------------------------- |
-| `frontend/` | React 19, TypeScript 5.5, Vite 7, Tailwind 4, React Router 7, Recharts 3, Vitest 4            | GitHub Pages (`gh-pages`) |
-| `backend/`  | Spring Boot 4.0.3, Java 25, PostgreSQL, Flyway, JWT (JJWT), Bucket4j, Caffeine, JaCoCo, OWASP | Railway                   |
+| App         | Stack                                                                                         | Deploy                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `frontend/` | React 19, TypeScript 5.5, Vite 7, Tailwind 4, React Router 7, Recharts 3, Vitest 4            | — (Pages desativado; produção em `my.ebbin.app`, fora deste repo — ADR-0004 obsoleto) |
+| `backend/`  | Spring Boot 4.0.3, Java 25, PostgreSQL, Flyway, JWT (JJWT), Bucket4j, Caffeine, JaCoCo, OWASP | Railway                                                                               |
 
 Detalhes em `docs/conventions/backend-java.md` e `frontend-react.md`.
 
@@ -56,7 +56,7 @@ Ver `docs/adr/`. Principais: monorepo desacoplado (0001), FSRS congelado (0002),
 ## 8. Perguntas em aberto
 
 - Ativar dificuldade dinâmica no FSRS (`w[17] != 0`)? Hoje congelada por decisão (ADR-0002).
-- Fallback de SPA routing no GitHub Pages (404.html) — validar necessidade.
+- Formalizar em ADR o deploy atual do frontend (produção em `my.ebbin.app`, fora deste repo) — o ADR-0004 (GitHub Pages) ficou obsoleto.
 
 ## 9. Operação
 

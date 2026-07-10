@@ -1,9 +1,10 @@
 # Runbook — Rollback
 
-## Frontend (GitHub Pages)
+## Frontend
 
-- Reverter o commit problemático em `main` (`git revert <sha>`) e deixar o workflow `deploy-frontend.yml` republicar.
-- Alternativa rápida: reexecutar um deploy anterior a partir do histórico de Actions, ou rebuildar de um commit bom e `npm run deploy`.
+- A produção do Ebbing é servida em `https://my.ebbin.app` (host próprio, fora deste
+  repositório) — o rollback do frontend acontece nesse host, não por aqui.
+- O fluxo antigo via GitHub Pages está desativado (ADR-0004 obsoleto).
 
 ## Backend (Railway)
 

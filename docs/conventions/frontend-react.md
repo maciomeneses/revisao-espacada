@@ -12,8 +12,8 @@
 
 ## Build e deploy
 
-- `vite.config.ts` **sem `base`** (usa `/`). O deploy via `gh-pages` publica em `https://{user}.github.io/revisao-espacada/`. **Não adicionar `base` sem ajustar o workflow de deploy.**
-- Build: `tsc -b && vite build`. Erro de `tsc` quebra o deploy.
+- `vite.config.ts` **sem `base`** (usa `/`) — herança do deploy via `gh-pages`, hoje desativado (ADR-0004 obsoleto). Manter sem `base`.
+- Build: `tsc -b && vite build`. Erro de `tsc` quebra o build.
 
 ## Rotas
 

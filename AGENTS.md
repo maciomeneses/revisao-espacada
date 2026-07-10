@@ -16,7 +16,7 @@
 
 **Ebbing** — plataforma de revisão espaçada (algoritmo FSRS v6) para o ENEM. Monorepo com frontend e backend **desacoplados** (sem código compartilhado):
 
-- `frontend/` — React 19 + TypeScript + Vite 7 + Tailwind 4 → **GitHub Pages** (via `gh-pages`).
+- `frontend/` — React 19 + TypeScript + Vite 7 + Tailwind 4 → **sem deploy automatizado** (Pages desativado — ADR-0004 obsoleto; produção do Ebbing em `https://my.ebbin.app`, fora deste repo).
 - `backend/` — Spring Boot 4 + Java 25 + PostgreSQL + Flyway → **Railway**.
 
 **Documento mestre (visão completa):** `docs/analysis_results.md` — leia ao receber uma tarefa não-trivial.
@@ -66,7 +66,6 @@ npm run dev          # frontend dev server
 npm run build        # build frontend
 npm run test         # testes frontend
 npm run ci           # validação local equivalente ao CI (backend + frontend) — scripts/ci-local.sh
-npm run deploy       # deploy frontend (gh-pages)
 npm run backend:build / backend:run / backend:test
 npm run format / format:check   # Prettier
 npm run lint         # ESLint (frontend)

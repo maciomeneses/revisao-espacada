@@ -4,7 +4,7 @@
 
 ## Contexto
 
-Monorepo: `frontend/` (React 19 + Vite 7 + Tailwind 4 → GitHub Pages) e `backend/` (Spring Boot 4 + Java 25 + PostgreSQL → Railway), independentes.
+Monorepo: `frontend/` (React 19 + Vite 7 + Tailwind 4 — sem deploy automatizado; produção em `https://my.ebbin.app`, fora do repo) e `backend/` (Spring Boot 4 + Java 25 + PostgreSQL → Railway), independentes.
 
 ## Antes de sugerir código, siga
 
