@@ -8,7 +8,7 @@ FONTES CANÔNICAS (siga): `docs/conventions/backend-java.md`, `security.md`, `da
 
 Checklist de revisão:
 1. JaCoCo: toda classe/método novo precisa de teste. Thresholds 90/85/90 agregado E per-class — `./gradlew jacocoTestCoverageVerification` não pode falhar. Classe nova abaixo de 90% bloqueia o build.
-2. Migrations imutáveis após merge em `main` (V1–V12). Mudança de schema = nova `V13+` na mesma PR.
+2. Migrations imutáveis após merge em `main`. Mudança de schema = nova migration na mesma PR — próximo número via `docs/conventions/database.md` (ou `ls backend/src/main/resources/db/migration/`); nunca reutilizar/editar existente.
 3. Erros via RFC 9457 ProblemDetail — campo `detail`, não `message`.
 4. JWT: endpoint novo com regra correta no `SecurityConfig`; `/api/admin/**` exige `hasRole('ADMIN')`.
 5. Autorização por usuário em `/api/routine` e `/api/preferences` via `Authentication.getName()` — nunca confiar em body/param.

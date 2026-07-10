@@ -16,7 +16,7 @@ Leia isto antes de qualquer mudança no código. Cobre os "tropeços" que não s
 ## 3. Migrations Flyway
 
 - Só rodam no profile `prod`. Em dev, schema é via `ddl-auto`.
-- **Imutáveis** após merge em `main`. Próxima é `V13__...`. Mexeu em `model/`? Crie migration.
+- **Imutáveis** após merge em `main`. Próxima = maior `V{n}` em `db/migration/` + 1 (ver `database.md`). Mexeu em `model/`? Crie migration.
 - Runbook: `docs/runbooks/nova-migration-flyway.md`.
 
 ## 4. Onde ficam os testes

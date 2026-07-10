@@ -22,5 +22,5 @@ Marque o que se aplica — atualizado na **mesma PR**:
 - [ ] Adaptadores propagados (`CLAUDE.md`, `GEMINI.md`, `.claude/rules/*`, `.cursor/rules/*`, `.github/copilot-instructions.md`, `.codex/agents/*.toml`, `.codex/hooks.json`)
 - [ ] `.agents/skills/*` e/ou `.claude/agents` / `.codex/agents` atualizados (se mudou fluxo/responsabilidade)
 - [ ] ADR criado/atualizado em `docs/adr/` (se houve decisão)
-- [ ] Migration Flyway `V13+` criada (se mexeu em `model/`) + testes na mesma PR
+- [ ] Migration Flyway nova criada (se mexeu em `model/`) + testes na mesma PR
 - [ ] Commits seguem Conventional Commits e **não** citam ferramentas de IA
