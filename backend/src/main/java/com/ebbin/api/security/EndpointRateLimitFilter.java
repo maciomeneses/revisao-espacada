@@ -145,19 +145,49 @@ public class EndpointRateLimitFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Resolve o IP real do cliente, respeitando o header {@code X-Forwarded-For} apenas
-     * quando a requisição chega de um proxy reverso confiável.
+     * Resolve o IP real do cliente para chavear o bucket de rate limit.
      *
-     * <p>Se a lista {@code app.rate-limit.trusted-proxies} estiver vazia (padrão), o
-     * header é <em>sempre ignorado</em> e o {@code remoteAddr} é usado — postura segura
-     * por padrão. Caso contrário, o header só é lido quando o {@code remoteAddr} estiver
-     * na lista de proxies confiáveis, impedindo que clientes diretos forjem seu IP.</p>
+     * <p><b>Caminho recomendado (PaaS/Railway) — {@code forwarded-for-trusted-hops > 0}:</b>
+     * confia num número fixo de proxies de borda e usa o IP que o proxy <em>anexou</em> ao
+     * {@code X-Forwarded-For} — o {@code hops}-ésimo a contar da direita. Esse valor não é
+     * forjável: qualquer {@code XFF} que o cliente envie fica à <em>esquerda</em> do IP real
+     * anexado pela borda. Ex.: cliente forja {@code "9.9.9.9"}; a borda anexa o IP real
+     * {@code R} → app recebe {@code "9.9.9.9, R"}; com {@code hops=1} pegamos {@code R}.</p>
+     *
+     * <p><b>Caminho legado — {@code trusted-proxies} (casamento de IP exato):</b> usado apenas
+     * quando {@code hops == 0} e a lista não está vazia. Lê o IP mais à esquerda do
+     * {@code XFF} (forjável — por isso o caminho por hops é preferível atrás de proxy).</p>
+     *
+     * <p><b>Padrão seguro:</b> {@code hops == 0} e {@code trusted-proxies} vazio → o header é
+     * ignorado e o {@code remoteAddr} (conexão TCP) é usado.</p>
      */
     String resolveClientIp(HttpServletRequest request) {
         String remoteAddr = request.getRemoteAddr();
+
+        int hops = props.getForwardedForTrustedHops();
+        if (hops > 0) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                String[] parts = forwarded.split(",");
+                int idx = parts.length - hops;
+                if (idx >= 0) {
+                    String ip = parts[idx].trim();
+                    if (!ip.isEmpty()) {
+                        log.debug("Rate limit — IP do cliente via {} hop(s) confiável(is): {} (XFF={})",
+                                hops, ip, forwarded);
+                        return ip;
+                    }
+                }
+                // Menos entradas no XFF do que hops confiáveis → configuração incoerente.
+                // Postura segura: cai para remoteAddr em vez de confiar num índice inválido.
+                log.warn("X-Forwarded-For incompatível com trusted-hops={} (XFF={}); usando remoteAddr",
+                        hops, forwarded);
+            }
+            return remoteAddr;
+        }
+
         boolean isTrustedProxy = !props.getTrustedProxies().isEmpty()
                 && props.getTrustedProxies().contains(remoteAddr);
-
         if (isTrustedProxy) {
             String forwarded = request.getHeader("X-Forwarded-For");
             if (forwarded != null && !forwarded.isBlank()) {

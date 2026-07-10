@@ -224,6 +224,103 @@ class EndpointRateLimitFilterUnitTest {
         assertThat(resolvedIp).isEqualTo("10.0.0.1");
     }
 
+    // ---- resolveClientIp via forwarded-for-trusted-hops (caminho recomendado PaaS) ----
+
+    @Test
+    @DisplayName("Com hops=1 e XFF só com o cliente, deve usar o IP do cliente")
+    void resolveClientIp_hops1_singleEntry_shouldUseClient() {
+        props.setForwardedForTrustedHops(1);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("10.0.0.1"); // IP do proxy da borda (ignorado quando hops>0)
+        request.addHeader("X-Forwarded-For", "203.0.113.7");
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("203.0.113.7");
+    }
+
+    @Test
+    @DisplayName("Com hops=1, deve pegar o IP anexado pela borda (direita), ignorando XFF forjado do cliente")
+    void resolveClientIp_hops1_forgedPrefix_shouldUseRightmostRealIp() {
+        props.setForwardedForTrustedHops(1);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("10.0.0.1");
+        // Cliente tenta forjar "9.9.9.9"; a borda anexa o IP real à direita.
+        request.addHeader("X-Forwarded-For", "9.9.9.9, 203.0.113.7");
+
+        // Deve resolver o IP real (direita), NÃO o forjado — anti-spoofing.
+        assertThat(f.resolveClientIp(request)).isEqualTo("203.0.113.7");
+    }
+
+    @Test
+    @DisplayName("Com hops=2, deve descontar os dois proxies confiáveis e usar o IP do cliente")
+    void resolveClientIp_hops2_shouldStripTwoProxies() {
+        props.setForwardedForTrustedHops(2);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        // Com 2 proxies na frente, o último é o remoteAddr; o XFF carrega
+        // [cliente, proxy-interno]. idx = 2 - 2 = 0 → cliente.
+        request.setRemoteAddr("10.0.0.1");
+        request.addHeader("X-Forwarded-For", "203.0.113.7, 172.16.0.5");
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("203.0.113.7");
+    }
+
+    @Test
+    @DisplayName("Com hops>0 e sem X-Forwarded-For, deve cair para remoteAddr")
+    void resolveClientIp_hops1_noForwardedHeader_shouldUseRemoteAddr() {
+        props.setForwardedForTrustedHops(1);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("198.51.100.9");
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("198.51.100.9");
+    }
+
+    @Test
+    @DisplayName("Com hops maior que o nº de entradas do XFF, deve cair para remoteAddr (config incoerente)")
+    void resolveClientIp_hopsExceedEntries_shouldFallbackToRemoteAddr() {
+        props.setForwardedForTrustedHops(2);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("198.51.100.9");
+        request.addHeader("X-Forwarded-For", "203.0.113.7"); // 1 entrada, mas hops=2
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("198.51.100.9");
+    }
+
+    @Test
+    @DisplayName("Com hops>0 e entrada resolvida vazia, deve cair para remoteAddr")
+    void resolveClientIp_hops_emptyResolvedEntry_shouldFallbackToRemoteAddr() {
+        props.setForwardedForTrustedHops(2);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("198.51.100.9");
+        // idx = 2-2 = 0 → primeira entrada, que é vazia (espaço) → fallback
+        request.addHeader("X-Forwarded-For", " , 203.0.113.7");
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("198.51.100.9");
+    }
+
+    @Test
+    @DisplayName("Com hops>0 e XFF em branco, deve cair para remoteAddr")
+    void resolveClientIp_hops_blankForwarded_shouldUseRemoteAddr() {
+        props.setForwardedForTrustedHops(1);
+        EndpointRateLimitFilter f = new EndpointRateLimitFilter(props);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("198.51.100.9");
+        request.addHeader("X-Forwarded-For", "   ");
+
+        assertThat(f.resolveClientIp(request)).isEqualTo("198.51.100.9");
+    }
+
     // ---- Endpoint não protegido ----
 
     @Test
