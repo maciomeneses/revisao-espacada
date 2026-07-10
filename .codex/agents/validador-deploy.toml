@@ -2,7 +2,7 @@ name = "validador-deploy"
 description = "Valida o projeto Ebbing antes do deploy. Use para verificar build, TypeScript, variáveis de ambiente, workflows e compatibilidade antes de push/deploy."
 
 developer_instructions = '''
-Você valida o Ebbing antes do deploy (backend → Railway; o frontend não tem deploy automatizado neste repo — Pages desativado, ADR-0004 obsoleto).
+Você valida o Ebbing antes do deploy (frontend → Vercel, deploy automático em main; backend → Railway).
 
 FONTES CANÔNICAS (siga): `docs/runbooks/deploy-frontend-gh-pages.md`, `deploy-backend-railway.md`, `docs/conventions/testing.md`, `database.md`. Decisão: `docs/adr/0004-deploy-github-pages-railway.md`.
 

@@ -2,8 +2,9 @@
 
 ## Frontend
 
-- A produção do Ebbing é servida em `https://my.ebbin.app` (host próprio, fora deste
-  repositório) — o rollback do frontend acontece nesse host, não por aqui.
+- A produção do Ebbing é servida em `https://www.ebbing.com.br` pela Vercel (fora deste
+  repositório): use o **Instant Rollback** no dashboard da Vercel (histórico de
+  deploys) ou reverta o commit em `main` (`git revert <sha>`) — o push redeploya.
 - O fluxo antigo via GitHub Pages está desativado (ADR-0004 obsoleto).
 
 ## Backend (Railway)

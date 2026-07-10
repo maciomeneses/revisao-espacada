@@ -54,7 +54,7 @@ class EmailServiceTest {
     void sendPasswordReset_sucesso() {
         EmailService service = newServiceWithMockedClient("brevo-key-123", "noreply@ebbin.com");
         String to = "user@test.com";
-        String resetLink = "https://ebbin.app/reset?token=abc123";
+        String resetLink = "https://www.ebbing.com.br/reset-password?token=abc123";
 
         service.sendPasswordReset(to, resetLink);
 
@@ -149,7 +149,7 @@ class EmailServiceTest {
     void sendEmailVerification_sucesso() {
         EmailService service = newServiceWithMockedClient("brevo-key-123", "noreply@ebbin.com");
         String to = "novo@test.com";
-        String verifyLink = "https://ebbin.app/?verify=abc123";
+        String verifyLink = "https://www.ebbing.com.br/?verify=abc123";
 
         service.sendEmailVerification(to, verifyLink);
 

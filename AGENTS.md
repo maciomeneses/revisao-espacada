@@ -16,7 +16,7 @@
 
 **Ebbing** — plataforma de revisão espaçada (algoritmo FSRS v6) para o ENEM. Monorepo com frontend e backend **desacoplados** (sem código compartilhado):
 
-- `frontend/` — React 19 + TypeScript + Vite 7 + Tailwind 4 → **sem deploy automatizado** (Pages desativado — ADR-0004 obsoleto; produção do Ebbing em `https://my.ebbin.app`, fora deste repo).
+- `frontend/` — React 19 + TypeScript + Vite 7 + Tailwind 4 → **Vercel** (deploy automático em `main`; produção em `https://www.ebbing.com.br`; preview por branch). O fluxo antigo via GitHub Pages está desativado (ADR-0004 obsoleto).
 - `backend/` — Spring Boot 4 + Java 25 + PostgreSQL + Flyway → **Railway**.
 
 **Documento mestre (visão completa):** `docs/analysis_results.md` — leia ao receber uma tarefa não-trivial.
