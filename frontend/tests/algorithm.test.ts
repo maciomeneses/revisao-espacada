@@ -61,6 +61,34 @@ describe('FSRS v6 Algorithm', () => {
     expect(secondUpdate.state).toBe('Relearning');
     expect(secondUpdate.lapses).toBe(1);
   });
+
+  // O backend converte lastPerformance com PerformanceLevel.fromValue, que só
+  // reconhece nomes de nível — dígitos ('1'..'4') degradariam silenciosamente
+  // para 'nao_classificada'.
+  it.each([
+    [0, 'ruim'],
+    [4, 'ruim'],
+    [5, 'medio'],
+    [6, 'medio'],
+    [7, 'bom'],
+    [8, 'bom'],
+    [9, 'excelente'],
+    [10, 'excelente'],
+  ] as const)(
+    'persiste o nome do nível em lastPerformance e performanceLevel (numCorrect=%i → %s)',
+    (numCorrect, expected) => {
+      const updates = calculateNextReview(mockSubject, numCorrect);
+      expect(updates.lastPerformance).toBe(expected);
+      expect(updates.performanceLevel).toBe(expected);
+    },
+  );
+
+  it('nunca persiste dígitos em lastPerformance', () => {
+    for (let numCorrect = 0; numCorrect <= 10; numCorrect++) {
+      const updates = calculateNextReview(mockSubject, numCorrect);
+      expect(updates.lastPerformance).not.toMatch(/^\d+$/);
+    }
+  });
 });
 
 describe('today', () => {
@@ -84,7 +112,7 @@ describe('resetCiclo', () => {
       currentStage: 'Review',
       nextReviewDate: '2026-01-01',
       lastReviewDate: '2026-01-01',
-      lastPerformance: '3',
+      lastPerformance: 'bom',
       performanceLevel: 'bom',
       stability: 10,
       difficulty: 5,

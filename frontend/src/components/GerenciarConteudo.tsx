@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { Subject } from '../types';
+import type { Relevance, Subject } from '../types';
 import { api } from '../services/api';
 import type { SubjectTemplatePayload } from '../services/api';
 import { useCatalog } from '../hooks/useCatalog';
@@ -12,6 +12,14 @@ interface GerenciarConteudoProps {
 }
 
 const NEW_VALUE = '__new__';
+
+/**
+ * Normaliza uma relevância vinda de fonte não tipada (templates do backend,
+ * value de <select>) para a união `Relevance`, com fallback 'Alta'.
+ */
+function toRelevance(value: string): Relevance {
+  return value === 'Alta' || value === 'Média' || value === 'Baixa' ? value : 'Alta';
+}
 
 export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: GerenciarConteudoProps) {
   const {
@@ -29,7 +37,7 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
   const [assuntoMode, setAssuntoMode] = useState<'select' | 'new'>('select');
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
   const [assuntoNovo, setAssuntoNovo] = useState('');
-  const [relevancia, setRelevancia] = useState('Alta');
+  const [relevancia, setRelevancia] = useState<Relevance>('Alta');
 
   const [newAreaMode, setNewAreaMode] = useState(false);
   const [newAreaName, setNewAreaName] = useState('');
@@ -138,7 +146,8 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
     const assunto = assuntoMode === 'new' ? assuntoNovo : (selectedTemplate?.assunto ?? '');
     if (!assunto.trim()) return;
 
-    const rel = assuntoMode === 'new' ? relevancia : (selectedTemplate?.relevancia ?? 'Alta');
+    const rel =
+      assuntoMode === 'new' ? relevancia : toRelevance(selectedTemplate?.relevancia ?? 'Alta');
 
     onAdd({
       area: selectedArea.name,
@@ -388,7 +397,7 @@ export function GerenciarConteudo({ subjects, onAdd, onRemove, onClose }: Gerenc
               ) : (
                 <select
                   value={relevancia}
-                  onChange={(e) => setRelevancia(e.target.value)}
+                  onChange={(e) => setRelevancia(toRelevance(e.target.value))}
                   disabled={assuntoMode === 'select' && !selectedTemplate}
                   className={`${inputClass} disabled:opacity-40`}
                 >

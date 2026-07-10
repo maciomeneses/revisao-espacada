@@ -51,7 +51,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       localStorage.getItem('ebbing_session')
     ) {
       const session = localStorage.getItem('ebbing_session');
-      const email = session ? (JSON.parse(session).email as string | undefined) : undefined;
+      // Sessão corrompida não pode impedir a limpeza automática: parse
+      // inválido degrada para email indefinido e o fluxo prossegue.
+      let email: string | undefined;
+      try {
+        email = session ? (JSON.parse(session).email as string | undefined) : undefined;
+      } catch {
+        email = undefined;
+      }
       localStorage.removeItem('ebbing_session');
       clearSubjects(email);
       window.location.reload();

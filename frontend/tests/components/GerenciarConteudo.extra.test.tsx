@@ -5,15 +5,12 @@ import type { Subject } from '../../src/types';
 
 const createAreaMock = vi.fn();
 const createDisciplineMock = vi.fn();
+const listTemplatesMock = vi.fn();
 
 vi.mock('../../src/services/api', () => ({
   api: {
     subjectTemplates: {
-      list: vi
-        .fn()
-        .mockResolvedValue([
-          { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Alta' },
-        ]),
+      list: (...a: unknown[]) => listTemplatesMock(...a),
     },
     areas: {
       list: vi.fn().mockResolvedValue([
@@ -45,7 +42,24 @@ describe('GerenciarConteudo (cobertura extra)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.setItem('ebbing_session', JSON.stringify({ token: 't', email: 'u@e.com' }));
+    listTemplatesMock.mockResolvedValue([
+      { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Alta' },
+    ]);
   });
+
+  /** Navega até o select de assunto com área e disciplina Física selecionadas. */
+  async function selecionarFisica() {
+    await waitFor(() =>
+      expect(screen.getByRole('option', { name: 'Ciências da Natureza' })).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByRole('combobox', { name: /área/i }), { target: { value: '10' } });
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: /disciplina/i })).not.toBeDisabled();
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /disciplina/i }), {
+      target: { value: '102' },
+    });
+  }
 
   it('cancela criação de nova área via Cancelar', async () => {
     render(<GerenciarConteudo subjects={[]} onAdd={onAdd} onRemove={onRemove} onClose={onClose} />);
@@ -225,6 +239,75 @@ describe('GerenciarConteudo (cobertura extra)', () => {
     await waitFor(() =>
       expect(onAdd).toHaveBeenCalledWith(
         expect.objectContaining({ aulaPrincipal: 'Leis', relevancia: 'Alta' }),
+      ),
+    );
+  });
+
+  it('submete a relevância "Média" do template selecionado', async () => {
+    listTemplatesMock.mockResolvedValue([
+      { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Média' },
+    ]);
+    render(<GerenciarConteudo subjects={[]} onAdd={onAdd} onRemove={onRemove} onClose={onClose} />);
+    await selecionarFisica();
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Leis' })).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /assunto/i }), {
+      target: { value: '1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /REGISTRAR ESTUDO/i }));
+
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ aulaPrincipal: 'Leis', relevancia: 'Média' }),
+      ),
+    );
+  });
+
+  it('normaliza relevância desconhecida do template para "Alta"', async () => {
+    listTemplatesMock.mockResolvedValue([
+      { id: 1, area: 'Cn', disciplina: 'Física', assunto: 'Leis', relevancia: 'Urgente' },
+    ]);
+    render(<GerenciarConteudo subjects={[]} onAdd={onAdd} onRemove={onRemove} onClose={onClose} />);
+    await selecionarFisica();
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Leis' })).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /assunto/i }), {
+      target: { value: '1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /REGISTRAR ESTUDO/i }));
+
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ aulaPrincipal: 'Leis', relevancia: 'Alta' }),
+      ),
+    );
+  });
+
+  it('submete a relevância "Baixa" escolhida no modo "novo assunto"', async () => {
+    render(<GerenciarConteudo subjects={[]} onAdd={onAdd} onRemove={onRemove} onClose={onClose} />);
+    await selecionarFisica();
+
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: /assunto/i })).toBeInTheDocument();
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /assunto/i }), {
+      target: { value: '__new__' },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/Ex: Funções Trigonométricas/i), {
+      target: { value: 'Termologia' },
+    });
+    // Select de relevância (sem label associado): localizado pelo valor default.
+    fireEvent.change(screen.getByDisplayValue('Alta'), { target: { value: 'Baixa' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /REGISTRAR ESTUDO/i }));
+
+    await waitFor(() =>
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ aulaPrincipal: 'Termologia', relevancia: 'Baixa' }),
       ),
     );
   });

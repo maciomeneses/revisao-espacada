@@ -147,6 +147,24 @@ describe('request<T> helper', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
+  it('401 com sessão corrompida: limpa session e recarrega sem lançar', async () => {
+    localStorage.setItem('ebbing_session', '{sessao-corrompida');
+    const clearSpy = vi.spyOn(storage, 'clearSubjects').mockImplementation(() => {});
+    const reloadMock = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { reload: reloadMock },
+    });
+
+    mockFetchOnce({ ok: false, status: 401, json: async () => ({}) });
+    const result = await api.subjects.list();
+
+    expect(result).toBeUndefined();
+    expect(localStorage.getItem('ebbing_session')).toBeNull();
+    expect(clearSpy).toHaveBeenCalledWith(undefined);
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+  });
+
   it('401 em /api/auth/* NÃO recarrega — lança Error com detail', async () => {
     localStorage.setItem(
       'ebbing_session',

@@ -1,4 +1,4 @@
-import { Subject } from '../types';
+import { Performance, ReviewStage, Subject } from '../types';
 
 // FSRS v6 Default Parameters
 export const DEFAULT_W = [
@@ -40,13 +40,20 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     rating = 3; // Good
   else rating = 4; // Easy
 
+  // Nível de desempenho persistido (ver tabela numCorrect → Rating → Performance
+  // em docs/conventions/fsrs.md). O backend espera o NOME do nível — dígitos
+  // ('1'..'4') não são reconhecidos por PerformanceLevel.fromValue e degradam
+  // silenciosamente para 'nao_classificada'.
+  const performance: Performance =
+    rating === 1 ? 'ruim' : rating === 2 ? 'medio' : rating === 3 ? 'bom' : 'excelente';
+
   const { stability = 0, difficulty = 0 } = subject;
   let { reps = 0, lapses = 0 } = subject;
   const now = new Date();
 
   let nextStability: number;
   let nextDifficulty: number;
-  let state: string;
+  let state: ReviewStage;
 
   if (reps === 0 || !stability) {
     // First review
@@ -110,9 +117,8 @@ export function calculateNextReview(subject: Subject, numCorrect: number): Parti
     // datetime UTC deslocava a data em +1 dia para revisões feitas à noite.
     lastReviewDate: localDateStr(now),
     nextReviewDate: localDateStr(nextReviewDate),
-    lastPerformance: rating.toString(),
-    performanceLevel:
-      rating === 1 ? 'ruim' : rating === 2 ? 'medio' : rating === 3 ? 'bom' : 'excelente',
+    lastPerformance: performance,
+    performanceLevel: performance,
     currentStage: state,
   };
 }
