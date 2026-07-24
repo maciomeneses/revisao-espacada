@@ -138,4 +138,16 @@ describe('LandingPage (cobertura extra)', () => {
     expect(container.querySelector('a[href="#como-funciona"]')).not.toBeNull();
     expect(container.querySelector('a[href="#algoritmo"]')).not.toBeNull();
   });
+
+  it('footer credita a Silis Tech com link externo seguro e logo self-hosted', () => {
+    const { container } = renderLanding();
+
+    const credit = container.querySelector('a[href="https://silistech.com.br"]');
+    expect(credit).not.toBeNull();
+    expect(credit?.getAttribute('target')).toBe('_blank');
+    expect(credit?.getAttribute('rel')).toBe('noopener noreferrer');
+    const logo = credit?.querySelector('img');
+    expect(logo?.getAttribute('src')).toBe('/logo-silis-tech.svg');
+    expect(logo?.getAttribute('alt')).toBe('Silis Tech');
+  });
 });

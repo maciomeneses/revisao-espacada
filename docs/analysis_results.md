@@ -51,6 +51,7 @@ Ver `docs/adr/`. Principais: monorepo desacoplado (0001), FSRS congelado (0002),
 - [x] Rate limit, cache, OWASP scan, cobertura agressiva.
 - [x] Limite diário de revisões (`user_preferences.max_reviews_per_day`) com balanceamento de carga no `snapReviewDate` (issue #54).
 - [x] Auto-cadastro público com verificação de e-mail (issue #59; kill switch `SIGNUP_ENABLED`).
+- [x] Crédito "Plataforma construída pela Silis Tech" no rodapé da landing (logo self-hosted + link para silistech.com.br).
 - [ ] Próximas features: backlog completo no Kanban board (issues #47–#60); registrar aqui ao iniciar cada uma.
 
 ## 8. Perguntas em aberto

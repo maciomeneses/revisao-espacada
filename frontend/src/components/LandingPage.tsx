@@ -550,8 +550,17 @@ function FooterSection() {
           </a>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-6 mt-20 pt-10 border-t border-white/5 text-center text-white/50 text-xs">
-        © 2026 Ebbing — Plataforma de Revisão Espaçada. Todos os direitos reservados.
+      <div className="max-w-7xl mx-auto px-6 mt-20 pt-10 border-t border-white/5 flex flex-col items-center gap-3 text-center text-white/50 text-xs">
+        <p>© 2026 Ebbing — Plataforma de Revisão Espaçada. Todos os direitos reservados.</p>
+        <a
+          href="https://silistech.com.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 hover:text-white transition-colors"
+        >
+          Plataforma construída pela{' '}
+          <img src="/logo-silis-tech.svg" alt="Silis Tech" className="h-4 object-contain" />
+        </a>
       </div>
     </footer>
   );
