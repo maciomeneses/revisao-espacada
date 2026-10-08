@@ -6,7 +6,7 @@ Leia isto antes de qualquer mudança no código. Cobre os "tropeços" que não s
 
 - O backend usa toolchain **Java 25** localmente, mas o CI (`ubuntu-latest`) roda **Java 21**.
 - Evite features de Java 22+ que não compilem em Java 21, senão o CI quebra mesmo com build local verde.
-- Com `CI_RUNNER=self-hosted` (fallback de billing — `docs/runbooks/ci-runner-self-hosted.md`), o CI roda no Mac e a toolchain resolve o JDK 25 local; a regra acima continua valendo para proteger a volta ao `ubuntu-latest`.
+- Com `CI_RUNNER=hermes` (atual) ou `self-hosted` (Mac) — ver `docs/runbooks/ci-runner-self-hosted.md` —, o CI roda em runner próprio e a toolchain resolve o JDK 25 local da máquina; a regra acima continua valendo para proteger a volta ao `ubuntu-latest`.
 
 ## 2. Cobertura quebra o build
 
