@@ -16,7 +16,9 @@ jobs:
     # CI_RUNNER=self-hosted → roda no runner local (não consome minutos do Actions).
     # Reversão: gh variable set CI_RUNNER --body ubuntu-latest
     # Runbook: docs/runbooks/ci-runner-self-hosted.md
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    # PR do dependabot (código de terceiros) nunca roda em runner self-hosted persistente
+    # (Mac ou VM hermes): vai para o runner do GitHub. O resto segue a variável CI_RUNNER.
+    runs-on: ${{ github.event.pull_request.user.login != 'dependabot[bot]' && vars.CI_RUNNER || 'ubuntu-latest' }}
     defaults:
       run:
         working-directory: frontend
