@@ -1,5 +1,7 @@
 # Ebbing — Plataforma de Revisão Espaçada para o ENEM
 
+> ⏸ **Projeto pausado desde 2026-10-28.** Backend e banco estão parados no Railway (dados mantidos, com backup local), o frontend está pausado na Vercel e o repositório está arquivado. Para retomar, ver [`docs/runbooks/retomar-projeto-pausado.md`](docs/runbooks/retomar-projeto-pausado.md).
+
 Aplicação web para estudantes do ENEM organizarem seus estudos com **revisões agendadas pelo algoritmo FSRS v6**. Cada assunto evolui automaticamente entre os estágios `aula → Learning → Review → Relearning` conforme o desempenho real do aluno, e o agendamento respeita tanto a **rotina semanal** quanto os **dias permitidos** configurados por usuário — duas restrições compostas em `snapReviewDate(...)`.
 
 ## Visão geral
