@@ -1,6 +1,6 @@
 # Ebbing — Plataforma de Revisão Espaçada para o ENEM
 
-> ⏸ **Projeto pausado desde 2026-10-28.** Backend e banco estão parados no Railway (dados mantidos, com backup local), o frontend está pausado na Vercel e o repositório está arquivado. Para retomar, ver [`docs/runbooks/retomar-projeto-pausado.md`](docs/runbooks/retomar-projeto-pausado.md).
+> ▶️ **Projeto retomado em novembro de 2026**, após uma pausa iniciada em 2026-10-28. A infraestrutura de produção (backend e banco no Railway, frontend na Vercel) ainda está pausada e será reativada seguindo o roteiro em [`docs/runbooks/retomar-projeto-pausado.md`](docs/runbooks/retomar-projeto-pausado.md).
 
 Aplicação web para estudantes do ENEM organizarem seus estudos com **revisões agendadas pelo algoritmo FSRS v6**. Cada assunto evolui automaticamente entre os estágios `aula → Learning → Review → Relearning` conforme o desempenho real do aluno, e o agendamento respeita tanto a **rotina semanal** quanto os **dias permitidos** configurados por usuário — duas restrições compostas em `snapReviewDate(...)`.
 
@@ -69,6 +69,16 @@ Toda a documentação vive em [`docs/`](./docs/) e é a **fonte de verdade**:
 - `.github/workflows/` — CI do backend e do frontend. Os deploys são automáticos e fora do Actions: Vercel (frontend) e Railway (backend).
 - `.claude/agents/` — agentes especializados de revisão (backend, frontend, testes, FSRS, deploy).
 - `CLAUDE.md`, `GEMINI.md` — adaptadores finos por ferramenta (apontam para `AGENTS.md` e `docs/conventions/`).
+
+## Roadmap
+
+O trabalho planejado está nas [issues abertas](https://github.com/maciomeneses/revisao-espacada/issues). Próximos passos:
+
+- Reativar a infraestrutura de produção (Railway e Vercel) seguindo o runbook de retomada.
+- **Algoritmo:** otimização dos pesos FSRS por usuário (#58), modo véspera de prova (#55) e uso do desempenho em simulados no agendamento (#56).
+- **Frontend:** previsão de carga de revisões para 30 dias (#57), PWA instalável (#53) e heatmap de consistência (#48).
+- **Backend:** lembretes de revisão (#51) e relatório semanal de progresso por e-mail (#52), exportação e importação de dados (#49).
+- **Produto:** gamificação com streaks e metas (#50) e suporte a outros vestibulares e concursos (#60).
 
 ## Contribuição
 
